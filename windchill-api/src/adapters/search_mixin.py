@@ -18,6 +18,13 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
+# Windchill ignoriert $top und liefert immer 25 Items pro Seite (fest).
+_WC_PAGE_SIZE = 25
+# Standard-Seitenlimit pro Entity-Typ bei der Suche.
+# 4 Seiten × 25 = 100 Items pro Typ → bei 6 Typen max ~600 Ergebnisse.
+# Deutlich genuegt fuer die UI und reduziert die Suchzeit drastisch.
+_DEFAULT_SEARCH_MAX_PAGES = 4
+
 
 class SearchMixin:
     """Multi-Entity-Suche (Mixin fuer WRSClientBase)."""
@@ -125,8 +132,17 @@ class SearchMixin:
         def _search_one_type(type_key: str, service: str, entity_set: str, wc_type: str) -> list[dict]:
             url = f"{self.odata_base}/{service}/{entity_set}"
             params: dict[str, str] = {"$filter": combined_filter}
+
+            # Seitenlimit berechnen:
+            # Bei limit > 0 genuegen ceil(limit/25)+1 Seiten pro Typ,
+            # sonst verwende den Default (4 Seiten = 100 Items pro Typ).
+            if limit > 0:
+                pages = max(_DEFAULT_SEARCH_MAX_PAGES, (limit // _WC_PAGE_SIZE) + 2)
+            else:
+                pages = _DEFAULT_SEARCH_MAX_PAGES
+
             try:
-                items = self._get_all_pages(url, params, return_none_on_error=True)
+                items = self._get_all_pages(url, params, max_pages=pages, return_none_on_error=True)
                 if items is None:
                     return []
                 for item in items:
@@ -243,12 +259,15 @@ class SearchMixin:
         for type_key, (service, entity_set, wc_type) in targets:
             url = f"{self.odata_base}/{service}/{entity_set}"
 
-            params: dict[str, str] = {"$top": str(min(limit, 200))}
+            # Seitenlimit: genuegend Seiten um 'limit' Items zu finden
+            pages = max(_DEFAULT_SEARCH_MAX_PAGES, (limit // _WC_PAGE_SIZE) + 2)
+
+            params: dict[str, str] = {}
             if filter_str:
                 params["$filter"] = filter_str
 
             try:
-                items = self._get_all_pages(url, params, return_none_on_error=True)
+                items = self._get_all_pages(url, params, max_pages=pages, return_none_on_error=True)
                 if items is None:
                     continue
                 for item in items:

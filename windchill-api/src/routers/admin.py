@@ -43,6 +43,18 @@ def api_logs(
     return {"items": items}
 
 
+@router.delete("/logs", summary="API Log leeren")
+def clear_api_logs(
+    request: Request = None,
+    _: None = Depends(require_auth),
+):
+    session = get_session(request)
+    if session:
+        with session.lock:
+            session.api_logs.clear()
+    return {"cleared": True}
+
+
 # ── JSON Export ──────────────────────────────────────────────
 
 

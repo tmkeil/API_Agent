@@ -207,6 +207,12 @@ export async function getApiLogs(limit = 120): Promise<ApiLogEntry[]> {
   return data.items
 }
 
+export async function clearApiLogs(): Promise<void> {
+  await request<{ cleared: boolean }>(`${BASE}/logs`, {
+    method: 'DELETE',
+  })
+}
+
 // Export
 export async function exportBom(
   mode: 'expandedOnly' | 'fullTree',

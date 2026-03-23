@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { getApiLogs, searchParts } from '../api/client'
+import { clearApiLogs, getApiLogs, searchParts } from '../api/client'
 import type { ApiLogEntry, PartSearchResult } from '../api/types'
 import SearchBar from '../components/SearchBar'
 import AdvancedSearchPanel from '../components/AdvancedSearchPanel'
@@ -224,17 +224,27 @@ export default function DashboardPage() {
 
       {/* API Log */}
       <section className="border-t border-slate-200 pt-4">
-        <button
-          onClick={() => setLogOpen((o) => !o)}
-          className="text-xs text-slate-400 hover:text-slate-600 font-medium transition-colors"
-        >
-          {logOpen ? '▾' : '▸'} API Log ({logs.length})
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setLogOpen((o) => !o)}
+            className="text-xs text-slate-400 hover:text-slate-600 font-medium transition-colors"
+          >
+            {logOpen ? '▾' : '▸'} API Log ({logs.length})
+          </button>
+          {logOpen && logs.length > 0 && (
+            <button
+              onClick={() => { setLogs([]); clearApiLogs().catch(() => {}) }}
+              className="text-[10px] text-slate-400 hover:text-red-500 transition-colors"
+            >
+              ✕ Clear
+            </button>
+          )}
+        </div>
         {logOpen && (
           <div
             ref={logRef}
             className="mt-2 bg-slate-900 text-green-400 text-[11px] font-mono rounded p-3 overflow-y-auto"
-            style={{ maxHeight: '240px' }}
+            style={{ height: '240px' }}
           >
             {logs.length === 0 && (
               <p className="text-slate-500">Keine API-Aufrufe protokolliert.</p>

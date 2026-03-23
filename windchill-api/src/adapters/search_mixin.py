@@ -126,10 +126,21 @@ class SearchMixin:
             ]
 
         safe = query.replace("'", "''")
-        combined_filter = (
-            f"(Number eq '{safe}' or contains(Number,'{safe}') "
-            f"or contains(Name,'{safe}'))"
-        )
+
+        # Wenn der Suchbegriff Ziffern enthaelt, ist er wahrscheinlich
+        # eine Nummer (z.B. S2200287364, BCC0812). In dem Fall ist
+        # contains(Name,...) sinnlos und erzwingt einen teuren Full-Text-Scan
+        # auf dem Name-Feld aller Entity-Typen (Documents: 10-17s!).
+        _has_digits = any(c.isdigit() for c in query)
+        if _has_digits:
+            combined_filter = (
+                f"(Number eq '{safe}' or contains(Number,'{safe}'))"
+            )
+        else:
+            combined_filter = (
+                f"(Number eq '{safe}' or contains(Number,'{safe}') "
+                f"or contains(Name,'{safe}'))"
+            )
 
         max_pages = _DEFAULT_SEARCH_MAX_PAGES
         if limit > 0:
@@ -282,9 +293,15 @@ class SearchMixin:
 
         if query:
             safe_q = query.replace("'", "''")
-            clauses.append(
-                f"(contains(Number,'{safe_q}') or contains(Name,'{safe_q}'))"
-            )
+            _has_digits = any(c.isdigit() for c in query)
+            if _has_digits:
+                clauses.append(
+                    f"(contains(Number,'{safe_q}'))"
+                )
+            else:
+                clauses.append(
+                    f"(contains(Number,'{safe_q}') or contains(Name,'{safe_q}'))"
+                )
 
         if state:
             safe_st = state.strip().replace("'", "''")

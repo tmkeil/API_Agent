@@ -213,33 +213,34 @@ def advanced_search(
 
 
 def get_contexts(client: WRSClient) -> list[str]:
-    """Get available Windchill organization names for filtering.
+    """Get available Windchill Kontexte aus FolderLocation.
 
-    Queries a sample of Parts and extracts unique OrganizationName values.
-    Falls back to full records if $select is not supported.
+    FolderLocation enthaelt Pfade wie '/P - Design/Article'.
+    Der erste Pfad-Abschnitt (z.B. 'P - Design') ist der Kontext.
     """
     url = f"{client.odata_base}/ProdMgmt/Parts"
-    orgs: set[str] = set()
+    contexts: set[str] = set()
 
-    # Strategie 1: $select=OrganizationName (schnellste)
+    # $select=FolderLocation um Bandbreite zu sparen
     items = client.get_all_pages(
-        url, {"$select": "OrganizationName", "$top": "500"},
+        url, {"$select": "FolderLocation", "$top": "500"},
         return_none_on_error=True,
     )
 
-    # Strategie 2: Ohne $select — alle Felder holen
+    # Fallback ohne $select
     if items is None:
-        logger.info("get_contexts: $select=OrganizationName failed, fetching full records")
+        logger.info("get_contexts: $select=FolderLocation failed, fetching full records")
         items = client.get_all_pages(
             url, {"$top": "200"},
             return_none_on_error=True,
         ) or []
 
     for item in (items or []):
-        org = item.get("OrganizationName") or item.get("OrganizationIdentifier")
-        if isinstance(org, dict):
-            org = org.get("Name") or org.get("DisplayName")
-        if org:
-            orgs.add(str(org))
+        folder = item.get("FolderLocation") or ""
+        if isinstance(folder, str) and folder.startswith("/"):
+            # '/P - Design/Article' → 'P - Design'
+            parts = folder.strip("/").split("/")
+            if parts and parts[0]:
+                contexts.add(parts[0])
 
-    return sorted(orgs)
+    return sorted(contexts)

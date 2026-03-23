@@ -146,7 +146,7 @@ export default function DashboardPage() {
               onChange={(e) => setSelectedContext(e.target.value)}
               className="ml-auto px-2 py-0.5 rounded text-xs border border-slate-200 bg-white text-slate-600 focus:outline-none focus:ring-1 focus:ring-indigo-400"
             >
-              <option value="">Alle Organisationen</option>
+              <option value="">Alle Kontexte</option>
               {contexts.map((c) => (
                 <option key={c} value={c}>{c}</option>
               ))}

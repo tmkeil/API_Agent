@@ -94,12 +94,14 @@ class SearchMixin:
     ) -> list[dict]:
         """Suche ueber mehrere Windchill-Entity-Typen gleichzeitig.
 
-        Strategie: Ein einzelner OData-Filter pro Typ
-        (Number/Name mit OR), parallel ueber ThreadPoolExecutor.
-        Windchill's eigenes serverseitiges Limit greift automatisch.
+        Strategie (2-Phasen, flacher Thread-Pool):
 
-        Kontext-Filter (P - Design etc.) erfolgt clientseitig anhand
-        von FolderLocation, da dieses Feld nicht OData-filterbar ist.
+        Phase 1 — Erste Seite pro Typ parallel abrufen.
+                  Liefert Ergebnisse + Skiptoken-Muster.
+        Phase 2 — Alle verbleibenden Seiten aller Typen in einem
+                  einzigen Thread-Pool parallel abrufen.
+
+        Kein verschachtelter Thread-Pool, kein $count.
 
         Args:
             query:        Suchbegriff (Nummer oder Name, mit Wildcard * oder ?).
@@ -112,6 +114,7 @@ class SearchMixin:
         Returns:
             Liste von OData-Dicts, ergaenzt um '_entity_type' (z.B. 'WTPart').
         """
+        import re as _re
         from concurrent.futures import ThreadPoolExecutor, as_completed
 
         if entity_types is None:
@@ -123,60 +126,115 @@ class SearchMixin:
             ]
 
         safe = query.replace("'", "''")
-
-        # OData-Filter: nur Number/Name (FolderLocation ist NICHT filterbar)
         combined_filter = (
             f"(Number eq '{safe}' or contains(Number,'{safe}') "
             f"or contains(Name,'{safe}'))"
         )
 
-        def _search_one_type(type_key: str, service: str, entity_set: str, wc_type: str) -> list[dict]:
+        max_pages = _DEFAULT_SEARCH_MAX_PAGES
+        if limit > 0:
+            max_pages = max(max_pages, (limit // _WC_PAGE_SIZE) + 2)
+
+        # ── Phase 1: Erste Seite pro Typ (parallel) ──────────
+
+        def _fetch_first(type_key: str, service: str, entity_set: str, wc_type: str):
             url = f"{self.odata_base}/{service}/{entity_set}"
             params: dict[str, str] = {"$filter": combined_filter}
-
-            # Seitenlimit berechnen
-            if limit > 0:
-                pages = max(_DEFAULT_SEARCH_MAX_PAGES, (limit // _WC_PAGE_SIZE) + 2)
-            else:
-                pages = _DEFAULT_SEARCH_MAX_PAGES
-
             try:
-                items = self._get_all_pages_parallel(
-                    url, params, max_pages=pages,
-                    return_none_on_error=True,
-                )
-                if items is None:
-                    return []
+                resp = self._get(url, params, suppress_errors=True)
+                if resp is None or resp.status_code != 200:
+                    return type_key, wc_type, [], None
+                data = resp.json()
+                items = list(data.get("value", []))
+                next_link = data.get("@odata.nextLink")
                 for item in items:
                     item["_entity_type"] = wc_type
                     item["_entity_type_key"] = type_key
-                if items:
-                    logger.debug(
-                        "search_entities %s/%s fields: %s",
-                        service, entity_set, list(items[0].keys()),
-                    )
-                return items
+                return type_key, wc_type, items, next_link
             except Exception:
-                logger.debug("search_entities failed for %s/%s", service, entity_set, exc_info=True)
-                return []
+                logger.debug("search first page failed %s/%s", service, entity_set, exc_info=True)
+                return type_key, wc_type, [], None
 
-        # Parallele Abfrage aller Entity-Typen
-        collected: list[dict] = []
-        seen_ids: set[str] = set()
+        all_items: list[dict] = []
+        remaining_urls: list[tuple[str, str, str]] = []  # (url, type_key, wc_type)
 
         with ThreadPoolExecutor(max_workers=len(targets)) as pool:
-            futures = {
-                pool.submit(_search_one_type, tk, svc, es, wct): tk
+            futures = [
+                pool.submit(_fetch_first, tk, svc, es, wct)
                 for tk, (svc, es, wct) in targets
-            }
-            for future in as_completed(futures):
-                for item in future.result():
-                    pid = extract_id(item)
-                    if pid and pid not in seen_ids:
-                        seen_ids.add(pid)
-                        collected.append(item)
+            ]
+            for f in as_completed(futures):
+                type_key, wc_type, items, next_link = f.result()
+                all_items.extend(items)
 
-        # Clientseitiger Kontext-Filter (FolderLocation)
+                if not next_link:
+                    continue
+
+                # Skiptoken-Muster erkennen (z.B. $skiptoken=25)
+                m = _re.search(r'[\?&]\$skiptoken=(\d+)', next_link)
+                if not m:
+                    # Unbekanntes Paging-Format → sequentiell nachladen
+                    page = 1
+                    nl = next_link
+                    while nl and page < max_pages:
+                        page += 1
+                        r = self._get(nl, suppress_errors=True)
+                        if r is None or r.status_code != 200:
+                            break
+                        d = r.json()
+                        for it in d.get("value", []):
+                            it["_entity_type"] = wc_type
+                            it["_entity_type_key"] = type_key
+                            all_items.append(it)
+                        nl = d.get("@odata.nextLink")
+                    continue
+
+                skip_size = int(m.group(1))
+                sep = next_link[m.start()]
+                base_url = next_link[:m.start()]
+
+                # URLs fuer Seite 2..max_pages generieren
+                for pg in range(1, max_pages):
+                    st = skip_size * pg
+                    remaining_urls.append(
+                        (f"{base_url}{sep}$skiptoken={st}", type_key, wc_type)
+                    )
+
+        # ── Phase 2: Alle Rest-Seiten in einem Pool ──────────
+
+        if remaining_urls:
+            def _fetch_page(item: tuple[str, str, str]) -> list[dict]:
+                pg_url, tk, wct = item
+                try:
+                    r = self._get(pg_url, suppress_errors=True)
+                    if r is None or r.status_code != 200:
+                        return []
+                    items = list(r.json().get("value", []))
+                    for it in items:
+                        it["_entity_type"] = wct
+                        it["_entity_type_key"] = tk
+                    return items
+                except Exception:
+                    return []
+
+            workers = min(len(remaining_urls), 15)
+            with ThreadPoolExecutor(max_workers=workers) as pool:
+                futures = [pool.submit(_fetch_page, ru) for ru in remaining_urls]
+                for f in as_completed(futures):
+                    result = f.result()
+                    if result:
+                        all_items.extend(result)
+
+        # ── Deduplizieren + filtern ───────────────────────────
+
+        collected: list[dict] = []
+        seen_ids: set[str] = set()
+        for item in all_items:
+            pid = extract_id(item)
+            if pid and pid not in seen_ids:
+                seen_ids.add(pid)
+                collected.append(item)
+
         if contexts:
             prefixes = [f"/{ctx}/" for ctx in contexts]
             collected = [
@@ -203,17 +261,11 @@ class SearchMixin:
     ) -> list[dict]:
         """Erweiterte Suche mit strukturierten OData-Filtern.
 
-        Args:
-            query:        Nummer oder Name (optional, kann leer sein).
-            entity_types: Typ-Keys (None → alle).
-            contexts:     Liste von Kontexten (clientseitiger Filter via FolderLocation).
-            state:        Lifecycle-State filter (z.B. 'INWORK', 'RELEASED').
-            description:  Beschreibungs-Substring filter.
-            date_from:    ISO-Datum (>= ModifyStamp).
-            date_to:      ISO-Datum (<= ModifyStamp).
-            attributes:   Zusaetzliche Name=Value-Filter auf OData-Felder.
-            limit:        Max. Gesamtergebnisse.
+        Gleiche 2-Phasen-Strategie wie search_entities (flacher Pool).
         """
+        import re as _re
+        from concurrent.futures import ThreadPoolExecutor, as_completed
+
         if entity_types is None or len(entity_types) == 0:
             targets = list(self.SEARCHABLE_ENTITIES.items())
         else:
@@ -230,8 +282,6 @@ class SearchMixin:
             clauses.append(
                 f"(contains(Number,'{safe_q}') or contains(Name,'{safe_q}'))"
             )
-
-        # FolderLocation ist NICHT OData-filterbar → kein OData-Clause
 
         if state:
             safe_st = state.strip().replace("'", "''")
@@ -254,46 +304,106 @@ class SearchMixin:
                 clauses.append(f"{safe_name} eq '{safe_val}'")
 
         filter_str = " and ".join(clauses) if clauses else ""
+        max_pages = max(_DEFAULT_SEARCH_MAX_PAGES, (limit // _WC_PAGE_SIZE) + 2)
 
-        collected: list[dict] = []
-        seen_ids: set[str] = set()
+        # ── Phase 1: Erste Seite pro Typ ─────────────────────
 
-        for type_key, (service, entity_set, wc_type) in targets:
+        def _fetch_first(type_key: str, service: str, entity_set: str, wc_type: str):
             url = f"{self.odata_base}/{service}/{entity_set}"
-
-            # Seitenlimit: genuegend Seiten um 'limit' Items zu finden
-            pages = max(_DEFAULT_SEARCH_MAX_PAGES, (limit // _WC_PAGE_SIZE) + 2)
-
             params: dict[str, str] = {}
             if filter_str:
                 params["$filter"] = filter_str
-
             try:
-                items = self._get_all_pages_parallel(
-                    url, params, max_pages=pages,
-                    return_none_on_error=True,
-                )
-                if items is None:
-                    continue
+                resp = self._get(url, params, suppress_errors=True)
+                if resp is None or resp.status_code != 200:
+                    return type_key, wc_type, [], None
+                data = resp.json()
+                items = list(data.get("value", []))
+                next_link = data.get("@odata.nextLink")
                 for item in items:
-                    pid = extract_id(item)
-                    if pid and pid not in seen_ids:
-                        seen_ids.add(pid)
-                        item["_entity_type"] = wc_type
-                        item["_entity_type_key"] = type_key
-                        collected.append(item)
+                    item["_entity_type"] = wc_type
+                    item["_entity_type_key"] = type_key
+                return type_key, wc_type, items, next_link
             except Exception:
-                logger.debug(
-                    "advanced_search failed for %s/%s",
-                    service, entity_set,
-                    exc_info=True,
-                )
-                continue
+                return type_key, wc_type, [], None
 
-            if len(collected) >= limit:
-                break
+        all_items: list[dict] = []
+        remaining_urls: list[tuple[str, str, str]] = []
 
-        # Clientseitiger Kontext-Filter (FolderLocation)
+        with ThreadPoolExecutor(max_workers=len(targets)) as pool:
+            futures = [
+                pool.submit(_fetch_first, tk, svc, es, wct)
+                for tk, (svc, es, wct) in targets
+            ]
+            for f in as_completed(futures):
+                type_key, wc_type, items, next_link = f.result()
+                all_items.extend(items)
+
+                if not next_link:
+                    continue
+
+                m = _re.search(r'[\?&]\$skiptoken=(\d+)', next_link)
+                if not m:
+                    # Sequentieller Fallback
+                    page = 1
+                    nl = next_link
+                    while nl and page < max_pages:
+                        page += 1
+                        r = self._get(nl, suppress_errors=True)
+                        if r is None or r.status_code != 200:
+                            break
+                        d = r.json()
+                        for it in d.get("value", []):
+                            it["_entity_type"] = wc_type
+                            it["_entity_type_key"] = type_key
+                            all_items.append(it)
+                        nl = d.get("@odata.nextLink")
+                    continue
+
+                skip_size = int(m.group(1))
+                sep = next_link[m.start()]
+                base_url = next_link[:m.start()]
+
+                for pg in range(1, max_pages):
+                    remaining_urls.append(
+                        (f"{base_url}{sep}$skiptoken={skip_size * pg}", type_key, wc_type)
+                    )
+
+        # ── Phase 2: Rest-Seiten parallel ────────────────────
+
+        if remaining_urls:
+            def _fetch_page(item: tuple[str, str, str]) -> list[dict]:
+                pg_url, tk, wct = item
+                try:
+                    r = self._get(pg_url, suppress_errors=True)
+                    if r is None or r.status_code != 200:
+                        return []
+                    items = list(r.json().get("value", []))
+                    for it in items:
+                        it["_entity_type"] = wct
+                        it["_entity_type_key"] = tk
+                    return items
+                except Exception:
+                    return []
+
+            workers = min(len(remaining_urls), 15)
+            with ThreadPoolExecutor(max_workers=workers) as pool:
+                futures = [pool.submit(_fetch_page, ru) for ru in remaining_urls]
+                for f in as_completed(futures):
+                    result = f.result()
+                    if result:
+                        all_items.extend(result)
+
+        # ── Deduplizieren + filtern ──────────────────────────
+
+        collected: list[dict] = []
+        seen_ids: set[str] = set()
+        for item in all_items:
+            pid = extract_id(item)
+            if pid and pid not in seen_ids:
+                seen_ids.add(pid)
+                collected.append(item)
+
         if contexts:
             prefixes = [f"/{ctx}/" for ctx in contexts]
             collected = [

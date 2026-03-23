@@ -9,7 +9,7 @@ Wird in ``WRSClient`` per Mehrfachvererbung eingebunden.
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Generator
 
 from src.core.odata import extract_id
 
@@ -274,6 +274,156 @@ class SearchMixin:
             ]
 
         return collected[:limit] if limit > 0 else collected
+
+    def search_entities_stream(
+        self: "WRSClientBase",
+        query: str,
+        entity_types: list[str] | None = None,
+        contexts: list[str] | None = None,
+        limit: int = 0,
+    ) -> Generator[list[dict], None, None]:
+        """Streaming-Variante von search_entities.
+
+        Yielded Batches von Ergebnissen sobald sie verfuegbar sind,
+        statt auf alle Seiten zu warten. Jeder Batch ist eine Liste
+        von OData-Dicts (dedupliziert, kontextgefiltert).
+
+        Phase 1 — Erste Seite pro Typ parallel → yield sofort.
+        Phase 2 — Restliche Seiten parallel → yield pro fertigem Batch.
+        """
+        import re as _re
+        from concurrent.futures import ThreadPoolExecutor, as_completed
+
+        if entity_types is None:
+            targets = list(self.SEARCHABLE_ENTITIES.items())
+        else:
+            targets = [
+                (k, v) for k, v in self.SEARCHABLE_ENTITIES.items()
+                if k in entity_types
+            ]
+
+        safe = query.replace("'", "''")
+        _has_digits = any(c.isdigit() for c in query)
+        _has_wildcards = "*" in query or "?" in query
+        _is_exact_number = _has_digits and len(query) >= 5 and not _has_wildcards
+
+        if _is_exact_number:
+            combined_filter = f"Number eq '{safe}'"
+        elif _has_digits:
+            combined_filter = f"(Number eq '{safe}' or contains(Number,'{safe}'))"
+        else:
+            combined_filter = (
+                f"(Number eq '{safe}' or contains(Number,'{safe}') "
+                f"or contains(Name,'{safe}'))"
+            )
+
+        max_pages = _DEFAULT_SEARCH_MAX_PAGES
+        if limit > 0:
+            max_pages = max(max_pages, (limit // _WC_PAGE_SIZE) + 2)
+
+        # Helpers fuer Kontext- und Duplikat-Filter
+        seen_ids: set[str] = set()
+        ctx_prefixes = [f"/{ctx}/" for ctx in contexts] if contexts else None
+        total_yielded = 0
+
+        def _dedup_filter(items: list[dict]) -> list[dict]:
+            nonlocal total_yielded
+            out = []
+            for item in items:
+                pid = extract_id(item)
+                if not pid or pid in seen_ids:
+                    continue
+                seen_ids.add(pid)
+                if ctx_prefixes:
+                    loc = item.get("FolderLocation") or ""
+                    if not any(loc.startswith(p) for p in ctx_prefixes):
+                        continue
+                out.append(item)
+            if limit > 0 and total_yielded + len(out) > limit:
+                out = out[:limit - total_yielded]
+            total_yielded += len(out)
+            return out
+
+        # ── Phase 1: Erste Seite pro Typ ─────────────────────
+
+        def _fetch_first(type_key: str, service: str, entity_set: str, wc_type: str):
+            url = f"{self.odata_base}/{service}/{entity_set}"
+            params: dict[str, str] = {"$filter": combined_filter}
+            try:
+                resp = self._raw_get(url, params)
+                if resp.status_code != 200:
+                    return type_key, wc_type, [], None
+                data = resp.json()
+                items = list(data.get("value", []))
+                next_link = data.get("@odata.nextLink")
+                for item in items:
+                    item["_entity_type"] = wc_type
+                    item["_entity_type_key"] = type_key
+                return type_key, wc_type, items, next_link
+            except Exception:
+                return type_key, wc_type, [], None
+
+        remaining_urls: list[tuple[str, str, str]] = []
+
+        with ThreadPoolExecutor(max_workers=len(targets)) as pool:
+            futures = [
+                pool.submit(_fetch_first, tk, svc, es, wct)
+                for tk, (svc, es, wct) in targets
+            ]
+            for f in as_completed(futures):
+                type_key, wc_type, items, next_link = f.result()
+
+                if items:
+                    batch = _dedup_filter(items)
+                    if batch:
+                        yield batch
+                    if limit > 0 and total_yielded >= limit:
+                        return
+
+                if not next_link:
+                    continue
+
+                m = _re.search(r'[\?&]\$skiptoken=(\d+)', next_link)
+                if not m:
+                    continue
+
+                skip_size = int(m.group(1))
+                sep = next_link[m.start()]
+                base_url = next_link[:m.start()]
+
+                for pg in range(1, max_pages):
+                    remaining_urls.append(
+                        (f"{base_url}{sep}$skiptoken={skip_size * pg}", type_key, wc_type)
+                    )
+
+        # ── Phase 2: Rest-Seiten parallel, yield pro Batch ───
+
+        if remaining_urls and (limit == 0 or total_yielded < limit):
+            def _fetch_page(item: tuple[str, str, str]) -> list[dict]:
+                pg_url, tk, wct = item
+                try:
+                    r = self._raw_get(pg_url)
+                    if r.status_code != 200:
+                        return []
+                    items = list(r.json().get("value", []))
+                    for it in items:
+                        it["_entity_type"] = wct
+                        it["_entity_type_key"] = tk
+                    return items
+                except Exception:
+                    return []
+
+            workers = min(len(remaining_urls), 20)
+            with ThreadPoolExecutor(max_workers=workers) as pool:
+                futures = [pool.submit(_fetch_page, ru) for ru in remaining_urls]
+                for f in as_completed(futures):
+                    result = f.result()
+                    if result:
+                        batch = _dedup_filter(result)
+                        if batch:
+                            yield batch
+                        if limit > 0 and total_yielded >= limit:
+                            return
 
     def advanced_search(
         self: "WRSClientBase",

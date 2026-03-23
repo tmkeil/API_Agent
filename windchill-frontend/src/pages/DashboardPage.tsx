@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { clearApiLogs, getApiLogs, searchParts } from '../api/client'
+import { clearApiLogs, getApiLogs, searchPartsStream } from '../api/client'
 import type { ApiLogEntry, PartSearchResult } from '../api/types'
 import SearchBar from '../components/SearchBar'
 import AdvancedSearchPanel from '../components/AdvancedSearchPanel'
@@ -33,6 +33,7 @@ export default function DashboardPage() {
   const [error, setError] = useState('')
   const [activeTypes, setActiveTypes] = useState<string[]>([])
   const hasRestoredRef = useRef(false)
+  const abortRef = useRef<AbortController | null>(null)
   // API Log state
   const [logs, setLogs] = useState<ApiLogEntry[]>([])
   const [logOpen, setLogOpen] = useState(false)
@@ -60,26 +61,39 @@ export default function DashboardPage() {
 
   // ── Search ──────────────────────────────────────────────
 
-  const handleSearch = useCallback(async (query: string) => {
+  const handleSearch = useCallback((query: string) => {
+    // Abort any in-flight stream
+    abortRef.current?.abort()
+
     setError('')
     setSearching(true)
     setSearchDone(false)
+    setResults([])
     // Persist query in URL so "Back" restores state
     setSearchParams(query ? { q: query } : {}, { replace: true })
-    try {
-      const items = await searchParts(
-        query, undefined,
-        activeTypes.length > 0 ? activeTypes : undefined,
-      )
-      setResults(items)
-    } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : String(e)
-      setError(msg)
-      setResults([])
-    } finally {
-      setSearching(false)
-      setSearchDone(true)
-    }
+
+    const ctrl = searchPartsStream(
+      query,
+      // onBatch – append results progressively
+      (batch) => {
+        setResults((prev) => [...prev, ...batch])
+      },
+      // onDone
+      (_info) => {
+        setSearching(false)
+        setSearchDone(true)
+      },
+      // onError
+      (msg) => {
+        setError(msg)
+        setSearching(false)
+        setSearchDone(true)
+      },
+      {
+        types: activeTypes.length > 0 ? activeTypes : undefined,
+      },
+    )
+    abortRef.current = ctrl
   }, [activeTypes, setSearchParams])
 
   // Restore search from URL params (e.g. after navigating back from detail page)
@@ -89,6 +103,9 @@ export default function DashboardPage() {
       handleSearch(urlQuery)
     }
   }, [urlQuery, handleSearch])
+
+  // Abort stream on unmount
+  useEffect(() => () => { abortRef.current?.abort() }, [])
 
   function handleRowClick(r: PartSearchResult) {
     const tk = TYPE_KEY_MAP[r.objectType]
@@ -175,6 +192,11 @@ export default function DashboardPage() {
         <section>
           <h2 className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2">
             {results.length} Ergebnis{results.length !== 1 ? 'se' : ''}
+            {searching && (
+              <span className="ml-2 text-indigo-500 animate-pulse">
+                — Lade weitere…
+              </span>
+            )}
           </h2>
 
           <div className="bg-white rounded shadow-sm border border-slate-200 overflow-hidden">

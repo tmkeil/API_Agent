@@ -3,18 +3,22 @@ Router: Typ-uebergreifende Suche und generische Objekt-Details.
 
 Endpoints:
   GET /search                       → Multi-Entity-Suche
+  GET /search/stream                → Streaming-Suche (SSE)
   GET /objects/{type_key}/{code}    → Detail fuer beliebigen Windchill-Typ
 """
 
+import json
 import logging
 import time
 
 from fastapi import APIRouter, Depends, Query, Request
+from fastapi.responses import StreamingResponse
 
 from src.core.auth import require_auth
 from src.core.dependencies import get_client, get_session
+from src.core.odata import WcType, normalize_item, match_score
 from src.core.session import log_session_event
-from src.models.dto import AdvancedSearchRequest, ObjectDetailResponse, SearchResponse
+from src.models.dto import AdvancedSearchRequest, ObjectDetailResponse, PartSearchResult, SearchResponse
 from src.services import search_service
 
 logger = logging.getLogger(__name__)
@@ -56,6 +60,74 @@ def search(
     if session:
         log_session_event(session, "GET", f"/api/search?q={q}&types={types}", 200, duration_ms, "web", f"{len(results)} results")
     return SearchResponse(items=results)
+
+
+# ── Streaming Search (SSE) ───────────────────────────────────
+
+
+@router.get(
+    "/search/stream",
+    summary="Streaming-Suche via Server-Sent Events",
+)
+def search_stream(
+    q: str = Query(..., min_length=1, description="Suchbegriff"),
+    limit: int = Query(0, ge=0, le=10000),
+    types: str = Query(None),
+    request: Request = None,
+    _: None = Depends(require_auth),
+):
+    """SSE-Endpoint: Liefert Ergebnis-Batches als `data:` Events.
+
+    Jedes Event enthaelt ein JSON-Array von PartSearchResult-Objekten.
+    Am Ende kommt ein `event: done` mit Zusammenfassung.
+    """
+    client = get_client(request)
+
+    entity_types: list[str] | None = None
+    if types:
+        entity_types = [t.strip() for t in types.split(",") if t.strip()]
+
+    def _to_search_result(item: dict) -> dict:
+        n = normalize_item(item)
+        if not n["id"]:
+            return None
+        obj_type = n.get("_entity_type", WcType.PART)
+        return {
+            "partId": n["id"],
+            "objectType": obj_type,
+            "number": n["number"],
+            "name": n["name"],
+            "version": n["version"],
+            "iteration": n["iteration"],
+            "state": n["state"],
+            "identity": n["identity"],
+            "context": n["context"],
+            "lastModified": n["last_modified"],
+            "createdOn": n["created_on"],
+        }
+
+    def _generate():
+        total = 0
+        t0 = time.perf_counter()
+        for batch in client.search_entities_stream(
+            q, entity_types=entity_types, limit=limit,
+        ):
+            results = [r for item in batch if (r := _to_search_result(item)) is not None]
+            if results:
+                total += len(results)
+                yield f"data: {json.dumps(results, ensure_ascii=False)}\n\n"
+
+        duration_ms = int((time.perf_counter() - t0) * 1000)
+        yield f"event: done\ndata: {json.dumps({'total': total, 'durationMs': duration_ms})}\n\n"
+
+    return StreamingResponse(
+        _generate(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "X-Accel-Buffering": "no",
+        },
+    )
 
 
 # ── Advanced Search ──────────────────────────────────────────

@@ -98,6 +98,84 @@ export async function searchParts(
   return data.items
 }
 
+/**
+ * Streaming search via Server-Sent Events.
+ * Calls `onBatch` with each batch of results as they arrive.
+ * Returns an AbortController to cancel the stream.
+ */
+export function searchPartsStream(
+  q: string,
+  onBatch: (items: PartSearchResult[]) => void,
+  onDone: (info: { total: number; durationMs: number }) => void,
+  onError: (err: string) => void,
+  opts?: { limit?: number; types?: string[] },
+): AbortController {
+  const params = new URLSearchParams({ q })
+  if (opts?.limit && opts.limit > 0) params.set('limit', String(opts.limit))
+  if (opts?.types && opts.types.length > 0) {
+    params.set('types', opts.types.join(','))
+  }
+
+  const controller = new AbortController()
+
+  fetch(`${BASE}/search/stream?${params}`, {
+    credentials: 'include',
+    signal: controller.signal,
+    headers: { Accept: 'text/event-stream' },
+  })
+    .then(async (resp) => {
+      if (!resp.ok) {
+        const body = await resp.json().catch(() => ({}))
+        throw new Error(body.error || body.detail || `HTTP ${resp.status}`)
+      }
+      const reader = resp.body?.getReader()
+      if (!reader) throw new Error('No response body')
+
+      const decoder = new TextDecoder()
+      let buffer = ''
+
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+
+        buffer += decoder.decode(value, { stream: true })
+
+        // Parse SSE events from buffer
+        const parts = buffer.split('\n\n')
+        buffer = parts.pop() || ''
+
+        for (const part of parts) {
+          const lines = part.trim().split('\n')
+          let eventType = 'message'
+          let data = ''
+          for (const line of lines) {
+            if (line.startsWith('event: ')) eventType = line.slice(7)
+            else if (line.startsWith('data: ')) data += line.slice(6)
+          }
+          if (!data) continue
+
+          if (eventType === 'done') {
+            try {
+              onDone(JSON.parse(data))
+            } catch { /* ignore */ }
+          } else {
+            try {
+              const items = JSON.parse(data) as PartSearchResult[]
+              if (items.length > 0) onBatch(items)
+            } catch { /* ignore */ }
+          }
+        }
+      }
+    })
+    .catch((err) => {
+      if (err?.name !== 'AbortError') {
+        onError(err instanceof Error ? err.message : String(err))
+      }
+    })
+
+  return controller
+}
+
 // Contexts (Windchill Container names)
 export async function getContexts(): Promise<string[]> {
   const data = await request<{ contexts: string[] }>(`${BASE}/contexts`)

@@ -40,7 +40,6 @@ def search_parts(
     query: str,
     limit: int = 200,
     entity_types: list[str] | None = None,
-    context: Optional[str] = None,
     session: Optional[UserSession] = None,
 ) -> list[PartSearchResult]:
     """Search with wildcard support, ranking, and session-level caching.
@@ -48,12 +47,10 @@ def search_parts(
     Args:
         entity_types: Optional list of type keys to search.
                       None → all types. E.g. ["part","document","cad_document"]
-        context: Optional Windchill ContainerName to filter results.
     """
     # Check session cache first
     types_key = ",".join(sorted(entity_types)) if entity_types else "all"
-    ctx_key = (context or "").strip().lower()
-    cache_key = f"{query.lower()}|{limit}|{types_key}|{ctx_key}"
+    cache_key = f"{query.lower()}|{limit}|{types_key}"
     if session:
         with session.lock:
             cached = session.search_cache.get(cache_key)
@@ -63,7 +60,7 @@ def search_parts(
 
     # Use multi-entity search (parallel, single query per type)
     raw_items = client.search_entities(
-        query, entity_types=entity_types, context=context, limit=limit,
+        query, entity_types=entity_types, contexts=None, limit=limit,
     )
 
     # Wildcard-Support: zusaetzliche clientseitige Regex-Filterung
@@ -161,7 +158,7 @@ def advanced_search(
     client: WRSClient,
     query: str = "",
     types: list[str] | None = None,
-    context: str = "",
+    contexts: list[str] | None = None,
     state: str = "",
     description: str = "",
     date_from: str = "",
@@ -179,7 +176,7 @@ def advanced_search(
     raw_items = client.advanced_search(
         query=query,
         entity_types=types if types else None,
-        context=context or None,
+        contexts=contexts or None,
         state=state or None,
         description=description or None,
         date_from=date_from or None,

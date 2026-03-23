@@ -81,7 +81,7 @@ class SearchMixin:
         self: "WRSClientBase",
         query: str,
         entity_types: list[str] | None = None,
-        context: str | None = None,
+        contexts: list[str] | None = None,
         limit: int = 0,
     ) -> list[dict]:
         """Suche ueber mehrere Windchill-Entity-Typen gleichzeitig.
@@ -90,11 +90,15 @@ class SearchMixin:
         (Number/Name mit OR), parallel ueber ThreadPoolExecutor.
         Windchill's eigenes serverseitiges Limit greift automatisch.
 
+        Kontext-Filter (P - Design etc.) erfolgt clientseitig anhand
+        von FolderLocation, da dieses Feld nicht OData-filterbar ist.
+
         Args:
             query:        Suchbegriff (Nummer oder Name, mit Wildcard * oder ?).
             entity_types: Liste von Typ-Keys (z.B. ["part","document"]).
                           None → alle Typen durchsuchen.
-            context:      Optional ContainerName filter (z.B. 'Balluff').
+            contexts:     Optional Liste von Kontexten (z.B. ['P - Design']).
+                          Filter erfolgt clientseitig ueber FolderLocation.
             limit:        Max. Gesamtergebnisse (0 = kein clientseitiges Limit).
 
         Returns:
@@ -112,29 +116,22 @@ class SearchMixin:
 
         safe = query.replace("'", "''")
 
-        # Optional Kontext-Filter (via FolderLocation) fuer OData $filter
-        ctx_clause = ""
-        if context:
-            safe_ctx = context.strip().replace("'", "''")
-            ctx_clause = f" and startswith(FolderLocation,'/{safe_ctx}/')"
-
-        # Einzelner kombinierter Filter pro Entity-Typ (statt 3 sequentiellen)
+        # OData-Filter: nur Number/Name (FolderLocation ist NICHT filterbar)
         combined_filter = (
             f"(Number eq '{safe}' or contains(Number,'{safe}') "
-            f"or contains(Name,'{safe}')){ctx_clause}"
+            f"or contains(Name,'{safe}'))"
         )
 
         def _search_one_type(type_key: str, service: str, entity_set: str, wc_type: str) -> list[dict]:
             url = f"{self.odata_base}/{service}/{entity_set}"
-            params: dict[str, str] = {"$filter": combined_filter, "$top": "500"}
+            params: dict[str, str] = {"$filter": combined_filter}
             try:
-                items = self._get_all_pages(url, params, max_pages=3, return_none_on_error=True)
+                items = self._get_all_pages(url, params, return_none_on_error=True)
                 if items is None:
                     return []
                 for item in items:
                     item["_entity_type"] = wc_type
                     item["_entity_type_key"] = type_key
-                # Debug: Welche Felder liefert Windchill?
                 if items:
                     logger.debug(
                         "search_entities %s/%s fields: %s",
@@ -161,13 +158,24 @@ class SearchMixin:
                         seen_ids.add(pid)
                         collected.append(item)
 
+        # Clientseitiger Kontext-Filter (FolderLocation)
+        if contexts:
+            prefixes = [f"/{ctx}/" for ctx in contexts]
+            collected = [
+                item for item in collected
+                if any(
+                    (item.get("FolderLocation") or "").startswith(p)
+                    for p in prefixes
+                )
+            ]
+
         return collected[:limit] if limit > 0 else collected
 
     def advanced_search(
         self: "WRSClientBase",
         query: str = "",
         entity_types: list[str] | None = None,
-        context: str | None = None,
+        contexts: list[str] | None = None,
         state: str | None = None,
         description: str | None = None,
         date_from: str | None = None,
@@ -180,7 +188,7 @@ class SearchMixin:
         Args:
             query:        Nummer oder Name (optional, kann leer sein).
             entity_types: Typ-Keys (None → alle).
-            context:      ContainerName filter.
+            contexts:     Liste von Kontexten (clientseitiger Filter via FolderLocation).
             state:        Lifecycle-State filter (z.B. 'INWORK', 'RELEASED').
             description:  Beschreibungs-Substring filter.
             date_from:    ISO-Datum (>= ModifyStamp).
@@ -205,9 +213,7 @@ class SearchMixin:
                 f"(contains(Number,'{safe_q}') or contains(Name,'{safe_q}'))"
             )
 
-        if context:
-            safe_ctx = context.strip().replace("'", "''")
-            clauses.append(f"startswith(FolderLocation,'/{safe_ctx}/')")
+        # FolderLocation ist NICHT OData-filterbar → kein OData-Clause
 
         if state:
             safe_st = state.strip().replace("'", "''")
@@ -262,5 +268,16 @@ class SearchMixin:
 
             if len(collected) >= limit:
                 break
+
+        # Clientseitiger Kontext-Filter (FolderLocation)
+        if contexts:
+            prefixes = [f"/{ctx}/" for ctx in contexts]
+            collected = [
+                item for item in collected
+                if any(
+                    (item.get("FolderLocation") or "").startswith(p)
+                    for p in prefixes
+                )
+            ]
 
         return collected[:limit]

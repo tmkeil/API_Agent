@@ -28,7 +28,7 @@ export default function AdvancedSearchPanel({ contexts, onResults, onError }: Pr
   // Form fields
   const [query, setQuery] = useState('')
   const [selectedTypes, setSelectedTypes] = useState<string[]>([])
-  const [context, setContext] = useState('')
+  const [selectedContexts, setSelectedContexts] = useState<string[]>([])
   const [state, setState] = useState('')
   const [description, setDescription] = useState('')
   const [dateFrom, setDateFrom] = useState('')
@@ -41,10 +41,16 @@ export default function AdvancedSearchPanel({ contexts, onResults, onError }: Pr
     )
   }
 
+  const toggleContext = (ctx: string) => {
+    setSelectedContexts((prev) =>
+      prev.includes(ctx) ? prev.filter((c) => c !== ctx) : [...prev, ctx],
+    )
+  }
+
   const resetForm = useCallback(() => {
     setQuery('')
     setSelectedTypes([])
-    setContext('')
+    setSelectedContexts([])
     setState('')
     setDescription('')
     setDateFrom('')
@@ -59,7 +65,7 @@ export default function AdvancedSearchPanel({ contexts, onResults, onError }: Pr
       const body: AdvancedSearchRequest = {}
       if (query.trim()) body.query = query.trim()
       if (selectedTypes.length > 0) body.types = selectedTypes
-      if (context) body.context = context
+      if (selectedContexts.length > 0) body.contexts = selectedContexts
       if (state.trim()) body.state = state.trim()
       if (description.trim()) body.description = description.trim()
       if (dateFrom) body.dateFrom = dateFrom
@@ -73,7 +79,7 @@ export default function AdvancedSearchPanel({ contexts, onResults, onError }: Pr
     } finally {
       setBusy(false)
     }
-  }, [query, selectedTypes, context, state, description, dateFrom, dateTo, limit, onResults, onError])
+  }, [query, selectedTypes, selectedContexts, state, description, dateFrom, dateTo, limit, onResults, onError])
 
   return (
     <div className="mt-2">
@@ -139,16 +145,29 @@ export default function AdvancedSearchPanel({ contexts, onResults, onError }: Pr
             </div>
             <div>
               <label className="text-xs text-slate-500 mb-1 block">Kontext</label>
-              <select
-                value={context}
-                onChange={(e) => setContext(e.target.value)}
-                className="w-full px-2 py-1.5 text-sm border border-slate-300 rounded bg-white focus:outline-none focus:ring-1 focus:ring-indigo-400"
-              >
-                <option value="">Alle</option>
+              <div className="flex flex-wrap gap-1.5">
                 {contexts.map((c) => (
-                  <option key={c} value={c}>{c}</option>
+                  <button
+                    key={c}
+                    onClick={() => toggleContext(c)}
+                    className={`px-2 py-0.5 rounded-full text-xs font-medium border transition-colors ${
+                      selectedContexts.includes(c)
+                        ? 'bg-teal-600 text-white border-teal-600'
+                        : 'bg-white text-slate-500 border-slate-200 hover:border-slate-400'
+                    }`}
+                  >
+                    {c}
+                  </button>
                 ))}
-              </select>
+                {selectedContexts.length > 0 && (
+                  <button
+                    onClick={() => setSelectedContexts([])}
+                    className="px-2 py-0.5 text-xs text-slate-400 hover:text-slate-600"
+                  >
+                    ✕ Alle
+                  </button>
+                )}
+              </div>
             </div>
             <div>
               <label className="text-xs text-slate-500 mb-1 block">Limit</label>

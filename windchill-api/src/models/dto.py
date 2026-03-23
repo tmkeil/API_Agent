@@ -369,7 +369,7 @@ class AdvancedSearchRequest(BaseModel):
     """Request body for advanced search with structured filters."""
     query: str = ""
     types: list[str] = []
-    context: str = ""
+    contexts: list[str] = []
     state: str = ""
     description: str = ""
     dateFrom: str = ""

@@ -38,11 +38,6 @@ def search(
                     "change_notice,change_request,problem_report. "
                     "Leer = alle Typen.",
     ),
-    context: str = Query(
-        None,
-        description="Windchill ContainerName Filter (z.B. 'Balluff'). "
-                    "Leer = kein Kontext-Filter.",
-    ),
     request: Request = None,
     _: None = Depends(require_auth),
 ) -> SearchResponse:
@@ -55,7 +50,7 @@ def search(
 
     t0 = time.perf_counter()
     results = search_service.search_parts(
-        client, q, limit, entity_types=entity_types, context=context, session=session,
+        client, q, limit, entity_types=entity_types, session=session,
     )
     duration_ms = int((time.perf_counter() - t0) * 1000)
     if session:
@@ -81,7 +76,7 @@ def advanced_search(
         client,
         query=body.query,
         types=body.types or None,
-        context=body.context,
+        contexts=body.contexts or None,
         state=body.state,
         description=body.description,
         date_from=body.dateFrom,

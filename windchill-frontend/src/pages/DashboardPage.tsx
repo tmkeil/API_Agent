@@ -13,6 +13,8 @@ const WINDCHILL_CONTEXTS = [
   'P - Electronical Components - Manufacturing',
   'P - Manufacturing',
   'P - Mechanical Components',
+  'P - Compliance and Conformity',
+  'P - Enclosed Documentation',
 ]
 
 // ── Component ──

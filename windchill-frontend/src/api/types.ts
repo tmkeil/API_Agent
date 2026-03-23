@@ -312,7 +312,7 @@ export interface BulkResponse {
 export interface AdvancedSearchRequest {
   query?: string
   types?: string[]
-  context?: string
+  contexts?: string[]
   state?: string
   description?: string
   dateFrom?: string

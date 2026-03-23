@@ -21,9 +21,10 @@ logger = logging.getLogger(__name__)
 # Windchill ignoriert $top und liefert immer 25 Items pro Seite (fest).
 _WC_PAGE_SIZE = 25
 # Standard-Seitenlimit pro Entity-Typ bei der Suche.
-# 4 Seiten × 25 = 100 Items pro Typ → bei 6 Typen max ~600 Ergebnisse.
-# Deutlich genuegt fuer die UI und reduziert die Suchzeit drastisch.
-_DEFAULT_SEARCH_MAX_PAGES = 4
+# 40 Seiten × 25 = 1000 Items pro Typ.
+# Dank parallelem Paging (alle Seiten gleichzeitig) dauert das nur
+# so lang wie ein einzelner Request (~3s Parts, ~10s Documents).
+_DEFAULT_SEARCH_MAX_PAGES = 40
 
 
 class SearchMixin:
@@ -133,16 +134,17 @@ class SearchMixin:
             url = f"{self.odata_base}/{service}/{entity_set}"
             params: dict[str, str] = {"$filter": combined_filter}
 
-            # Seitenlimit berechnen:
-            # Bei limit > 0 genuegen ceil(limit/25)+1 Seiten pro Typ,
-            # sonst verwende den Default (4 Seiten = 100 Items pro Typ).
+            # Seitenlimit berechnen
             if limit > 0:
                 pages = max(_DEFAULT_SEARCH_MAX_PAGES, (limit // _WC_PAGE_SIZE) + 2)
             else:
                 pages = _DEFAULT_SEARCH_MAX_PAGES
 
             try:
-                items = self._get_all_pages(url, params, max_pages=pages, return_none_on_error=True)
+                items = self._get_all_pages_parallel(
+                    url, params, max_pages=pages, max_workers=6,
+                    return_none_on_error=True,
+                )
                 if items is None:
                     return []
                 for item in items:
@@ -267,7 +269,10 @@ class SearchMixin:
                 params["$filter"] = filter_str
 
             try:
-                items = self._get_all_pages(url, params, max_pages=pages, return_none_on_error=True)
+                items = self._get_all_pages_parallel(
+                    url, params, max_pages=pages, max_workers=6,
+                    return_none_on_error=True,
+                )
                 if items is None:
                     continue
                 for item in items:

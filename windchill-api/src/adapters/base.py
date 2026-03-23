@@ -348,6 +348,91 @@ class WRSClientBase:
             logger.debug("_get_all_pages(%s) failed", url, exc_info=True)
             return None if return_none_on_error else []
 
+    def _get_all_pages_parallel(
+        self,
+        url: str,
+        params: Any = None,
+        *,
+        max_pages: int = 40,
+        max_workers: int = 6,
+        return_none_on_error: bool = False,
+    ) -> Optional[list]:
+        """OData-Paging mit parallelem Abruf aller Seiten.
+
+        Strategie:
+        1. Erste Seite normal abrufen (liefert Daten + @odata.nextLink).
+        2. Aus dem nextLink den Skiptoken-Offset ableiten (typisch 25).
+        3. Alle verbleibenden Seiten parallel mit vorausberechneten
+           Skiptokens abrufen statt sequentiell auf nextLink zu warten.
+
+        Windchill's Skiptokens sind simple numerische Offsets (25, 50, 75 …),
+        daher vorhersagbar.  Leere Seiten (jenseits der Treffermenge)
+        werden einfach verworfen.
+        """
+        import re as _re
+        from concurrent.futures import ThreadPoolExecutor, as_completed
+
+        try:
+            # ── Seite 1 ──────────────────────────────────────
+            resp = self._get(url, params, suppress_errors=True)
+            if resp is None or resp.status_code != 200:
+                return None if return_none_on_error else []
+
+            data = resp.json()
+            first_page = list(data.get("value", []))
+            next_link = data.get("@odata.nextLink")
+
+            if not next_link or max_pages <= 1:
+                return first_page
+
+            # ── Skiptoken-Muster erkennen ─────────────────────
+            m = _re.search(r'[\?&]\$skiptoken=(\d+)', next_link)
+            if not m:
+                # Kein numerischer Skiptoken → Fallback auf sequentiell
+                return self._get_all_pages(
+                    url, params,
+                    max_pages=max_pages,
+                    return_none_on_error=return_none_on_error,
+                )
+
+            skip_size = int(m.group(1))  # z.B. 25
+            sep = next_link[m.start()]   # '?' oder '&'
+            base_url = next_link[:m.start()]  # URL ohne $skiptoken
+
+            # ── Parallele Seiten-URLs bauen ───────────────────
+            page_urls: list[tuple[int, str]] = []
+            for pg in range(1, max_pages):  # Seite 1 = skiptoken 0, schon da
+                st = skip_size * pg
+                page_urls.append((pg, f"{base_url}{sep}$skiptoken={st}"))
+
+            # ── Parallel abrufen ──────────────────────────────
+            results_by_page: dict[int, list[dict]] = {0: first_page}
+
+            def _fetch(item: tuple[int, str]) -> tuple[int, list[dict]]:
+                pg_num, pg_url = item
+                r = self._get(pg_url, suppress_errors=True)
+                if r is None or r.status_code != 200:
+                    return pg_num, []
+                return pg_num, list(r.json().get("value", []))
+
+            with ThreadPoolExecutor(max_workers=max_workers) as pool:
+                futures = {pool.submit(_fetch, pu): pu for pu in page_urls}
+                for future in as_completed(futures):
+                    pg_num, items = future.result()
+                    if items:
+                        results_by_page[pg_num] = items
+
+            # ── Ergebnisse in Seitenreihenfolge zusammenfuegen ─
+            all_items: list[dict] = []
+            for pg in sorted(results_by_page.keys()):
+                all_items.extend(results_by_page[pg])
+
+            return all_items
+
+        except Exception:
+            logger.debug("_get_all_pages_parallel(%s) failed", url, exc_info=True)
+            return None if return_none_on_error else []
+
     def get_all_pages(
         self,
         url: str,

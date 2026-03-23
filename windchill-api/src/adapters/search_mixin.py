@@ -126,9 +126,9 @@ class SearchMixin:
 
         def _search_one_type(type_key: str, service: str, entity_set: str, wc_type: str) -> list[dict]:
             url = f"{self.odata_base}/{service}/{entity_set}"
-            params: dict[str, str] = {"$filter": combined_filter}
+            params: dict[str, str] = {"$filter": combined_filter, "$top": "500"}
             try:
-                items = self._get_all_pages(url, params, return_none_on_error=True)
+                items = self._get_all_pages(url, params, max_pages=3, return_none_on_error=True)
                 if items is None:
                     return []
                 for item in items:

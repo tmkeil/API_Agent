@@ -217,13 +217,17 @@ def get_contexts(client: WRSClient) -> list[str]:
 
     FolderLocation enthaelt Pfade wie '/P - Design/Article'.
     Der erste Pfad-Abschnitt (z.B. 'P - Design') ist der Kontext.
+
+    Holt nur EINE Seite (max_pages=1) — 500 Records genuegen,
+    um die gaengigen Kontexte abzudecken.
     """
     url = f"{client.odata_base}/ProdMgmt/Parts"
     contexts: set[str] = set()
 
-    # $select=FolderLocation um Bandbreite zu sparen
+    # NUR 1 Seite holen — kein Paging durch die ganze DB!
     items = client.get_all_pages(
         url, {"$select": "FolderLocation", "$top": "500"},
+        max_pages=1,
         return_none_on_error=True,
     )
 
@@ -231,7 +235,8 @@ def get_contexts(client: WRSClient) -> list[str]:
     if items is None:
         logger.info("get_contexts: $select=FolderLocation failed, fetching full records")
         items = client.get_all_pages(
-            url, {"$top": "200"},
+            url, {"$top": "100"},
+            max_pages=1,
             return_none_on_error=True,
         ) or []
 

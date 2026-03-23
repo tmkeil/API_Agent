@@ -1,10 +1,19 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { getApiLogs, getContexts, searchParts } from '../api/client'
+import { getApiLogs, searchParts } from '../api/client'
 import type { ApiLogEntry, PartSearchResult } from '../api/types'
 import SearchBar from '../components/SearchBar'
 import AdvancedSearchPanel from '../components/AdvancedSearchPanel'
 import { TYPE_FILTERS, TYPE_KEY_MAP, formatDate, typeLabel } from '../utils/labels'
+
+// Bekannte Windchill-Kontexte (Folder-Toplevel)
+const WINDCHILL_CONTEXTS = [
+  'P - Design',
+  'P - Electronical Components - Design',
+  'P - Electronical Components - Manufacturing',
+  'P - Manufacturing',
+  'P - Mechanical Components',
+]
 
 // ── Component ──
 
@@ -21,20 +30,11 @@ export default function DashboardPage() {
   const [searchDone, setSearchDone] = useState(false)
   const [error, setError] = useState('')
   const [activeTypes, setActiveTypes] = useState<string[]>([])
-  const [selectedContext, setSelectedContext] = useState<string>('')
-  const [contexts, setContexts] = useState<string[]>([])
   const hasRestoredRef = useRef(false)
   // API Log state
   const [logs, setLogs] = useState<ApiLogEntry[]>([])
   const [logOpen, setLogOpen] = useState(false)
   const logRef = useRef<HTMLDivElement>(null)
-
-  // Load available contexts once on mount
-  useEffect(() => {
-    getContexts()
-      .then(setContexts)
-      .catch(() => {/* best-effort — dropdown stays empty */})
-  }, [])
 
   // Poll API logs every 2.5s when the log panel is open
   useEffect(() => {
@@ -68,7 +68,6 @@ export default function DashboardPage() {
       const items = await searchParts(
         query, undefined,
         activeTypes.length > 0 ? activeTypes : undefined,
-        selectedContext || undefined,
       )
       setResults(items)
     } catch (e: unknown) {
@@ -79,7 +78,7 @@ export default function DashboardPage() {
       setSearching(false)
       setSearchDone(true)
     }
-  }, [activeTypes, selectedContext, setSearchParams])
+  }, [activeTypes, setSearchParams])
 
   // Restore search from URL params (e.g. after navigating back from detail page)
   useEffect(() => {
@@ -139,23 +138,10 @@ export default function DashboardPage() {
               ✕ Alle
             </button>
           )}
-          {/* Context dropdown */}
-          {contexts.length > 0 && (
-            <select
-              value={selectedContext}
-              onChange={(e) => setSelectedContext(e.target.value)}
-              className="ml-auto px-2 py-0.5 rounded text-xs border border-slate-200 bg-white text-slate-600 focus:outline-none focus:ring-1 focus:ring-indigo-400"
-            >
-              <option value="">Alle Kontexte</option>
-              {contexts.map((c) => (
-                <option key={c} value={c}>{c}</option>
-              ))}
-            </select>
-          )}
         </div>
         {/* Advanced Search Panel */}
         <AdvancedSearchPanel
-          contexts={contexts}
+          contexts={WINDCHILL_CONTEXTS}
           onResults={(items) => {
             setResults(items)
             setSearchDone(true)
@@ -190,9 +176,9 @@ export default function DashboardPage() {
           </h2>
 
           <div className="bg-white rounded shadow-sm border border-slate-200 overflow-hidden">
-            <div className="overflow-x-auto">
+            <div className="overflow-auto" style={{ maxHeight: 'calc(100vh - 300px)' }}>
               <table className="w-full text-sm">
-                <thead className="bg-slate-50 text-slate-500 text-xs border-b border-slate-200">
+                <thead className="bg-slate-50 text-slate-500 text-xs border-b border-slate-200 sticky top-0 z-10">
                   <tr>
                     <th className="text-left px-3 py-2 font-medium">Typ</th>
                     <th className="text-left px-3 py-2 font-medium">Nummer</th>

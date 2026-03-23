@@ -25,7 +25,7 @@ _FIELD_ALIASES: dict[str, list[str]] = {
     "iteration":     ["Iteration", "IterationID"],
     "state":         ["State", "LifeCycleState"],
     "identity":      ["Identity", "DisplayIdentity"],
-    "context":       ["ContainerName", "Context"],
+    "context":       ["ContainerName", "Context", "OrganizationName", "ContainerReference"],
     "last_modified": ["LastModified", "ModifyTimestamp"],
     "created_on":    ["CreatedOn", "CreateTimestamp"],
 }
@@ -66,6 +66,21 @@ def normalize_item(raw: dict) -> dict:
             result[canonical] = normalize_state(value)
         else:
             result[canonical] = str(value) if value is not None else ""
+
+    # Fallback fuer Context: aus @odata.context URL oder Container-Referenz
+    if not result.get("context"):
+        # Versuch: Container-Referenz als Dict
+        cref = raw.get("ContainerReference")
+        if isinstance(cref, dict):
+            result["context"] = str(
+                cref.get("Name") or cref.get("DisplayName") or ""
+            )
+        # Versuch: Aus @odata.context die Container-Info extrahieren
+        if not result["context"]:
+            odata_ctx = raw.get("@odata.context") or raw.get("odata.context") or ""
+            if "ContainerName" in str(odata_ctx):
+                # Manchmal in @odata.context eingebettet
+                pass  # Komplex; belassen wir als leer
 
     # Injizierte Metadaten beibehalten (von SearchMixin)
     for meta_key in ("_entity_type", "_entity_type_key"):

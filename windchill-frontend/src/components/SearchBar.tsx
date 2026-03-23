@@ -1,13 +1,19 @@
-import { useState, type FormEvent } from 'react'
+import { useEffect, useState, type FormEvent } from 'react'
 
 interface Props {
   onSearch: (query: string) => void
   loading?: boolean
   placeholder?: string
+  initialQuery?: string
 }
 
-export default function SearchBar({ onSearch, loading, placeholder }: Props) {
-  const [query, setQuery] = useState('')
+export default function SearchBar({ onSearch, loading, placeholder, initialQuery }: Props) {
+  const [query, setQuery] = useState(initialQuery || '')
+
+  // Sync with external initialQuery changes (e.g. from URL params)
+  useEffect(() => {
+    if (initialQuery !== undefined) setQuery(initialQuery)
+  }, [initialQuery])
 
   function handleSubmit(e: FormEvent) {
     e.preventDefault()

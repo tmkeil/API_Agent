@@ -57,6 +57,31 @@ def _map_part(raw: dict) -> PartDetail:
     )
 
 
+def _has_children(raw: dict) -> bool:
+    """Heuristik: Hat dieses Part Kinder in der Stueckliste?
+
+    Windchill liefert je nach OData-Version und $expand
+    unterschiedliche Hinweise. Wir pruefen mehrere Indikatoren.
+    Im Zweifel geben wir True zurueck — die UI laedt dann
+    einfach eine leere Children-Liste.
+    """
+    for key in ("UsesPartList", "PartListMember", "Uses", "UsesInterface",
+                "BOMComponents", "PartStructure"):
+        val = raw.get(key)
+        if val is not None:
+            if isinstance(val, list) and len(val) > 0:
+                return True
+            if isinstance(val, str) and val:
+                return True
+    # odata.navigationLink Hinweis
+    for key in raw:
+        if key.endswith("@odata.navigationLink") and "Uses" in key:
+            return True
+    # Fallback: Immer True — die UI laedt dann leere Kinder und
+    # klappt den Pfeil weg falls keine Ergebnisse kommen
+    return True
+
+
 def _map_tree_node(
     raw: dict, usage_link: Optional[dict] = None
 ) -> BomTreeNode:
@@ -70,7 +95,7 @@ def _map_tree_node(
         iteration=n["iteration"],
         state=n["state"],
         identity=n["identity"],
-        hasChildren=bool(raw.get("UsesPartList") or raw.get("PartListMember")),
+        hasChildren=_has_children(raw),
     )
 
     if usage_link:

@@ -21,12 +21,14 @@ export default function BomTreeNodeComponent({ node, depth }: Props) {
   )
   const [loaded, setLoaded] = useState(hasInitialChildren)
   const [loading, setLoading] = useState(false)
+  const [noChildren, setNoChildren] = useState(false)
 
   /**
    * State machine: 5 state variables control the expand/collapse/load lifecycle.
    *  - expanded: whether the subtree is visually open
    *  - loaded:   whether children have been fetched from the API at least once
    *  - loading:  an API request is currently in-flight (prevents double-clicks)
+   *  - noChildren: API returned 0 children (hide expand arrow)
    *  - children/documents/cadDocuments: fetched data (empty until loaded)
    *
    * Flow: click → if !loaded → fetch → setLoaded → expand
@@ -51,6 +53,10 @@ export default function BomTreeNodeComponent({ node, depth }: Props) {
         setDocuments(resp.documents)
         setCadDocuments(resp.cadDocuments)
         setLoaded(true)
+        // If no children came back, mark as leaf node
+        if (resp.children.length === 0) {
+          setNoChildren(true)
+        }
       } catch {
         // Fetch failed → don't expand
         setLoading(false)
@@ -84,7 +90,7 @@ export default function BomTreeNodeComponent({ node, depth }: Props) {
       >
         {/* Expand icon */}
         <span className="w-4 text-center text-slate-400 text-[11px] flex-shrink-0">
-          {node.hasChildren ? (
+          {node.hasChildren && !noChildren ? (
             loading ? (
               <span className="animate-spin inline-block">⟳</span>
             ) : expanded ? (

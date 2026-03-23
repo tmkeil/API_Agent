@@ -82,20 +82,26 @@ class SearchMixin:
         query: str,
         entity_types: list[str] | None = None,
         context: str | None = None,
-        limit: int = 200,
+        limit: int = 0,
     ) -> list[dict]:
         """Suche ueber mehrere Windchill-Entity-Typen gleichzeitig.
+
+        Strategie: Ein einzelner OData-Filter pro Typ
+        (Number/Name mit OR), parallel ueber ThreadPoolExecutor.
+        Windchill's eigenes serverseitiges Limit greift automatisch.
 
         Args:
             query:        Suchbegriff (Nummer oder Name, mit Wildcard * oder ?).
             entity_types: Liste von Typ-Keys (z.B. ["part","document"]).
                           None → alle Typen durchsuchen.
             context:      Optional ContainerName filter (z.B. 'Balluff').
-            limit:        Max. Gesamtergebnisse.
+            limit:        Max. Gesamtergebnisse (0 = kein clientseitiges Limit).
 
         Returns:
             Liste von OData-Dicts, ergaenzt um '_entity_type' (z.B. 'WTPart').
         """
+        from concurrent.futures import ThreadPoolExecutor, as_completed
+
         if entity_types is None:
             targets = list(self.SEARCHABLE_ENTITIES.items())
         else:
@@ -105,8 +111,6 @@ class SearchMixin:
             ]
 
         safe = query.replace("'", "''")
-        collected: list[dict] = []
-        seen_ids: set[str] = set()
 
         # Optional ContainerName suffix for OData $filter
         ctx_clause = ""
@@ -114,40 +118,50 @@ class SearchMixin:
             safe_ctx = context.strip().replace("'", "''")
             ctx_clause = f" and ContainerName eq '{safe_ctx}'"
 
-        for type_key, (service, entity_set, wc_type) in targets:
+        # Einzelner kombinierter Filter pro Entity-Typ (statt 3 sequentiellen)
+        combined_filter = (
+            f"(Number eq '{safe}' or contains(Number,'{safe}') "
+            f"or contains(Name,'{safe}')){ctx_clause}"
+        )
+
+        def _search_one_type(type_key: str, service: str, entity_set: str, wc_type: str) -> list[dict]:
             url = f"{self.odata_base}/{service}/{entity_set}"
+            params: dict[str, str] = {"$filter": combined_filter}
+            try:
+                items = self._get_all_pages(url, params, return_none_on_error=True)
+                if items is None:
+                    return []
+                for item in items:
+                    item["_entity_type"] = wc_type
+                    item["_entity_type_key"] = type_key
+                # Debug: Welche Felder liefert Windchill?
+                if items:
+                    logger.debug(
+                        "search_entities %s/%s fields: %s",
+                        service, entity_set, list(items[0].keys()),
+                    )
+                return items
+            except Exception:
+                logger.debug("search_entities failed for %s/%s", service, entity_set, exc_info=True)
+                return []
 
-            # OData-Filter: exakt, contains Number, contains Name
-            filters = [
-                {"$filter": f"Number eq '{safe}'{ctx_clause}", "$top": "20"},
-                {"$filter": f"contains(Number,'{safe}'){ctx_clause}", "$top": "100"},
-                {"$filter": f"contains(Name,'{safe}'){ctx_clause}", "$top": "100"},
-            ]
+        # Parallele Abfrage aller Entity-Typen
+        collected: list[dict] = []
+        seen_ids: set[str] = set()
 
-            for params in filters:
-                try:
-                    items = self._get_all_pages(url, params, return_none_on_error=True)
-                    if items is None:
-                        # Service or entity set not available → skip remaining filters
-                        break
-                    for item in items:
-                        pid = extract_id(item)
-                        if pid and pid not in seen_ids:
-                            seen_ids.add(pid)
-                            item["_entity_type"] = wc_type
-                            item["_entity_type_key"] = type_key
-                            collected.append(item)
-                except Exception:
-                    logger.debug("search_entities failed for %s/%s", service, entity_set, exc_info=True)
-                    continue
+        with ThreadPoolExecutor(max_workers=len(targets)) as pool:
+            futures = {
+                pool.submit(_search_one_type, tk, svc, es, wct): tk
+                for tk, (svc, es, wct) in targets
+            }
+            for future in as_completed(futures):
+                for item in future.result():
+                    pid = extract_id(item)
+                    if pid and pid not in seen_ids:
+                        seen_ids.add(pid)
+                        collected.append(item)
 
-                if len(collected) >= limit:
-                    break
-
-            if len(collected) >= limit:
-                break
-
-        return collected[:limit]
+        return collected[:limit] if limit > 0 else collected
 
     def advanced_search(
         self: "WRSClientBase",

@@ -80,11 +80,12 @@ export async function getMe(): Promise<UserInfo> {
 // Search
 export async function searchParts(
   q: string,
-  limit = 200,
+  limit?: number,
   types?: string[],
   context?: string,
 ): Promise<PartSearchResult[]> {
-  const params = new URLSearchParams({ q, limit: String(limit) })
+  const params = new URLSearchParams({ q })
+  if (limit && limit > 0) params.set('limit', String(limit))
   if (types && types.length > 0) {
     params.set('types', types.join(','))
   }

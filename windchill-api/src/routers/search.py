@@ -31,7 +31,7 @@ router = APIRouter()
 )
 def search(
     q: str = Query(..., min_length=1, description="Suchbegriff"),
-    limit: int = Query(100, ge=1, le=500),
+    limit: int = Query(0, ge=0, le=10000, description="Max Ergebnisse. 0 = kein clientseitiges Limit, Windchill-Serverlimit greift."),
     types: str = Query(
         None,
         description="Komma-getrennte Typ-Filter: part,document,cad_document,"

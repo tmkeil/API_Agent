@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { getApiLogs, getContexts, searchParts } from '../api/client'
 import type { ApiLogEntry, PartSearchResult } from '../api/types'
 import SearchBar from '../components/SearchBar'
@@ -10,6 +10,10 @@ import { TYPE_FILTERS, TYPE_KEY_MAP, formatDate, typeLabel } from '../utils/labe
 
 export default function DashboardPage() {
   const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
+
+  // Restore query from URL (e.g. after navigating back from detail page)
+  const urlQuery = searchParams.get('q') || ''
 
   // Search state
   const [results, setResults] = useState<PartSearchResult[]>([])
@@ -19,7 +23,7 @@ export default function DashboardPage() {
   const [activeTypes, setActiveTypes] = useState<string[]>([])
   const [selectedContext, setSelectedContext] = useState<string>('')
   const [contexts, setContexts] = useState<string[]>([])
-
+  const hasRestoredRef = useRef(false)
   // API Log state
   const [logs, setLogs] = useState<ApiLogEntry[]>([])
   const [logOpen, setLogOpen] = useState(false)
@@ -58,35 +62,32 @@ export default function DashboardPage() {
     setError('')
     setSearching(true)
     setSearchDone(false)
-    let navigated = false
+    // Persist query in URL so "Back" restores state
+    setSearchParams(query ? { q: query } : {}, { replace: true })
     try {
       const items = await searchParts(
-        query, 200,
+        query, undefined,
         activeTypes.length > 0 ? activeTypes : undefined,
         selectedContext || undefined,
       )
       setResults(items)
-      // UX: wenn genau ein Treffer → direkt zur Detailseite navigieren
-      // (überspringe die Ergebnisliste, spart einen Klick)
-      if (items.length === 1) {
-        const tk = TYPE_KEY_MAP[items[0].objectType]
-        if (tk) {
-          navigated = true
-          navigate(`/detail/${tk}/${encodeURIComponent(items[0].number)}`)
-          return
-        }
-      }
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e)
       setError(msg)
       setResults([])
     } finally {
-      if (!navigated) {
-        setSearching(false)
-        setSearchDone(true)
-      }
+      setSearching(false)
+      setSearchDone(true)
     }
-  }, [activeTypes, selectedContext, navigate])
+  }, [activeTypes, selectedContext, setSearchParams])
+
+  // Restore search from URL params (e.g. after navigating back from detail page)
+  useEffect(() => {
+    if (urlQuery && !hasRestoredRef.current) {
+      hasRestoredRef.current = true
+      handleSearch(urlQuery)
+    }
+  }, [urlQuery, handleSearch])
 
   function handleRowClick(r: PartSearchResult) {
     const tk = TYPE_KEY_MAP[r.objectType]
@@ -112,6 +113,7 @@ export default function DashboardPage() {
         <SearchBar
           onSearch={handleSearch}
           loading={searching}
+          initialQuery={urlQuery}
           placeholder="Suchen — Nummer, Name oder Wildcard (z.B. S2200*, Z03*, *287364)"
         />
         {/* Type filter chips */}

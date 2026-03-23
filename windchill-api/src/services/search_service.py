@@ -61,48 +61,23 @@ def search_parts(
             log_session_event(session, "CACHE", f"search:{query}", 200, 0, "cache", "search hit")
             return cached
 
-    # Use multi-entity search
+    # Use multi-entity search (parallel, single query per type)
     raw_items = client.search_entities(
-        query, entity_types=entity_types, context=context, limit=limit * 2,
+        query, entity_types=entity_types, context=context, limit=limit,
     )
 
-    # Also do the legacy ProdMgmt/Parts search with wildcard filtering
-    # if "part" is in the requested types (or all types)
+    # Wildcard-Support: zusaetzliche clientseitige Regex-Filterung
     if entity_types is None or "part" in entity_types:
-        url = f"{client.odata_base}/ProdMgmt/Parts"
         wildcard = "*" in query or "?" in query
-        regex = _wildcard_to_regex(query)
-        core = query.replace("*", "").replace("?", "").strip()
-        safe = core.replace("'", "''")
+        regex = _wildcard_to_regex(query) if wildcard else None
 
-        # Additional filters for wildcard patterns
-        extra_collected: dict[str, dict] = {}
-        seen_from_multi = {extract_id(item) for item in raw_items}
-
-        if wildcard and core:
-            extra_filters = [
-                {"$filter": f"contains(Number,'{safe}')", "$top": "200"},
-                {"$filter": f"contains(Name,'{safe}')", "$top": "200"},
+        if wildcard and regex:
+            # Filter bestehendes Ergebnis nach Wildcard-Regex
+            raw_items = [
+                item for item in raw_items
+                if regex.search(str(item.get("Number") or ""))
+                or regex.search(str(item.get("Name") or ""))
             ]
-            for params in extra_filters:
-                try:
-                    items = client.get_all_pages(url, params)
-                    for item in items:
-                        pid = extract_id(item)
-                        if pid and pid not in seen_from_multi and pid not in extra_collected:
-                            item["_entity_type"] = WcType.PART
-                            item["_entity_type_key"] = "part"
-                            extra_collected[pid] = item
-                except Exception:
-                    logger.debug("Wildcard filter failed: %s", params, exc_info=True)
-                    continue
-
-            # Filter by wildcard regex
-            for pid, item in extra_collected.items():
-                number = str(item.get("Number") or "")
-                name = str(item.get("Name") or "")
-                if regex.search(number) or regex.search(name):
-                    raw_items.append(item)
 
     # Map to PartSearchResult
     matches = []
@@ -141,7 +116,7 @@ def search_parts(
                     session.part_by_number[num] = item
 
     matches.sort(key=lambda m: match_score(query, m.number, m.name))
-    result = matches[:limit]
+    result = matches[:limit] if limit > 0 else matches
 
     # Store in session cache
     if session:
@@ -240,14 +215,35 @@ def advanced_search(
 def get_contexts(client: WRSClient) -> list[str]:
     """Get available Windchill container names for context filtering.
 
-    Queries ProdMgmt/Parts for a small sample and extracts unique ContainerName values.
+    Versucht mehrere Strategien, da $select=ContainerName
+    nicht auf allen WRS-Versionen unterstuetzt ist.
     """
     url = f"{client.odata_base}/ProdMgmt/Parts"
-    # Fetch a decent sample to discover containers
-    items = client.get_all_pages(url, {"$select": "ContainerName", "$top": "500"}) or []
     containers: set[str] = set()
-    for item in items:
-        cn = item.get("ContainerName") or item.get("Context")
+
+    # Strategie 1: $select=ContainerName (schnellste, wenn unterstuetzt)
+    items = client.get_all_pages(
+        url, {"$select": "ContainerName", "$top": "500"},
+        return_none_on_error=True,
+    )
+
+    # Strategie 2: Ohne $select — alle Felder holen
+    if items is None:
+        logger.info("get_contexts: $select=ContainerName failed, fetching full records")
+        items = client.get_all_pages(
+            url, {"$top": "200"},
+            return_none_on_error=True,
+        ) or []
+
+    for item in (items or []):
+        cn = (
+            item.get("ContainerName")
+            or item.get("Context")
+            or item.get("OrganizationName")
+        )
+        if isinstance(cn, dict):
+            cn = cn.get("Name") or cn.get("DisplayName")
         if cn:
             containers.add(str(cn))
+
     return sorted(containers)

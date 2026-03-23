@@ -33,7 +33,7 @@ export default function AdvancedSearchPanel({ contexts, onResults, onError }: Pr
   const [description, setDescription] = useState('')
   const [dateFrom, setDateFrom] = useState('')
   const [dateTo, setDateTo] = useState('')
-  const [limit, setLimit] = useState(200)
+  const [limit, setLimit] = useState<number | ''>('')
 
   const toggleType = (key: string) => {
     setSelectedTypes((prev) =>
@@ -49,7 +49,7 @@ export default function AdvancedSearchPanel({ contexts, onResults, onError }: Pr
     setDescription('')
     setDateFrom('')
     setDateTo('')
-    setLimit(200)
+    setLimit('')
   }, [])
 
   const handleSubmit = useCallback(async () => {
@@ -64,7 +64,7 @@ export default function AdvancedSearchPanel({ contexts, onResults, onError }: Pr
       if (description.trim()) body.description = description.trim()
       if (dateFrom) body.dateFrom = dateFrom
       if (dateTo) body.dateTo = dateTo
-      if (limit !== 200) body.limit = limit
+      if (limit && limit > 0) body.limit = limit
 
       const items = await advancedSearch(body)
       onResults(items)
@@ -154,10 +154,14 @@ export default function AdvancedSearchPanel({ contexts, onResults, onError }: Pr
               <label className="text-xs text-slate-500 mb-1 block">Limit</label>
               <input
                 type="number"
-                min={1}
-                max={500}
+                min={0}
+                max={10000}
                 value={limit}
-                onChange={(e) => setLimit(Number(e.target.value) || 200)}
+                placeholder="kein Limit"
+                onChange={(e) => {
+                  const v = e.target.value
+                  setLimit(v === '' ? '' : Math.max(0, Number(v)))
+                }}
                 className="w-full px-2 py-1.5 text-sm border border-slate-300 rounded focus:outline-none focus:ring-1 focus:ring-indigo-400"
               />
             </div>

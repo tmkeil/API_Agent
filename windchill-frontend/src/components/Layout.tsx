@@ -1,5 +1,6 @@
 import { useAuth } from '../contexts/AuthContext'
 import type { ReactNode } from 'react'
+import ApiLogPanel from './ApiLogPanel'
 
 export default function Layout({ children }: { children: ReactNode }) {
   const { user, logout } = useAuth()
@@ -33,7 +34,10 @@ export default function Layout({ children }: { children: ReactNode }) {
       </header>
 
       {/* Content */}
-      <main className="max-w-7xl mx-auto px-6 py-5">{children}</main>
+      <main className="max-w-7xl mx-auto px-6 py-5">
+        {children}
+        {user && <ApiLogPanel />}
+      </main>
     </div>
   )
 }

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { clearApiLogs, getApiLogs, searchPartsStream } from '../api/client'
-import type { ApiLogEntry, PartSearchResult } from '../api/types'
+import { searchPartsStream } from '../api/client'
+import type { PartSearchResult } from '../api/types'
 import SearchBar from '../components/SearchBar'
 import AdvancedSearchPanel from '../components/AdvancedSearchPanel'
 import { TYPE_FILTERS, TYPE_KEY_MAP, formatDate, typeLabel } from '../utils/labels'
@@ -99,30 +99,6 @@ export default function DashboardPage() {
 
   const [activeTypes, setActiveTypes] = useState<string[]>([])
   const hasRestoredRef = useRef(false)
-  // API Log state
-  const [logs, setLogs] = useState<ApiLogEntry[]>([])
-  const [logOpen, setLogOpen] = useState(false)
-  const logRef = useRef<HTMLDivElement>(null)
-
-  // Poll API logs every 2.5s when the log panel is open
-  useEffect(() => {
-    if (!logOpen) return
-    let cancelled = false
-    const poll = async () => {
-      try {
-        const items = await getApiLogs(120)
-        if (!cancelled) setLogs(items)
-      } catch {
-        /* ignore */
-      }
-    }
-    poll()
-    const id = setInterval(poll, 2500)
-    return () => {
-      cancelled = true
-      clearInterval(id)
-    }
-  }, [logOpen])
 
   // ── Search ──────────────────────────────────────────────
 
@@ -280,56 +256,6 @@ export default function DashboardPage() {
           </div>
         </section>
       )}
-
-      {/* API Log */}
-      <section className="border-t border-slate-200 pt-4">
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => setLogOpen((o) => !o)}
-            className="text-xs text-slate-400 hover:text-slate-600 font-medium transition-colors"
-          >
-            {logOpen ? '▾' : '▸'} API Log ({logs.length})
-          </button>
-          {logOpen && logs.length > 0 && (
-            <button
-              onClick={() => { setLogs([]); clearApiLogs().catch(() => {}) }}
-              className="text-[10px] text-slate-400 hover:text-red-500 transition-colors"
-            >
-              ✕ Clear
-            </button>
-          )}
-        </div>
-        {logOpen && (
-          <div
-            ref={logRef}
-            className="mt-2 bg-slate-900 text-green-400 text-[11px] font-mono rounded p-3 overflow-y-auto"
-            style={{ height: '240px' }}
-          >
-            {logs.length === 0 && (
-              <p className="text-slate-500">Keine API-Aufrufe protokolliert.</p>
-            )}
-            {logs.map((entry, i) => {
-              const ts = entry.timestamp?.substring(11, 23) || ''
-              const src = (entry.source || '').toUpperCase().padEnd(10)
-              const method = (entry.method || '').padEnd(5)
-              const status = entry.status || 0
-              const ms = entry.durationMs ?? 0
-              const color =
-                entry.source === 'cache'
-                  ? 'text-yellow-400'
-                  : status >= 400
-                    ? 'text-red-400'
-                    : 'text-green-400'
-              return (
-                <div key={i} className={color}>
-                  [{ts}] [{src}] {method} {status} {ms}ms {entry.url}
-                  {entry.note ? ` — ${entry.note}` : ''}
-                </div>
-              )
-            })}
-          </div>
-        )}
-      </section>
     </div>
   )
 }

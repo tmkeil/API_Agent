@@ -22,10 +22,8 @@ logger = logging.getLogger(__name__)
 # Windchill ignoriert $top und liefert immer 25 Items pro Seite (fest).
 _WC_PAGE_SIZE = 25
 # Standard-Seitenlimit pro Entity-Typ bei der Suche.
-# 40 Seiten × 25 = 1000 Items pro Typ.
-# Dank parallelem Paging (alle Seiten gleichzeitig) dauert das nur
-# so lang wie ein einzelner Request (~3s Parts, ~10s Documents).
-_DEFAULT_SEARCH_MAX_PAGES = 40
+# 200 Seiten × 25 = 5000 Items pro Typ.
+_DEFAULT_SEARCH_MAX_PAGES = 200
 
 
 class SearchMixin:

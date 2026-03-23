@@ -133,38 +133,47 @@ export function searchPartsStream(
 
       const decoder = new TextDecoder()
       let buffer = ''
+      let doneReceived = false
+
+      const parseEvent = (raw: string) => {
+        const lines = raw.trim().split('\n')
+        let eventType = 'message'
+        let data = ''
+        for (const line of lines) {
+          if (line.startsWith('event: ')) eventType = line.slice(7)
+          else if (line.startsWith('data: ')) data += line.slice(6)
+        }
+        if (!data) return
+        if (eventType === 'done') {
+          doneReceived = true
+          try { onDone(JSON.parse(data)) } catch { /* ignore */ }
+        } else {
+          try {
+            const items = JSON.parse(data) as PartSearchResult[]
+            if (items.length > 0) onBatch(items)
+          } catch { /* ignore */ }
+        }
+      }
 
       while (true) {
         const { done, value } = await reader.read()
         if (done) break
-
         buffer += decoder.decode(value, { stream: true })
 
-        // Parse SSE events from buffer
-        const parts = buffer.split('\n\n')
-        buffer = parts.pop() || ''
-
-        for (const part of parts) {
-          const lines = part.trim().split('\n')
-          let eventType = 'message'
-          let data = ''
-          for (const line of lines) {
-            if (line.startsWith('event: ')) eventType = line.slice(7)
-            else if (line.startsWith('data: ')) data += line.slice(6)
-          }
-          if (!data) continue
-
-          if (eventType === 'done') {
-            try {
-              onDone(JSON.parse(data))
-            } catch { /* ignore */ }
-          } else {
-            try {
-              const items = JSON.parse(data) as PartSearchResult[]
-              if (items.length > 0) onBatch(items)
-            } catch { /* ignore */ }
-          }
+        // Extract complete SSE events (separated by \n\n)
+        const segments = buffer.split('\n\n')
+        buffer = segments.pop() || '' // keep incomplete tail
+        for (const seg of segments) {
+          if (seg.trim()) parseEvent(seg)
         }
+      }
+
+      // Flush any remaining data in buffer
+      if (buffer.trim()) parseEvent(buffer)
+
+      // Guarantee onDone fires even if server didn't send event:done
+      if (!doneReceived) {
+        onDone({ total: 0, durationMs: 0 })
       }
     })
     .catch((err) => {

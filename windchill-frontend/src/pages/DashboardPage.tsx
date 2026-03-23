@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { clearApiLogs, getApiLogs, searchPartsStream } from '../api/client'
 import type { ApiLogEntry, PartSearchResult } from '../api/types'
@@ -17,6 +17,73 @@ const WINDCHILL_CONTEXTS = [
   'P - Enclosed Documentation',
 ]
 
+// ── Background Search Store ────────────────────────────
+// Der Stream läuft im Hintergrund weiter, auch wenn die Komponente
+// unmounted wird (z.B. beim Wechsel zur Detailseite).
+
+interface SearchStore {
+  query: string
+  results: PartSearchResult[]
+  searching: boolean
+  done: boolean
+  error: string
+  durationMs: number
+}
+
+let _store: SearchStore = {
+  query: '', results: [], searching: false, done: false, error: '', durationMs: 0,
+}
+let _abortCtrl: AbortController | null = null
+const _listeners = new Set<() => void>()
+
+function _notify() {
+  _listeners.forEach((fn) => fn())
+}
+
+function getStoreSnapshot(): SearchStore {
+  return _store
+}
+
+function subscribeStore(cb: () => void): () => void {
+  _listeners.add(cb)
+  return () => { _listeners.delete(cb) }
+}
+
+function startSearch(query: string, types?: string[]) {
+  // Abort previous stream
+  _abortCtrl?.abort()
+
+  _store = { query, results: [], searching: true, done: false, error: '', durationMs: 0 }
+  _notify()
+
+  const ctrl = searchPartsStream(
+    query,
+    (batch) => {
+      _store = { ..._store, results: [..._store.results, ...batch] }
+      _notify()
+    },
+    (info) => {
+      _store = { ..._store, searching: false, done: true, durationMs: info.durationMs }
+      _notify()
+    },
+    (msg) => {
+      _store = { ..._store, searching: false, done: true, error: msg }
+      _notify()
+    },
+    { types },
+  )
+  _abortCtrl = ctrl
+}
+
+function abortSearch() {
+  _abortCtrl?.abort()
+  _abortCtrl = null
+  if (_store.searching) {
+    _store = { ..._store, searching: false, done: true }
+    _notify()
+  }
+}
+
 // ── Component ──
 
 export default function DashboardPage() {
@@ -26,14 +93,12 @@ export default function DashboardPage() {
   // Restore query from URL (e.g. after navigating back from detail page)
   const urlQuery = searchParams.get('q') || ''
 
-  // Search state
-  const [results, setResults] = useState<PartSearchResult[]>([])
-  const [searching, setSearching] = useState(false)
-  const [searchDone, setSearchDone] = useState(false)
-  const [error, setError] = useState('')
+  // Subscribe to the background search store
+  const searchState = useSyncExternalStore(subscribeStore, getStoreSnapshot)
+  const { results, searching, done: searchDone, error } = searchState
+
   const [activeTypes, setActiveTypes] = useState<string[]>([])
   const hasRestoredRef = useRef(false)
-  const abortRef = useRef<AbortController | null>(null)
   // API Log state
   const [logs, setLogs] = useState<ApiLogEntry[]>([])
   const [logOpen, setLogOpen] = useState(false)
@@ -62,50 +127,21 @@ export default function DashboardPage() {
   // ── Search ──────────────────────────────────────────────
 
   const handleSearch = useCallback((query: string) => {
-    // Abort any in-flight stream
-    abortRef.current?.abort()
-
-    setError('')
-    setSearching(true)
-    setSearchDone(false)
-    setResults([])
     // Persist query in URL so "Back" restores state
     setSearchParams(query ? { q: query } : {}, { replace: true })
-
-    const ctrl = searchPartsStream(
-      query,
-      // onBatch – append results progressively
-      (batch) => {
-        setResults((prev) => [...prev, ...batch])
-      },
-      // onDone
-      (_info) => {
-        setSearching(false)
-        setSearchDone(true)
-      },
-      // onError
-      (msg) => {
-        setError(msg)
-        setSearching(false)
-        setSearchDone(true)
-      },
-      {
-        types: activeTypes.length > 0 ? activeTypes : undefined,
-      },
-    )
-    abortRef.current = ctrl
+    startSearch(query, activeTypes.length > 0 ? activeTypes : undefined)
   }, [activeTypes, setSearchParams])
 
   // Restore search from URL params (e.g. after navigating back from detail page)
+  // If the store already has results for this query, nothing happens.
   useEffect(() => {
     if (urlQuery && !hasRestoredRef.current) {
       hasRestoredRef.current = true
-      handleSearch(urlQuery)
+      if (searchState.query !== urlQuery || searchState.results.length === 0) {
+        startSearch(urlQuery, activeTypes.length > 0 ? activeTypes : undefined)
+      }
     }
-  }, [urlQuery, handleSearch])
-
-  // Abort stream on unmount
-  useEffect(() => () => { abortRef.current?.abort() }, [])
+  }, [urlQuery]) // eslint-disable-line react-hooks/exhaustive-deps
 
   function handleRowClick(r: PartSearchResult) {
     const tk = TYPE_KEY_MAP[r.objectType]
@@ -162,14 +198,15 @@ export default function DashboardPage() {
         <AdvancedSearchPanel
           contexts={WINDCHILL_CONTEXTS}
           onResults={(items) => {
-            setResults(items)
-            setSearchDone(true)
-            setSearching(false)
+            // Inject advanced search results into the store
+            abortSearch()
+            _store = { query: _store.query, results: items, searching: false, done: true, error: '', durationMs: 0 }
+            _notify()
           }}
           onError={(msg) => {
-            setError(msg)
-            setResults([])
-            setSearchDone(true)
+            abortSearch()
+            _store = { query: _store.query, results: [], searching: false, done: true, error: msg, durationMs: 0 }
+            _notify()
           }}
         />
       </section>

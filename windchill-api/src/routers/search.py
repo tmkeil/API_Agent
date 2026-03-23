@@ -7,8 +7,10 @@ Endpoints:
   GET /objects/{type_key}/{code}    → Detail fuer beliebigen Windchill-Typ
 """
 
+import asyncio
 import json
 import logging
+import threading
 import time
 
 from fastapi import APIRouter, Depends, Query, Request
@@ -69,7 +71,7 @@ def search(
     "/search/stream",
     summary="Streaming-Suche via Server-Sent Events",
 )
-def search_stream(
+async def search_stream(
     q: str = Query(..., min_length=1, description="Suchbegriff"),
     limit: int = Query(0, ge=0, le=10000),
     types: str = Query(None),
@@ -80,6 +82,9 @@ def search_stream(
 
     Jedes Event enthaelt ein JSON-Array von PartSearchResult-Objekten.
     Am Ende kommt ein `event: done` mit Zusammenfassung.
+
+    Erkennt Client-Disconnect und bricht die Windchill-Abfragen ab,
+    um keine unnötigen OData-Requests zu verschwenden.
     """
     client = get_client(request)
 
@@ -87,7 +92,7 @@ def search_stream(
     if types:
         entity_types = [t.strip() for t in types.split(",") if t.strip()]
 
-    def _to_search_result(item: dict) -> dict:
+    def _to_search_result(item: dict) -> dict | None:
         n = normalize_item(item)
         if not n["id"]:
             return None
@@ -106,19 +111,63 @@ def search_stream(
             "createdOn": n["created_on"],
         }
 
-    def _generate():
+    # --- Async generator that bridges sync iterator + disconnect detection ---
+
+    async def _generate():
         total = 0
         t0 = time.perf_counter()
-        for batch in client.search_entities_stream(
-            q, entity_types=entity_types, limit=limit,
-        ):
-            results = [r for item in batch if (r := _to_search_result(item)) is not None]
-            if results:
-                total += len(results)
-                yield f"data: {json.dumps(results, ensure_ascii=False)}\n\n"
 
-        duration_ms = int((time.perf_counter() - t0) * 1000)
-        yield f"event: done\ndata: {json.dumps({'total': total, 'durationMs': duration_ms})}\n\n"
+        # Run the sync generator in a background thread, communicate via queue.
+        # The cancelled event lets us stop the generator when the client disconnects.
+        queue: asyncio.Queue[list[dict] | None] = asyncio.Queue()
+        cancelled = threading.Event()
+        loop = asyncio.get_event_loop()
+
+        def _producer():
+            try:
+                for batch in client.search_entities_stream(
+                    q, entity_types=entity_types, limit=limit,
+                    cancelled=cancelled,
+                ):
+                    if cancelled.is_set():
+                        break
+                    results = [r for item in batch if (r := _to_search_result(item)) is not None]
+                    if results:
+                        loop.call_soon_threadsafe(queue.put_nowait, results)
+            except Exception:
+                logger.debug("SSE producer error", exc_info=True)
+            finally:
+                loop.call_soon_threadsafe(queue.put_nowait, None)  # sentinel
+
+        thread = threading.Thread(target=_producer, daemon=True)
+        thread.start()
+
+        try:
+            while True:
+                # Check for client disconnect every 0.5s while waiting for data
+                while True:
+                    if await request.is_disconnected():
+                        logger.info("SSE client disconnected, cancelling search")
+                        cancelled.set()
+                        return
+                    try:
+                        batch = await asyncio.wait_for(queue.get(), timeout=0.5)
+                        break
+                    except asyncio.TimeoutError:
+                        continue
+
+                if batch is None:
+                    # Producer finished
+                    break
+
+                total += len(batch)
+                yield f"data: {json.dumps(batch, ensure_ascii=False)}\n\n"
+
+            duration_ms = int((time.perf_counter() - t0) * 1000)
+            yield f"event: done\ndata: {json.dumps({'total': total, 'durationMs': duration_ms})}\n\n"
+        finally:
+            cancelled.set()
+            thread.join(timeout=5)
 
     return StreamingResponse(
         _generate(),

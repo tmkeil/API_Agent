@@ -33,10 +33,10 @@ export default function SearchBar({ onSearch, loading, placeholder, initialQuery
       />
       <button
         type="submit"
-        disabled={loading || !query.trim()}
+        disabled={!query.trim()}
         className="bg-indigo-600 text-white px-5 py-2 rounded text-sm font-medium hover:bg-indigo-700 disabled:opacity-40 transition-colors"
       >
-        {loading ? 'Suche...' : 'Suchen'}
+        {loading ? 'Suche…' : 'Suchen'}
       </button>
     </form>
   )

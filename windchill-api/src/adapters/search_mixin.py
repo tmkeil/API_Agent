@@ -9,6 +9,7 @@ Wird in ``WRSClient`` per Mehrfachvererbung eingebunden.
 from __future__ import annotations
 
 import logging
+import threading
 from typing import TYPE_CHECKING, Generator
 
 from src.core.odata import extract_id
@@ -229,6 +230,13 @@ class SearchMixin:
                     )
 
         # ── Phase 2: Alle Rest-Seiten in einem Pool ──────────
+        # Sortiere nach Skiptoken aufsteigend: niedrige Offsets (schnell) von
+        # allen Typen zuerst, hohe Offsets (langsam) spaeter.
+        def _skiptoken_key(item: tuple[str, str, str]) -> int:
+            m = _re.search(r'\$skiptoken=(\d+)', item[0])
+            return int(m.group(1)) if m else 0
+
+        remaining_urls.sort(key=_skiptoken_key)
 
         if remaining_urls:
             def _fetch_page(item: tuple[str, str, str]) -> list[dict]:
@@ -245,7 +253,7 @@ class SearchMixin:
                 except Exception:
                     return []
 
-            workers = min(len(remaining_urls), 20)
+            workers = min(len(remaining_urls), 40)
             with ThreadPoolExecutor(max_workers=workers) as pool:
                 futures = [pool.submit(_fetch_page, ru) for ru in remaining_urls]
                 for f in as_completed(futures):
@@ -281,6 +289,7 @@ class SearchMixin:
         entity_types: list[str] | None = None,
         contexts: list[str] | None = None,
         limit: int = 0,
+        cancelled: "threading.Event | None" = None,
     ) -> Generator[list[dict], None, None]:
         """Streaming-Variante von search_entities.
 
@@ -290,9 +299,17 @@ class SearchMixin:
 
         Phase 1 — Erste Seite pro Typ parallel → yield sofort.
         Phase 2 — Restliche Seiten parallel → yield pro fertigem Batch.
+
+        Args:
+            cancelled: Optional threading.Event. Wenn gesetzt, bricht die
+                       Suche fruehzeitig ab (z.B. bei Client-Disconnect).
         """
         import re as _re
+        import threading as _threading
         from concurrent.futures import ThreadPoolExecutor, as_completed
+
+        if cancelled is None:
+            cancelled = _threading.Event()  # Dummy, wird nie gesetzt
 
         if entity_types is None:
             targets = list(self.SEARCHABLE_ENTITIES.items())
@@ -347,6 +364,8 @@ class SearchMixin:
         # ── Phase 1: Erste Seite pro Typ ─────────────────────
 
         def _fetch_first(type_key: str, service: str, entity_set: str, wc_type: str):
+            if cancelled.is_set():
+                return type_key, wc_type, [], None
             url = f"{self.odata_base}/{service}/{entity_set}"
             params: dict[str, str] = {"$filter": combined_filter}
             try:
@@ -371,6 +390,8 @@ class SearchMixin:
                 for tk, (svc, es, wct) in targets
             ]
             for f in as_completed(futures):
+                if cancelled.is_set():
+                    return
                 type_key, wc_type, items, next_link = f.result()
 
                 if items:
@@ -397,9 +418,17 @@ class SearchMixin:
                     )
 
         # ── Phase 2: Rest-Seiten parallel, yield pro Batch ───
+        # Sortiere nach Skiptoken aufsteigend: schnelle Seiten zuerst.
+        def _skiptoken_key(item: tuple[str, str, str]) -> int:
+            m = _re.search(r'\$skiptoken=(\d+)', item[0])
+            return int(m.group(1)) if m else 0
+
+        remaining_urls.sort(key=_skiptoken_key)
 
         if remaining_urls and (limit == 0 or total_yielded < limit):
             def _fetch_page(item: tuple[str, str, str]) -> list[dict]:
+                if cancelled.is_set():
+                    return []
                 pg_url, tk, wct = item
                 try:
                     r = self._raw_get(pg_url)
@@ -413,10 +442,15 @@ class SearchMixin:
                 except Exception:
                     return []
 
-            workers = min(len(remaining_urls), 20)
+            workers = min(len(remaining_urls), 40)
             with ThreadPoolExecutor(max_workers=workers) as pool:
                 futures = [pool.submit(_fetch_page, ru) for ru in remaining_urls]
                 for f in as_completed(futures):
+                    if cancelled.is_set():
+                        # Cancel pending futures (best-effort)
+                        for pf in futures:
+                            pf.cancel()
+                        return
                     result = f.result()
                     if result:
                         batch = _dedup_filter(result)

@@ -83,6 +83,10 @@ class WRSClientBase:
             timeout=timeout,
             follow_redirects=True,
             headers={"Accept": "application/json"},
+            limits=httpx.Limits(
+                max_connections=100,
+                max_keepalive_connections=40,
+            ),
         )
         self._lock = threading.Lock()
 
@@ -354,33 +358,37 @@ class WRSClientBase:
         params: Any = None,
         *,
         max_pages: int = 40,
-        max_workers: int = 6,
+        max_workers: int = 10,
         return_none_on_error: bool = False,
     ) -> Optional[list]:
         """OData-Paging mit parallelem Abruf aller Seiten.
 
         Strategie:
-        1. Erste Seite normal abrufen (liefert Daten + @odata.nextLink).
-        2. Aus dem nextLink den Skiptoken-Offset ableiten (typisch 25).
+        1. Erste Seite mit ``$count=true`` abrufen → liefert ``@odata.count``
+           (Gesamtanzahl Treffer) und ``@odata.nextLink``.
+        2. Aus ``@odata.count`` die exakte Seitenzahl berechnen.
         3. Alle verbleibenden Seiten parallel mit vorausberechneten
-           Skiptokens abrufen statt sequentiell auf nextLink zu warten.
+           Skiptokens abrufen (statt sequentiell auf nextLink zu warten).
 
-        Windchill's Skiptokens sind simple numerische Offsets (25, 50, 75 …),
-        daher vorhersagbar.  Leere Seiten (jenseits der Treffermenge)
-        werden einfach verworfen.
+        Windchill's Skiptokens sind einfache numerische Offsets (25, 50, 75 …).
         """
+        import math
         import re as _re
         from concurrent.futures import ThreadPoolExecutor, as_completed
 
         try:
-            # ── Seite 1 ──────────────────────────────────────
-            resp = self._get(url, params, suppress_errors=True)
+            # ── Seite 1 (mit $count=true) ─────────────────────
+            p = dict(params or {})
+            p["$count"] = "true"
+
+            resp = self._get(url, p, suppress_errors=True)
             if resp is None or resp.status_code != 200:
                 return None if return_none_on_error else []
 
             data = resp.json()
             first_page = list(data.get("value", []))
             next_link = data.get("@odata.nextLink")
+            total_count = data.get("@odata.count")
 
             if not next_link or max_pages <= 1:
                 return first_page
@@ -399,11 +407,26 @@ class WRSClientBase:
             sep = next_link[m.start()]   # '?' oder '&'
             base_url = next_link[:m.start()]  # URL ohne $skiptoken
 
-            # ── Parallele Seiten-URLs bauen ───────────────────
+            # ── Exakte Seitenzahl aus @odata.count berechnen ──
+            if total_count is not None and isinstance(total_count, (int, float)) and total_count > 0:
+                needed_pages = min(math.ceil(int(total_count) / skip_size), max_pages)
+            else:
+                # Kein Count verfuegbar → Fallback auf max_pages
+                needed_pages = max_pages
+
+            logger.debug(
+                "parallel paging: total_count=%s, skip_size=%s, needed_pages=%s, url=%s",
+                total_count, skip_size, needed_pages, url,
+            )
+
+            # ── Nur benoetigte Seiten-URLs bauen ─────────────
             page_urls: list[tuple[int, str]] = []
-            for pg in range(1, max_pages):  # Seite 1 = skiptoken 0, schon da
+            for pg in range(1, needed_pages):  # pg 0 = first_page, schon da
                 st = skip_size * pg
                 page_urls.append((pg, f"{base_url}{sep}$skiptoken={st}"))
+
+            if not page_urls:
+                return first_page
 
             # ── Parallel abrufen ──────────────────────────────
             results_by_page: dict[int, list[dict]] = {0: first_page}

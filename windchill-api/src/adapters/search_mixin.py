@@ -142,7 +142,7 @@ class SearchMixin:
 
             try:
                 items = self._get_all_pages_parallel(
-                    url, params, max_pages=pages, max_workers=6,
+                    url, params, max_pages=pages,
                     return_none_on_error=True,
                 )
                 if items is None:
@@ -270,7 +270,7 @@ class SearchMixin:
 
             try:
                 items = self._get_all_pages_parallel(
-                    url, params, max_pages=pages, max_workers=6,
+                    url, params, max_pages=pages,
                     return_none_on_error=True,
                 )
                 if items is None:

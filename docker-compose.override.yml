@@ -1,0 +1,41 @@
+# ============================================================
+# Lokale Entwicklung — Override (wird automatisch geladen)
+# ============================================================
+#
+# Problem:  Docker/WSL2 kann nicht durch das Windows-VPN auf
+#           Windchill zugreifen.
+# Loesung:  Windchill-Hostnames werden per extra_hosts auf den
+#           Windows-Host umgeleitet. Dort laeuft ein TCP-Proxy
+#           (netsh portproxy), der ueber VPN an den echten
+#           Windchill-Server weiterleitet.
+#
+# ── Einmalige Einrichtung auf Windows (PowerShell als Admin) ──
+#
+#   # Port-Proxy fuer DEV-System:
+#   netsh interface portproxy add v4tov4 listenport=443 listenaddress=0.0.0.0 connectport=443 connectaddress=192.168.226.152
+#
+#   # Firewall-Regel damit Docker den Proxy erreichen kann:
+#   netsh advfirewall firewall add rule name="WSL-Windchill" dir=in action=allow protocol=TCP localport=443
+#
+#   # Status pruefen:
+#   netsh interface portproxy show all
+#
+#   # Spaeter entfernen:
+#   netsh interface portproxy delete v4tov4 listenport=443 listenaddress=0.0.0.0
+#   netsh advfirewall firewall delete rule name="WSL-Windchill"
+#
+# ══════════════════════════════════════════════════════════════
+
+services:
+
+  backend:
+    # Windchill-Hostname → Docker-Host (Windows) → netsh portproxy → VPN → Windchill
+    extra_hosts:
+      - "plm-dev.neuhausen.balluff.net:host-gateway"
+      # Weitere Systeme bei Bedarf aktivieren (eigener portproxy pro IP):
+      # - "plm-test.neuhausen.balluff.net:host-gateway"
+      # - "plm-prod.neuhausen.balluff.net:host-gateway"
+    # Source-Code als Volume fuer Hot-Reload ohne Rebuild
+    volumes:
+      - ./windchill-api:/app
+    command: ["uvicorn", "api:app", "--host", "0.0.0.0", "--port", "8001", "--reload"]

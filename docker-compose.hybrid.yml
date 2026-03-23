@@ -1,0 +1,26 @@
+# ============================================================
+# Hybrid-Modus: Backend auf Windows, Frontend/Nginx in Docker
+# ============================================================
+# Verwendung:  make dev-hybrid
+#
+# Warum:  Docker/WSL2 kann nicht durch das Windows-VPN auf
+#         Windchill zugreifen. Das Backend laeuft deshalb direkt
+#         auf Windows (hat VPN-Zugang) und wird per
+#         host.docker.internal von den Containern erreicht.
+
+services:
+
+  frontend:
+    # Backend laeuft nicht in Docker → Dependency entfernen
+    depends_on: !reset {}
+    extra_hosts:
+      - "host.docker.internal:${WINDOWS_HOST_IP}"
+    environment:
+      - BACKEND_HOST=host.docker.internal
+
+  nginx:
+    depends_on: !reset {}
+    extra_hosts:
+      - "host.docker.internal:${WINDOWS_HOST_IP}"
+    environment:
+      - BACKEND_HOST=host.docker.internal

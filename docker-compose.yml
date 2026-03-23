@@ -1,0 +1,75 @@
+# ============================================================
+# Windchill API + Frontend — Docker Compose (Produktion)
+# ============================================================
+# Alle Services im Bridge-Netzwerk. Funktioniert wenn der Host
+# (z.B. Azure VM) Windchill direkt erreichen kann.
+#
+# Lokal mit VPN:  make up   (lädt automatisch docker-compose.override.yml)
+# Produktion:     docker compose -f docker-compose.yml up -d --build
+
+services:
+
+  # ── Backend (FastAPI) ────────────────────────────────────
+  backend:
+    build:
+      context: ./windchill-api
+      dockerfile: Dockerfile
+    container_name: wc-backend
+    ports:
+      - "8001:8001"
+    env_file:
+      - ./windchill-api/.env
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+    restart: unless-stopped
+    networks:
+      - wc-network
+
+  # ── Frontend (React + Vite) ──────────────────────────────
+  frontend:
+    build:
+      context: ./windchill-frontend
+      dockerfile: Dockerfile
+      target: development
+    container_name: wc-frontend
+    ports:
+      - "5173:5173"
+    environment:
+      - BACKEND_HOST=backend
+    volumes:
+      - ./windchill-frontend/src:/app/src
+      - ./windchill-frontend/index.html:/app/index.html
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - wc-network
+
+  # ── Nginx Reverse Proxy ──────────────────────────────────
+  nginx:
+    image: nginx:alpine
+    container_name: wc-nginx
+    ports:
+      - "80:80"
+    environment:
+      - BACKEND_HOST=backend
+    volumes:
+      - ./nginx.conf:/tmp/nginx.conf.template:ro
+    command: ["/bin/sh", "-c", "envsubst '$$BACKEND_HOST' < /tmp/nginx.conf.template > /etc/nginx/nginx.conf && nginx -g 'daemon off;'"]
+    depends_on:
+      backend:
+        condition: service_healthy
+      frontend:
+        condition: service_started
+    restart: unless-stopped
+    networks:
+      - wc-network
+
+networks:
+  wc-network:
+    driver: bridge

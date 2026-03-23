@@ -138,7 +138,7 @@ export default function AdvancedSearchPanel({ contexts, onResults, onError }: Pr
               />
             </div>
             <div>
-              <label className="text-xs text-slate-500 mb-1 block">Kontext</label>
+              <label className="text-xs text-slate-500 mb-1 block">Organisation</label>
               <select
                 value={context}
                 onChange={(e) => setContext(e.target.value)}

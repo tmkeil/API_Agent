@@ -136,3 +136,31 @@ def cache_stats(_: None = Depends(require_auth)):
 def clear_cache(_: None = Depends(require_auth)):
     cache.clear()
     return {"message": "Cache geleert."}
+
+
+# ── Diagnose (OData-Feld-Inspektion) ────────────────────────
+
+
+@router.get("/diagnose/fields", summary="Zeigt alle OData-Felder eines echten WRS-Records")
+def diagnose_fields(
+    request: Request,
+    _: None = Depends(require_auth),
+    entity: str = Query("ProdMgmt/Parts", description="OData-Pfad, z.B. ProdMgmt/Parts"),
+    top: int = Query(1, ge=1, le=5),
+):
+    """Holt 1-5 Records aus dem WRS und zeigt alle Felder + Werte.
+
+    Damit kann man pruefen, welche Felder Windchill tatsaechlich liefert.
+    """
+    client = get_client(request)
+    url = f"{client.odata_base}/{entity}"
+    items = client.get_all_pages(url, {"$top": str(top)}, return_none_on_error=True)
+    if items is None:
+        return {"error": f"Entity '{entity}' nicht erreichbar", "fields": [], "records": []}
+    fields = sorted(items[0].keys()) if items else []
+    return {
+        "entity": entity,
+        "recordCount": len(items),
+        "fields": fields,
+        "records": items[:top],
+    }

@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { getBomChildren } from '../api/client'
 import type { BomTreeNode, DocumentNode } from '../api/types'
 
@@ -23,19 +23,34 @@ export default function BomTreeNodeComponent({ node, depth }: Props) {
   const [loading, setLoading] = useState(false)
   const [noChildren, setNoChildren] = useState(false)
 
-  /**
-   * State machine: 5 state variables control the expand/collapse/load lifecycle.
-   *  - expanded: whether the subtree is visually open
-   *  - loaded:   whether children have been fetched from the API at least once
-   *  - loading:  an API request is currently in-flight (prevents double-clicks)
-   *  - noChildren: API returned 0 children (hide expand arrow)
-   *  - children/documents/cadDocuments: fetched data (empty until loaded)
-   *
-   * Flow: click → if !loaded → fetch → setLoaded → expand
-   *               if  loaded → toggle expanded
-   */
+  // Auto-load children for root node so the expanded state matches reality
+  const loadChildren = useCallback(async () => {
+    if (loaded || loading || !node.hasChildren || !node.partId) return
+    setLoading(true)
+    try {
+      const resp = await getBomChildren(node.partId)
+      setChildren(resp.children)
+      setDocuments(resp.documents)
+      setCadDocuments(resp.cadDocuments)
+      setLoaded(true)
+      if (resp.children.length === 0) {
+        setNoChildren(true)
+      }
+    } catch {
+      // Fetch failed — keep current state
+    } finally {
+      setLoading(false)
+    }
+  }, [loaded, loading, node.hasChildren, node.partId])
+
+  // Root node starts expanded → fetch children immediately
+  useEffect(() => {
+    if (depth === 0 && expanded && !loaded) {
+      loadChildren()
+    }
+  }, [depth, expanded, loaded, loadChildren])
+
   const toggle = useCallback(async () => {
-    // Already expanded → just collapse
     if (expanded) {
       setExpanded(false)
       return
@@ -45,36 +60,15 @@ export default function BomTreeNodeComponent({ node, depth }: Props) {
     if (loading) return
 
     // Need to fetch children first?
-    if (!loaded && node.hasChildren && node.partId) {
-      setLoading(true)
-      try {
-        const resp = await getBomChildren(node.partId)
-        setChildren(resp.children)
-        setDocuments(resp.documents)
-        setCadDocuments(resp.cadDocuments)
-        setLoaded(true)
-        // If no children came back, mark as leaf node
-        if (resp.children.length === 0) {
-          setNoChildren(true)
-        }
-      } catch {
-        // Fetch failed → don't expand
-        setLoading(false)
-        return
-      }
-      setLoading(false)
+    if (!loaded) {
+      await loadChildren()
     }
 
     // Expand
     setExpanded(true)
-  }, [expanded, loaded, loading, node.hasChildren, node.partId])
+  }, [expanded, loaded, loading, loadChildren])
 
-  // Dynamic state color based on lifecycle state
-  const stateColor = node.state === 'RELEASED'
-    ? 'text-green-600'
-    : node.state === 'IN_WORK' || node.state === 'INWORK'
-      ? 'text-amber-500'
-      : 'text-slate-500'
+  const stateColor = 'text-slate-500'
 
   return (
     <div style={{ marginLeft: depth > 0 ? 20 : 0 }}>

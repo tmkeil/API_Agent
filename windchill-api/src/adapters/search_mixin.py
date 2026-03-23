@@ -112,11 +112,11 @@ class SearchMixin:
 
         safe = query.replace("'", "''")
 
-        # Optional ContainerName suffix for OData $filter
+        # Optional OrganizationName suffix for OData $filter
         ctx_clause = ""
         if context:
             safe_ctx = context.strip().replace("'", "''")
-            ctx_clause = f" and ContainerName eq '{safe_ctx}'"
+            ctx_clause = f" and OrganizationName eq '{safe_ctx}'"
 
         # Einzelner kombinierter Filter pro Entity-Typ (statt 3 sequentiellen)
         combined_filter = (
@@ -207,7 +207,7 @@ class SearchMixin:
 
         if context:
             safe_ctx = context.strip().replace("'", "''")
-            clauses.append(f"ContainerName eq '{safe_ctx}'")
+            clauses.append(f"OrganizationName eq '{safe_ctx}'")
 
         if state:
             safe_st = state.strip().replace("'", "''")

@@ -126,7 +126,7 @@ export default function DetailPage() {
           <p>{error}</p>
         </div>
         <button
-          onClick={() => navigate('/')}
+          onClick={() => navigate(-1)}
           className="text-sm text-indigo-600 hover:underline"
         >
           ← Zurück zur Suche
@@ -140,7 +140,7 @@ export default function DetailPage() {
   return (
     <div className="space-y-4">
       {/* Header */}
-      <DetailHeader detail={detail} onBack={() => navigate('/')} />
+      <DetailHeader detail={detail} onBack={() => navigate(-1)} />
 
       {/* Tab bar */}
       <nav className="border-b border-slate-200">

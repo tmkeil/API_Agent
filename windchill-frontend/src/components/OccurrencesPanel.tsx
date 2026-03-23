@@ -100,13 +100,7 @@ export default function OccurrencesPanel() {
                       </td>
                       <td className="px-4 py-2 text-slate-400">{occ.version}</td>
                       <td className="px-4 py-2">
-                        <span
-                          className={
-                            occ.state === 'RELEASED'
-                              ? 'text-emerald-600 font-medium'
-                              : 'text-slate-500'
-                          }
-                        >
+                        <span className="text-slate-500">
                           {occ.state}
                         </span>
                       </td>

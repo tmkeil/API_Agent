@@ -213,37 +213,33 @@ def advanced_search(
 
 
 def get_contexts(client: WRSClient) -> list[str]:
-    """Get available Windchill container names for context filtering.
+    """Get available Windchill organization names for filtering.
 
-    Versucht mehrere Strategien, da $select=ContainerName
-    nicht auf allen WRS-Versionen unterstuetzt ist.
+    Queries a sample of Parts and extracts unique OrganizationName values.
+    Falls back to full records if $select is not supported.
     """
     url = f"{client.odata_base}/ProdMgmt/Parts"
-    containers: set[str] = set()
+    orgs: set[str] = set()
 
-    # Strategie 1: $select=ContainerName (schnellste, wenn unterstuetzt)
+    # Strategie 1: $select=OrganizationName (schnellste)
     items = client.get_all_pages(
-        url, {"$select": "ContainerName", "$top": "500"},
+        url, {"$select": "OrganizationName", "$top": "500"},
         return_none_on_error=True,
     )
 
     # Strategie 2: Ohne $select — alle Felder holen
     if items is None:
-        logger.info("get_contexts: $select=ContainerName failed, fetching full records")
+        logger.info("get_contexts: $select=OrganizationName failed, fetching full records")
         items = client.get_all_pages(
             url, {"$top": "200"},
             return_none_on_error=True,
         ) or []
 
     for item in (items or []):
-        cn = (
-            item.get("ContainerName")
-            or item.get("Context")
-            or item.get("OrganizationName")
-        )
-        if isinstance(cn, dict):
-            cn = cn.get("Name") or cn.get("DisplayName")
-        if cn:
-            containers.add(str(cn))
+        org = item.get("OrganizationName") or item.get("OrganizationIdentifier")
+        if isinstance(org, dict):
+            org = org.get("Name") or org.get("DisplayName")
+        if org:
+            orgs.add(str(org))
 
-    return sorted(containers)
+    return sorted(orgs)

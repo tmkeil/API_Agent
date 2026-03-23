@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { getApiLogs, getContexts, searchParts } from '../api/client'
 import type { ApiLogEntry, PartSearchResult } from '../api/types'
 import SearchBar from '../components/SearchBar'
+import AdvancedSearchPanel from '../components/AdvancedSearchPanel'
 import { TYPE_FILTERS, TYPE_KEY_MAP, formatDate, typeLabel } from '../utils/labels'
 
 // ── Component ──
@@ -150,6 +151,20 @@ export default function DashboardPage() {
             </select>
           )}
         </div>
+        {/* Advanced Search Panel */}
+        <AdvancedSearchPanel
+          contexts={contexts}
+          onResults={(items) => {
+            setResults(items)
+            setSearchDone(true)
+            setSearching(false)
+          }}
+          onError={(msg) => {
+            setError(msg)
+            setResults([])
+            setSearchDone(true)
+          }}
+        />
       </section>
 
       {error && (

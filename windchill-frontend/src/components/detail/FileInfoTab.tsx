@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { getDocumentFiles } from '../../api/client'
+import { getDocumentFiles, getDocumentDownloadUrl } from '../../api/client'
 import type { FileInfo } from '../../api/types'
 import { formatDate } from '../../utils/labels'
 
@@ -45,6 +45,8 @@ export default function FileInfoTab({ typeKey, code }: Props) {
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
   }
 
+  const downloadUrl = getDocumentDownloadUrl(typeKey, code)
+
   if (loading) {
     return <p className="text-sm text-slate-500 animate-pulse py-4">Dateien werden geladen…</p>
   }
@@ -67,7 +69,19 @@ export default function FileInfoTab({ typeKey, code }: Props) {
   }
 
   return (
-    <div className="bg-white rounded shadow-sm border border-slate-200 overflow-hidden">
+    <div className="space-y-2">
+      {/* Download button */}
+      <div className="flex items-center gap-2">
+        <a
+          href={downloadUrl}
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded bg-indigo-600 text-white hover:bg-indigo-700 transition-colors"
+          download
+        >
+          ↓ Primärdatei herunterladen
+        </a>
+      </div>
+
+      <div className="bg-white rounded shadow-sm border border-slate-200 overflow-hidden">
       <table className="w-full text-sm">
         <thead className="bg-slate-50 text-slate-500 text-xs border-b border-slate-200">
           <tr>
@@ -100,6 +114,7 @@ export default function FileInfoTab({ typeKey, code }: Props) {
           ))}
         </tbody>
       </table>
+    </div>
     </div>
   )
 }

@@ -168,3 +168,57 @@ class DocumentsMixin:
                     return results
 
         return results
+
+    def download_document_content(
+        self: "WRSClientBase",
+        service: str,
+        entity_set: str,
+        doc_id: str,
+        file_id: str = "",
+    ) -> tuple[bytes, str, str]:
+        """Datei-Inhalt aus dem Windchill Vault herunterladen.
+
+        Mehrere Strategien:
+          1. ContentHolders('file_id')/$value  (direkt per Content-ID)
+          2. PrimaryContent/$value             (Hauptdatei)
+          3. Content/$value                    (Generisch)
+
+        Returns:
+            Tuple (content_bytes, filename, content_type).
+
+        Raises:
+            WRSError 404 wenn kein Content vorhanden.
+        """
+        from src.adapters.base import WRSError
+
+        urls: list[str] = []
+        if file_id:
+            urls.append(
+                f"{self.odata_base}/{service}/{entity_set}('{doc_id}')"
+                f"/ContentHolders('{file_id}')/$value"
+            )
+        urls.extend([
+            f"{self.odata_base}/{service}/{entity_set}('{doc_id}')/PrimaryContent/$value",
+            f"{self.odata_base}/{service}/{entity_set}('{doc_id}')/Content/$value",
+            f"{self.odata_base}/{service}/{entity_set}('{doc_id}')/$value",
+        ])
+
+        for url in urls:
+            resp = self._get(url, suppress_errors=True)
+            if resp and resp.status_code == 200:
+                ct = resp.headers.get("content-type", "application/octet-stream")
+                # Dateinamen aus Content-Disposition extrahieren
+                disp = resp.headers.get("content-disposition", "")
+                filename = ""
+                if "filename=" in disp:
+                    parts = disp.split("filename=")
+                    if len(parts) > 1:
+                        filename = parts[1].strip().strip('"').strip("'")
+                if not filename:
+                    filename = f"download_{doc_id}"
+                return resp.content, filename, ct
+
+        raise WRSError(
+            f"Kein downloadbarer Content fuer {entity_set}('{doc_id}')",
+            status_code=404,
+        )

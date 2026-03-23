@@ -259,3 +259,64 @@ export interface LifecycleResponse {
   events: LifecycleEntry[]
   timing: TimingInfo
 }
+
+// ── Write Operations ────────────────────────────────────────
+
+export interface CreateObjectRequest {
+  typeKey: string
+  attributes: Record<string, string>
+}
+
+export interface UpdateAttributesRequest {
+  attributes: Record<string, string>
+}
+
+export interface SetStateRequest {
+  targetState: string
+  comment?: string
+}
+
+export interface WriteResponse {
+  ok: boolean
+  objectId: string
+  number: string
+  message: string
+  timing: TimingInfo
+}
+
+// ── Bulk / Batch ────────────────────────────────────────────
+
+export interface BulkItem {
+  typeKey: string
+  code: string
+}
+
+export interface BulkDetailResult {
+  typeKey: string
+  code: string
+  ok: boolean
+  error?: string
+  detail?: ObjectDetail
+}
+
+export interface BulkResponse {
+  totalRequested: number
+  totalFound: number
+  totalErrors: number
+  results: BulkDetailResult[]
+  timing: TimingInfo
+}
+
+// ── Advanced Search ─────────────────────────────────────────
+
+export interface AdvancedSearchRequest {
+  query?: string
+  types?: string[]
+  context?: string
+  state?: string
+  description?: string
+  dateFrom?: string
+  dateTo?: string
+  attributes?: Record<string, string>
+  limit?: number
+}

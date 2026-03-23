@@ -41,6 +41,7 @@ from src.adapters.parts_mixin import PartsMixin
 from src.adapters.search_mixin import SearchMixin
 from src.adapters.versions_mixin import VersionsMixin
 from src.adapters.where_used_mixin import WhereUsedMixin
+from src.adapters.write_mixin import WriteMixin
 from src.core.config import settings
 
 # Re-export damit bestehende Imports weiterhin funktionieren
@@ -59,6 +60,7 @@ class WRSClient(
     DocumentsMixin,
     VersionsMixin,
     WhereUsedMixin,
+    WriteMixin,
     WRSClientBase,
 ):
     """Vollstaendiger Windchill REST-Client.

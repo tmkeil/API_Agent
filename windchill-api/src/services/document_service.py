@@ -129,3 +129,27 @@ def _to_file_info(raw: dict) -> FileInfo:
         created=created,
         modified=modified,
     )
+
+
+def download_file(
+    client: WRSClient,
+    type_key: str,
+    code: str,
+) -> tuple[bytes, str, str]:
+    """Primaerdatei eines Dokuments herunterladen.
+
+    Returns:
+        (content_bytes, filename, content_type)
+    """
+    from src.adapters.base import WRSError
+
+    if type_key not in _DOC_ENTITIES:
+        raise WRSError(f"Kein Dokument-Typ: '{type_key}'", status_code=400)
+
+    raw_doc = client.find_object(type_key, code)
+    doc_id = extract_id(raw_doc)
+    if not doc_id:
+        raise WRSError(f"Keine ID fuer {type_key} '{code}'", status_code=404)
+
+    service, entity_set = _DOC_ENTITIES[type_key]
+    return client.download_document_content(service, entity_set, doc_id)

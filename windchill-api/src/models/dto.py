@@ -299,3 +299,80 @@ class LifecycleResponse(BaseModel):
     totalFound: int = 0
     events: list[LifecycleEntry] = []
     timing: TimingInfo = TimingInfo()
+
+
+# ── Write Operations ────────────────────────────────────────
+
+
+class CreateObjectRequest(BaseModel):
+    """Request body for creating a Windchill object."""
+    typeKey: str
+    attributes: dict[str, Any]
+
+
+class UpdateAttributesRequest(BaseModel):
+    """Request body for updating object attributes."""
+    attributes: dict[str, Any]
+
+
+class SetStateRequest(BaseModel):
+    """Request body for changing lifecycle state."""
+    targetState: str
+    comment: str = ""
+
+
+class WriteResponse(BaseModel):
+    """Generic response for write operations."""
+    ok: bool = True
+    objectId: str = ""
+    number: str = ""
+    message: str = ""
+    timing: TimingInfo = TimingInfo()
+
+
+# ── Bulk / Batch Queries ────────────────────────────────────
+
+
+class BulkItem(BaseModel):
+    """A single item in a bulk query request."""
+    typeKey: str
+    code: str
+
+
+class BulkRequest(BaseModel):
+    """Request body for bulk detail queries."""
+    items: list[BulkItem]
+
+
+class BulkDetailResult(BaseModel):
+    """Result for a single item in a bulk query."""
+    typeKey: str
+    code: str
+    ok: bool = True
+    error: str = ""
+    detail: Optional[ObjectDetail] = None
+
+
+class BulkResponse(BaseModel):
+    """Response for bulk detail queries."""
+    totalRequested: int = 0
+    totalFound: int = 0
+    totalErrors: int = 0
+    results: list[BulkDetailResult] = []
+    timing: TimingInfo = TimingInfo()
+
+
+# ── Advanced Search ─────────────────────────────────────────
+
+
+class AdvancedSearchRequest(BaseModel):
+    """Request body for advanced search with structured filters."""
+    query: str = ""
+    types: list[str] = []
+    context: str = ""
+    state: str = ""
+    description: str = ""
+    dateFrom: str = ""
+    dateTo: str = ""
+    attributes: dict[str, str] = {}
+    limit: int = 200

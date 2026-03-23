@@ -182,6 +182,61 @@ def get_object_detail(
     )
 
 
+def advanced_search(
+    client: WRSClient,
+    query: str = "",
+    types: list[str] | None = None,
+    context: str = "",
+    state: str = "",
+    description: str = "",
+    date_from: str = "",
+    date_to: str = "",
+    attributes: dict[str, str] | None = None,
+    limit: int = 200,
+) -> list[PartSearchResult]:
+    """Erweiterte Suche mit strukturierten Filtern.
+
+    Delegiert an search_mixin.advanced_search und normalisiert
+    die Ergebnisse zu PartSearchResult-DTOs.
+    """
+    from src.core.odata import WcType
+
+    raw_items = client.advanced_search(
+        query=query,
+        entity_types=types if types else None,
+        context=context or None,
+        state=state or None,
+        description=description or None,
+        date_from=date_from or None,
+        date_to=date_to or None,
+        attributes=attributes or None,
+        limit=limit,
+    )
+
+    results: list[PartSearchResult] = []
+    for item in raw_items:
+        n = normalize_item(item)
+        if not n["id"]:
+            continue
+        obj_type = n.get("_entity_type", WcType.PART)
+        results.append(
+            PartSearchResult(
+                partId=n["id"],
+                objectType=obj_type,
+                number=n["number"],
+                name=n["name"],
+                version=n["version"],
+                iteration=n["iteration"],
+                state=n["state"],
+                identity=n["identity"],
+                context=n["context"],
+                lastModified=n["last_modified"],
+                createdOn=n["created_on"],
+            )
+        )
+    return results[:limit]
+
+
 def get_contexts(client: WRSClient) -> list[str]:
     """Get available Windchill container names for context filtering.
 

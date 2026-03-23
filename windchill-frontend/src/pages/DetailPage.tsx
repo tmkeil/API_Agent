@@ -13,9 +13,10 @@ import ReferencingPartsTab from '../components/detail/ReferencingPartsTab'
 import FileInfoTab from '../components/detail/FileInfoTab'
 import VersionsTab from '../components/detail/VersionsTab'
 import LifecycleTab from '../components/detail/LifecycleTab'
+import WriteActionsPanel from '../components/detail/WriteActionsPanel'
 
 type TabKey = 'details' | 'structure' | 'documents' | 'cad' | 'whereUsed'
-  | 'affected' | 'resulting' | 'referencingParts' | 'files' | 'versions' | 'lifecycle'
+  | 'affected' | 'resulting' | 'referencingParts' | 'files' | 'versions' | 'lifecycle' | 'actions'
 
 interface TabDef {
   key: TabKey
@@ -32,6 +33,7 @@ const TABS_BY_TYPE: Record<string, TabDef[]> = {
     { key: 'whereUsed', label: 'Where-Used' },
     { key: 'versions', label: 'Versionen' },
     { key: 'lifecycle', label: 'Lifecycle' },
+    { key: 'actions', label: 'Aktionen' },
   ],
   document: [
     { key: 'details', label: 'Details' },
@@ -39,6 +41,7 @@ const TABS_BY_TYPE: Record<string, TabDef[]> = {
     { key: 'files', label: 'Dateien' },
     { key: 'versions', label: 'Versionen' },
     { key: 'lifecycle', label: 'Lifecycle' },
+    { key: 'actions', label: 'Aktionen' },
   ],
   cad_document: [
     { key: 'details', label: 'Details' },
@@ -46,6 +49,7 @@ const TABS_BY_TYPE: Record<string, TabDef[]> = {
     { key: 'files', label: 'Dateien' },
     { key: 'versions', label: 'Versionen' },
     { key: 'lifecycle', label: 'Lifecycle' },
+    { key: 'actions', label: 'Aktionen' },
   ],
   change_notice: [
     { key: 'details', label: 'Details' },
@@ -53,18 +57,21 @@ const TABS_BY_TYPE: Record<string, TabDef[]> = {
     { key: 'resulting', label: 'Resulting Items' },
     { key: 'versions', label: 'Versionen' },
     { key: 'lifecycle', label: 'Lifecycle' },
+    { key: 'actions', label: 'Aktionen' },
   ],
   change_request: [
     { key: 'details', label: 'Details' },
     { key: 'affected', label: 'Affected Items' },
     { key: 'versions', label: 'Versionen' },
     { key: 'lifecycle', label: 'Lifecycle' },
+    { key: 'actions', label: 'Aktionen' },
   ],
   problem_report: [
     { key: 'details', label: 'Details' },
     { key: 'affected', label: 'Affected Items' },
     { key: 'versions', label: 'Versionen' },
     { key: 'lifecycle', label: 'Lifecycle' },
+    { key: 'actions', label: 'Aktionen' },
   ],
 }
 
@@ -184,6 +191,9 @@ export default function DetailPage() {
         )}
         {activeTab === 'lifecycle' && (
           <LifecycleTab typeKey={typeKey} code={code} />
+        )}
+        {activeTab === 'actions' && (
+          <WriteActionsPanel typeKey={typeKey} code={code} onSuccess={load} />
         )}
       </div>
     </div>

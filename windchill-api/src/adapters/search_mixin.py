@@ -148,3 +148,105 @@ class SearchMixin:
                 break
 
         return collected[:limit]
+
+    def advanced_search(
+        self: "WRSClientBase",
+        query: str = "",
+        entity_types: list[str] | None = None,
+        context: str | None = None,
+        state: str | None = None,
+        description: str | None = None,
+        date_from: str | None = None,
+        date_to: str | None = None,
+        attributes: dict[str, str] | None = None,
+        limit: int = 200,
+    ) -> list[dict]:
+        """Erweiterte Suche mit strukturierten OData-Filtern.
+
+        Args:
+            query:        Nummer oder Name (optional, kann leer sein).
+            entity_types: Typ-Keys (None → alle).
+            context:      ContainerName filter.
+            state:        Lifecycle-State filter (z.B. 'INWORK', 'RELEASED').
+            description:  Beschreibungs-Substring filter.
+            date_from:    ISO-Datum (>= ModifyStamp).
+            date_to:      ISO-Datum (<= ModifyStamp).
+            attributes:   Zusaetzliche Name=Value-Filter auf OData-Felder.
+            limit:        Max. Gesamtergebnisse.
+        """
+        if entity_types is None or len(entity_types) == 0:
+            targets = list(self.SEARCHABLE_ENTITIES.items())
+        else:
+            targets = [
+                (k, v) for k, v in self.SEARCHABLE_ENTITIES.items()
+                if k in entity_types
+            ]
+
+        # ── Build shared filter clauses ──────────────────────
+        clauses: list[str] = []
+
+        if query:
+            safe_q = query.replace("'", "''")
+            clauses.append(
+                f"(contains(Number,'{safe_q}') or contains(Name,'{safe_q}'))"
+            )
+
+        if context:
+            safe_ctx = context.strip().replace("'", "''")
+            clauses.append(f"ContainerName eq '{safe_ctx}'")
+
+        if state:
+            safe_st = state.strip().replace("'", "''")
+            clauses.append(f"State eq '{safe_st}'")
+
+        if description:
+            safe_desc = description.replace("'", "''")
+            clauses.append(f"contains(Description,'{safe_desc}')")
+
+        if date_from:
+            clauses.append(f"ModifyStamp ge {date_from}T00:00:00Z")
+
+        if date_to:
+            clauses.append(f"ModifyStamp le {date_to}T23:59:59Z")
+
+        if attributes:
+            for attr_name, attr_val in attributes.items():
+                safe_name = attr_name.replace("'", "''")
+                safe_val = attr_val.replace("'", "''")
+                clauses.append(f"{safe_name} eq '{safe_val}'")
+
+        filter_str = " and ".join(clauses) if clauses else ""
+
+        collected: list[dict] = []
+        seen_ids: set[str] = set()
+
+        for type_key, (service, entity_set, wc_type) in targets:
+            url = f"{self.odata_base}/{service}/{entity_set}"
+
+            params: dict[str, str] = {"$top": str(min(limit, 200))}
+            if filter_str:
+                params["$filter"] = filter_str
+
+            try:
+                items = self._get_all_pages(url, params, return_none_on_error=True)
+                if items is None:
+                    continue
+                for item in items:
+                    pid = extract_id(item)
+                    if pid and pid not in seen_ids:
+                        seen_ids.add(pid)
+                        item["_entity_type"] = wc_type
+                        item["_entity_type_key"] = type_key
+                        collected.append(item)
+            except Exception:
+                logger.debug(
+                    "advanced_search failed for %s/%s",
+                    service, entity_set,
+                    exc_info=True,
+                )
+                continue
+
+            if len(collected) >= limit:
+                break
+
+        return collected[:limit]

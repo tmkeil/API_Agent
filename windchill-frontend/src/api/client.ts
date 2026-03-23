@@ -1,6 +1,9 @@
 import type {
+  AdvancedSearchRequest,
   BomNodeResponse,
   BomTreeNode,
+  BulkItem,
+  BulkResponse,
   ChangeItemsResponse,
   DocumentListResponse,
   FileInfoResponse,
@@ -10,10 +13,12 @@ import type {
   PartDetailResponse,
   PartSearchResult,
   ReferencingPartsResponse,
+  SetStateRequest,
   SystemInfo,
   UserInfo,
   VersionsResponse,
   WhereUsedResponse,
+  WriteResponse,
   ApiLogEntry,
 } from './types'
 
@@ -211,4 +216,92 @@ export async function exportBom(
     method: 'POST',
     body: JSON.stringify({ mode, partNumber, tree }),
   })
+}
+
+// ── Write Operations ────────────────────────────────────────
+
+export async function createObject(
+  typeKey: string,
+  attributes: Record<string, string>,
+): Promise<WriteResponse> {
+  return request<WriteResponse>(`${BASE}/write/create`, {
+    method: 'POST',
+    body: JSON.stringify({ typeKey, attributes }),
+  })
+}
+
+export async function updateAttributes(
+  typeKey: string,
+  code: string,
+  attributes: Record<string, string>,
+): Promise<WriteResponse> {
+  return request<WriteResponse>(
+    `${BASE}/write/${encodeURIComponent(typeKey)}/${encodeURIComponent(code)}/attributes`,
+    {
+      method: 'PATCH',
+      body: JSON.stringify({ attributes }),
+    },
+  )
+}
+
+export async function setLifecycleState(
+  typeKey: string,
+  code: string,
+  body: SetStateRequest,
+): Promise<WriteResponse> {
+  return request<WriteResponse>(
+    `${BASE}/write/${encodeURIComponent(typeKey)}/${encodeURIComponent(code)}/state`,
+    {
+      method: 'POST',
+      body: JSON.stringify(body),
+    },
+  )
+}
+
+export async function checkoutObject(
+  typeKey: string,
+  code: string,
+): Promise<WriteResponse> {
+  return request<WriteResponse>(
+    `${BASE}/write/${encodeURIComponent(typeKey)}/${encodeURIComponent(code)}/checkout`,
+    { method: 'POST' },
+  )
+}
+
+export async function checkinObject(
+  typeKey: string,
+  code: string,
+): Promise<WriteResponse> {
+  return request<WriteResponse>(
+    `${BASE}/write/${encodeURIComponent(typeKey)}/${encodeURIComponent(code)}/checkin`,
+    { method: 'POST' },
+  )
+}
+
+// ── Bulk / Batch ────────────────────────────────────────────
+
+export async function bulkDetails(items: BulkItem[]): Promise<BulkResponse> {
+  return request<BulkResponse>(`${BASE}/bulk/details`, {
+    method: 'POST',
+    body: JSON.stringify({ items }),
+  })
+}
+
+// ── Advanced Search ─────────────────────────────────────────
+
+export async function advancedSearch(body: AdvancedSearchRequest): Promise<PartSearchResult[]> {
+  const data = await request<{ items: PartSearchResult[] }>(
+    `${BASE}/search/advanced`,
+    {
+      method: 'POST',
+      body: JSON.stringify(body),
+    },
+  )
+  return data.items
+}
+
+// ── Document Download ───────────────────────────────────────
+
+export function getDocumentDownloadUrl(typeKey: string, code: string): string {
+  return `${BASE}/documents/${encodeURIComponent(typeKey)}/${encodeURIComponent(code)}/download`
 }

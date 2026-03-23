@@ -22,6 +22,8 @@ from src.routers.admin import router as admin_router
 from src.routers.change import router as change_router
 from src.routers.documents import router as documents_router
 from src.routers.versions import router as versions_router
+from src.routers.write import router as write_router
+from src.routers.bulk import router as bulk_router
 
 logging.basicConfig(
     level=logging.INFO,
@@ -103,6 +105,8 @@ app.include_router(parts_router, prefix="/api")
 app.include_router(change_router, prefix="/api")
 app.include_router(documents_router, prefix="/api")
 app.include_router(versions_router, prefix="/api")
+app.include_router(write_router, prefix="/api")
+app.include_router(bulk_router, prefix="/api")
 app.include_router(admin_router, prefix="/api")
 
 

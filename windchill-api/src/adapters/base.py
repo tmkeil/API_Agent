@@ -366,3 +366,97 @@ class WRSClientBase:
     def close(self) -> None:
         """httpx-Session schliessen und Ressourcen freigeben."""
         self._http.close()
+
+    # ── Write-Operations (POST / PATCH) ──────────────────────
+
+    def _post(
+        self,
+        url: str,
+        json_body: dict | None = None,
+        *,
+        suppress_errors: bool = False,
+    ) -> Optional[httpx.Response]:
+        """POST mit Retry und CSRF_NONCE Handling.
+
+        Windchill WRS benötigt CSRF_NONCE Header für alle Schreiboperationen.
+        Der Nonce wird bei jedem Response automatisch aktualisiert (siehe _raw_get).
+        """
+        delay = 1.0
+        last_exc: Optional[Exception] = None
+
+        for attempt in range(self._max_retries):
+            try:
+                resp = self._http.post(
+                    url,
+                    json=json_body,
+                    timeout=self._timeout,
+                )
+                nonce = resp.headers.get("CSRF_NONCE")
+                if nonce:
+                    with self._lock:
+                        self._http.headers["CSRF_NONCE"] = nonce
+                if resp.status_code < 500:
+                    return resp
+                last_exc = WRSError(f"Server error {resp.status_code}", resp.status_code)
+            except (httpx.TimeoutException, httpx.NetworkError, httpx.ConnectError) as e:
+                last_exc = WRSError(f"Connection error: {e}")
+
+            if attempt < self._max_retries - 1:
+                time.sleep(delay)
+                delay = min(delay * 2, 10.0)
+
+        if suppress_errors:
+            return None
+        raise last_exc or WRSError("Unknown error")
+
+    def _patch(
+        self,
+        url: str,
+        json_body: dict | None = None,
+        *,
+        suppress_errors: bool = False,
+    ) -> Optional[httpx.Response]:
+        """PATCH mit Retry und CSRF_NONCE Handling."""
+        delay = 1.0
+        last_exc: Optional[Exception] = None
+
+        for attempt in range(self._max_retries):
+            try:
+                resp = self._http.patch(
+                    url,
+                    json=json_body,
+                    timeout=self._timeout,
+                )
+                nonce = resp.headers.get("CSRF_NONCE")
+                if nonce:
+                    with self._lock:
+                        self._http.headers["CSRF_NONCE"] = nonce
+                if resp.status_code < 500:
+                    return resp
+                last_exc = WRSError(f"Server error {resp.status_code}", resp.status_code)
+            except (httpx.TimeoutException, httpx.NetworkError, httpx.ConnectError) as e:
+                last_exc = WRSError(f"Connection error: {e}")
+
+            if attempt < self._max_retries - 1:
+                time.sleep(delay)
+                delay = min(delay * 2, 10.0)
+
+        if suppress_errors:
+            return None
+        raise last_exc or WRSError("Unknown error")
+
+    def _get_raw_stream(
+        self,
+        url: str,
+        params: Any = None,
+    ) -> httpx.Response:
+        """GET mit stream=True für Datei-Downloads. Gibt die Response direkt zurück.
+
+        Der Aufrufer muss die Response mit resp.close() schließen.
+        """
+        resp = self._http.stream("GET", url, params=params).__enter__()
+        nonce = resp.headers.get("CSRF_NONCE")
+        if nonce:
+            with self._lock:
+                self._http.headers["CSRF_NONCE"] = nonce
+        return resp

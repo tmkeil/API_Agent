@@ -4,7 +4,7 @@ import { searchPartsStream } from '../api/client'
 import type { PartSearchResult } from '../api/types'
 import SearchBar from '../components/SearchBar'
 import AdvancedSearchPanel from '../components/AdvancedSearchPanel'
-import { TYPE_FILTERS, TYPE_KEY_MAP, formatDate, typeLabel } from '../utils/labels'
+import { TYPE_KEY_MAP, formatDate, typeLabel } from '../utils/labels'
 
 // Bekannte Windchill-Kontexte (Folder-Toplevel)
 const WINDCHILL_CONTEXTS = [
@@ -97,7 +97,7 @@ export default function DashboardPage() {
   const searchState = useSyncExternalStore(subscribeStore, getStoreSnapshot)
   const { results, searching, done: searchDone, error } = searchState
 
-  const [activeTypes, setActiveTypes] = useState<string[]>([])
+  const [activeTypes] = useState<string[]>([])
   const hasRestoredRef = useRef(false)
 
   // ── Search ──────────────────────────────────────────────
@@ -128,12 +128,6 @@ export default function DashboardPage() {
 
   // ── Helpers ────────────────────────────────────────────
 
-  function toggleType(key: string) {
-    setActiveTypes((prev) =>
-      prev.includes(key) ? prev.filter((t) => t !== key) : [...prev, key],
-    )
-  }
-
   // ── Render ─────────────────────────────────────────────
 
   return (
@@ -146,30 +140,6 @@ export default function DashboardPage() {
           initialQuery={urlQuery}
           placeholder="Suchen — Nummer, Name oder Wildcard (z.B. S2200*, Z03*, *287364)"
         />
-        {/* Type filter chips */}
-        <div className="flex flex-wrap gap-1.5 mt-2">
-          {TYPE_FILTERS.map((tf) => (
-            <button
-              key={tf.key}
-              onClick={() => toggleType(tf.key)}
-              className={`px-2.5 py-0.5 rounded-full text-xs font-medium border transition-colors ${
-                activeTypes.includes(tf.key)
-                  ? 'bg-indigo-600 text-white border-indigo-600'
-                  : 'bg-white text-slate-500 border-slate-200 hover:border-slate-400'
-              }`}
-            >
-              {tf.label}
-            </button>
-          ))}
-          {activeTypes.length > 0 && (
-            <button
-              onClick={() => setActiveTypes([])}
-              className="px-2 py-0.5 text-xs text-slate-400 hover:text-slate-600"
-            >
-              ✕ Alle
-            </button>
-          )}
-        </div>
         {/* Advanced Search Panel */}
         <AdvancedSearchPanel
           contexts={WINDCHILL_CONTEXTS}
@@ -223,6 +193,9 @@ export default function DashboardPage() {
                     <th className="text-left px-3 py-2 font-medium">Version</th>
                     <th className="text-left px-3 py-2 font-medium">Status</th>
                     <th className="text-left px-3 py-2 font-medium">Kontext</th>
+                    <th className="text-left px-3 py-2 font-medium">Variante</th>
+                    <th className="text-left px-3 py-2 font-medium">Org-ID</th>
+                    <th className="text-left px-3 py-2 font-medium">Klassifikation</th>
                     <th className="text-left px-3 py-2 font-medium">Geändert</th>
                     <th className="text-left px-3 py-2 font-medium">Erstellt</th>
                   </tr>
@@ -246,6 +219,9 @@ export default function DashboardPage() {
                       <td className="px-3 py-2 text-slate-500 whitespace-nowrap">{r.version}</td>
                       <td className="px-3 py-2 text-slate-500 whitespace-nowrap">{r.state}</td>
                       <td className="px-3 py-2 text-slate-400 whitespace-nowrap text-xs">{r.context || '—'}</td>
+                      <td className="px-3 py-2 text-slate-500 whitespace-nowrap text-xs">{r.isVariant || '—'}</td>
+                      <td className="px-3 py-2 text-slate-500 whitespace-nowrap text-xs">{r.organizationId || '—'}</td>
+                      <td className="px-3 py-2 text-slate-500 whitespace-nowrap text-xs">{r.classification || '—'}</td>
                       <td className="px-3 py-2 text-slate-400 whitespace-nowrap text-xs">{formatDate(r.lastModified)}</td>
                       <td className="px-3 py-2 text-slate-400 whitespace-nowrap text-xs">{formatDate(r.createdOn)}</td>
                     </tr>

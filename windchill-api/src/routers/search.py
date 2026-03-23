@@ -109,6 +109,9 @@ async def search_stream(
             "context": n["context"],
             "lastModified": n["last_modified"],
             "createdOn": n["created_on"],
+            "isVariant": n.get("is_variant", ""),
+            "organizationId": n.get("organization_id", ""),
+            "classification": n.get("classification", ""),
         }
 
     # --- Async generator that bridges sync iterator + disconnect detection ---
@@ -199,9 +202,9 @@ def advanced_search(
         types=body.types or None,
         contexts=body.contexts or None,
         state=body.state,
-        description=body.description,
         date_from=body.dateFrom,
         date_to=body.dateTo,
+        date_field=body.dateField,
         attributes=body.attributes or None,
         limit=body.limit,
     )

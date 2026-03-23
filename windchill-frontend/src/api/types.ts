@@ -19,6 +19,9 @@ export interface PartSearchResult {
   context: string
   lastModified: string
   createdOn: string
+  isVariant: string
+  organizationId: string
+  classification: string
 }
 
 export interface BomTreeNode {
@@ -34,6 +37,7 @@ export interface BomTreeNode {
   quantity?: number | null
   quantityUnit?: string
   lineNumber?: string
+  organizationId?: string
   // Frontend-only state
   children?: BomTreeNode[]
   documents?: DocumentNode[]
@@ -314,9 +318,9 @@ export interface AdvancedSearchRequest {
   types?: string[]
   contexts?: string[]
   state?: string
-  description?: string
   dateFrom?: string
   dateTo?: string
+  dateField?: string
   attributes?: Record<string, string>
   limit?: number
 }

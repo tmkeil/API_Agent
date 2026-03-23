@@ -100,6 +100,9 @@ def search_parts(
                 context=n["context"],
                 lastModified=n["last_modified"],
                 createdOn=n["created_on"],
+                isVariant=n.get("is_variant", ""),
+                organizationId=n.get("organization_id", ""),
+                classification=n.get("classification", ""),
             )
         )
 
@@ -160,9 +163,9 @@ def advanced_search(
     types: list[str] | None = None,
     contexts: list[str] | None = None,
     state: str = "",
-    description: str = "",
     date_from: str = "",
     date_to: str = "",
+    date_field: str = "modified",
     attributes: dict[str, str] | None = None,
     limit: int = 200,
 ) -> list[PartSearchResult]:
@@ -178,9 +181,9 @@ def advanced_search(
         entity_types=types if types else None,
         contexts=contexts or None,
         state=state or None,
-        description=description or None,
         date_from=date_from or None,
         date_to=date_to or None,
+        date_field=date_field or "modified",
         attributes=attributes or None,
         limit=limit,
     )
@@ -204,6 +207,9 @@ def advanced_search(
                 context=n["context"],
                 lastModified=n["last_modified"],
                 createdOn=n["created_on"],
+                isVariant=n.get("is_variant", ""),
+                organizationId=n.get("organization_id", ""),
+                classification=n.get("classification", ""),
             )
         )
     return results[:limit]

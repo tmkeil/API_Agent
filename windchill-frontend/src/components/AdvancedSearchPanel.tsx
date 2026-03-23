@@ -1,6 +1,7 @@
 import { useCallback, useState } from 'react'
 import { advancedSearch } from '../api/client'
 import type { AdvancedSearchRequest, PartSearchResult } from '../api/types'
+import MultiSelect from './MultiSelect'
 
 interface Props {
   contexts: string[]
@@ -17,6 +18,11 @@ const TYPE_OPTIONS = [
   { key: 'problem_report', label: 'Problem Report' },
 ]
 
+const DATE_FIELD_OPTIONS = [
+  { value: 'modified', label: 'Geändert' },
+  { value: 'created', label: 'Erstellt' },
+]
+
 /**
  * Collapsible advanced search form with structured filters.
  * Renders below the quick search on the dashboard.
@@ -30,31 +36,21 @@ export default function AdvancedSearchPanel({ contexts, onResults, onError }: Pr
   const [selectedTypes, setSelectedTypes] = useState<string[]>([])
   const [selectedContexts, setSelectedContexts] = useState<string[]>([])
   const [state, setState] = useState('')
-  const [description, setDescription] = useState('')
   const [dateFrom, setDateFrom] = useState('')
   const [dateTo, setDateTo] = useState('')
+  const [dateField, setDateField] = useState('modified')
   const [limit, setLimit] = useState<number | ''>('')
 
-  const toggleType = (key: string) => {
-    setSelectedTypes((prev) =>
-      prev.includes(key) ? prev.filter((t) => t !== key) : [...prev, key],
-    )
-  }
-
-  const toggleContext = (ctx: string) => {
-    setSelectedContexts((prev) =>
-      prev.includes(ctx) ? prev.filter((c) => c !== ctx) : [...prev, ctx],
-    )
-  }
+  const contextOptions = contexts.map((c) => ({ key: c, label: c }))
 
   const resetForm = useCallback(() => {
     setQuery('')
     setSelectedTypes([])
     setSelectedContexts([])
     setState('')
-    setDescription('')
     setDateFrom('')
     setDateTo('')
+    setDateField('modified')
     setLimit('')
   }, [])
 
@@ -67,9 +63,9 @@ export default function AdvancedSearchPanel({ contexts, onResults, onError }: Pr
       if (selectedTypes.length > 0) body.types = selectedTypes
       if (selectedContexts.length > 0) body.contexts = selectedContexts
       if (state.trim()) body.state = state.trim()
-      if (description.trim()) body.description = description.trim()
       if (dateFrom) body.dateFrom = dateFrom
       if (dateTo) body.dateTo = dateTo
+      if (dateFrom || dateTo) body.dateField = dateField
       if (limit && limit > 0) body.limit = limit
 
       const items = await advancedSearch(body)
@@ -79,7 +75,7 @@ export default function AdvancedSearchPanel({ contexts, onResults, onError }: Pr
     } finally {
       setBusy(false)
     }
-  }, [query, selectedTypes, selectedContexts, state, description, dateFrom, dateTo, limit, onResults, onError])
+  }, [query, selectedTypes, selectedContexts, state, dateFrom, dateTo, dateField, limit, onResults, onError])
 
   return (
     <div className="mt-2">
@@ -93,7 +89,7 @@ export default function AdvancedSearchPanel({ contexts, onResults, onError }: Pr
       {open && (
         <div className="mt-2 bg-slate-50 border border-slate-200 rounded p-4 space-y-3">
           {/* Row 1: Query + State */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="text-xs text-slate-500 mb-1 block">Nummer / Name</label>
               <input
@@ -112,21 +108,42 @@ export default function AdvancedSearchPanel({ contexts, onResults, onError }: Pr
                 className="w-full px-2 py-1.5 text-sm border border-slate-300 rounded focus:outline-none focus:ring-1 focus:ring-indigo-400"
               />
             </div>
-            <div>
-              <label className="text-xs text-slate-500 mb-1 block">Beschreibung</label>
-              <input
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                placeholder="Substring"
-                className="w-full px-2 py-1.5 text-sm border border-slate-300 rounded focus:outline-none focus:ring-1 focus:ring-indigo-400"
-              />
-            </div>
           </div>
 
-          {/* Row 2: Date range + Context + Limit */}
+          {/* Row 2: MultiSelect dropdowns (Types + Contexts) */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <MultiSelect
+              label="Typen"
+              options={TYPE_OPTIONS}
+              selected={selectedTypes}
+              onChange={setSelectedTypes}
+              placeholder="Alle Typen"
+            />
+            <MultiSelect
+              label="Kontext"
+              options={contextOptions}
+              selected={selectedContexts}
+              onChange={setSelectedContexts}
+              placeholder="Alle Kontexte"
+            />
+          </div>
+
+          {/* Row 3: Date field selector + Date range + Limit */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <div>
-              <label className="text-xs text-slate-500 mb-1 block">Datum von</label>
+              <label className="text-xs text-slate-500 mb-1 block">Datumsfeld</label>
+              <select
+                value={dateField}
+                onChange={(e) => setDateField(e.target.value)}
+                className="w-full px-2 py-1.5 text-sm border border-slate-300 rounded focus:outline-none focus:ring-1 focus:ring-indigo-400 bg-white"
+              >
+                {DATE_FIELD_OPTIONS.map((o) => (
+                  <option key={o.value} value={o.value}>{o.label}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="text-xs text-slate-500 mb-1 block">{dateField === 'modified' ? 'Geändert von' : 'Erstellt von'}</label>
               <input
                 type="date"
                 value={dateFrom}
@@ -135,39 +152,13 @@ export default function AdvancedSearchPanel({ contexts, onResults, onError }: Pr
               />
             </div>
             <div>
-              <label className="text-xs text-slate-500 mb-1 block">Datum bis</label>
+              <label className="text-xs text-slate-500 mb-1 block">{dateField === 'modified' ? 'Geändert bis' : 'Erstellt bis'}</label>
               <input
                 type="date"
                 value={dateTo}
                 onChange={(e) => setDateTo(e.target.value)}
                 className="w-full px-2 py-1.5 text-sm border border-slate-300 rounded focus:outline-none focus:ring-1 focus:ring-indigo-400"
               />
-            </div>
-            <div>
-              <label className="text-xs text-slate-500 mb-1 block">Kontext</label>
-              <div className="flex flex-wrap gap-1.5">
-                {contexts.map((c) => (
-                  <button
-                    key={c}
-                    onClick={() => toggleContext(c)}
-                    className={`px-2 py-0.5 rounded-full text-xs font-medium border transition-colors ${
-                      selectedContexts.includes(c)
-                        ? 'bg-teal-600 text-white border-teal-600'
-                        : 'bg-white text-slate-500 border-slate-200 hover:border-slate-400'
-                    }`}
-                  >
-                    {c}
-                  </button>
-                ))}
-                {selectedContexts.length > 0 && (
-                  <button
-                    onClick={() => setSelectedContexts([])}
-                    className="px-2 py-0.5 text-xs text-slate-400 hover:text-slate-600"
-                  >
-                    ✕ Alle
-                  </button>
-                )}
-              </div>
             </div>
             <div>
               <label className="text-xs text-slate-500 mb-1 block">Limit</label>
@@ -183,26 +174,6 @@ export default function AdvancedSearchPanel({ contexts, onResults, onError }: Pr
                 }}
                 className="w-full px-2 py-1.5 text-sm border border-slate-300 rounded focus:outline-none focus:ring-1 focus:ring-indigo-400"
               />
-            </div>
-          </div>
-
-          {/* Type chips */}
-          <div>
-            <label className="text-xs text-slate-500 mb-1 block">Typen</label>
-            <div className="flex flex-wrap gap-1.5">
-              {TYPE_OPTIONS.map((t) => (
-                <button
-                  key={t.key}
-                  onClick={() => toggleType(t.key)}
-                  className={`px-2.5 py-0.5 rounded-full text-xs font-medium border transition-colors ${
-                    selectedTypes.includes(t.key)
-                      ? 'bg-indigo-600 text-white border-indigo-600'
-                      : 'bg-white text-slate-500 border-slate-200 hover:border-slate-400'
-                  }`}
-                >
-                  {t.label}
-                </button>
-              ))}
             </div>
           </div>
 

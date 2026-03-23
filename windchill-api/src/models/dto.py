@@ -69,6 +69,9 @@ class PartSearchResult(BaseModel):
     context: str = ""
     lastModified: str = ""
     createdOn: str = ""
+    isVariant: str = ""
+    organizationId: str = ""
+    classification: str = ""
 
 
 # ── BOM Tree (lazy expand) ──────────────────────────────────
@@ -87,6 +90,7 @@ class BomTreeNode(BaseModel):
     quantity: Any = None
     quantityUnit: str = ""
     lineNumber: str = ""
+    organizationId: str = ""
 
 
 class DocumentNode(BaseModel):
@@ -371,8 +375,8 @@ class AdvancedSearchRequest(BaseModel):
     types: list[str] = []
     contexts: list[str] = []
     state: str = ""
-    description: str = ""
     dateFrom: str = ""
     dateTo: str = ""
+    dateField: str = "modified"  # "modified" or "created"
     attributes: dict[str, str] = {}
     limit: int = 200

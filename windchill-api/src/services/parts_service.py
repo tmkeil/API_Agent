@@ -38,7 +38,7 @@ from src.models.dto import (
 logger = logging.getLogger(__name__)
 
 # Module-level thread pool — reused across all get_bom_children calls
-_bom_executor = ThreadPoolExecutor(max_workers=8, thread_name_prefix="bom")
+_bom_executor = ThreadPoolExecutor(max_workers=16, thread_name_prefix="bom")
 
 
 # ── Internal mappers ─────────────────────────────────────────
@@ -96,6 +96,7 @@ def _map_tree_node(
         state=n["state"],
         identity=n["identity"],
         hasChildren=_has_children(raw),
+        organizationId=n.get("organization_id", ""),
     )
 
     if usage_link:

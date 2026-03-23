@@ -68,8 +68,6 @@ export default function BomTreeNodeComponent({ node, depth }: Props) {
     setExpanded(true)
   }, [expanded, loaded, loading, loadChildren])
 
-  const stateColor = 'text-slate-500'
-
   return (
     <div style={{ marginLeft: depth > 0 ? 20 : 0 }}>
       {/* Node row */}
@@ -102,25 +100,28 @@ export default function BomTreeNodeComponent({ node, depth }: Props) {
           {node.type === 'WTPart' ? 'Part' : node.type}
         </span>
 
-        {/* Number */}
-        <span className="font-mono text-sm font-medium text-slate-800 whitespace-nowrap">
-          {node.number}
+        {/* Identity: Number, Name, OrgID, Version, State */}
+        <span className="text-sm text-slate-800 truncate">
+          <span className="font-mono font-medium">{node.number}</span>
+          {node.name && <span className="text-slate-500">, {node.name}</span>}
+          {node.organizationId && <span className="text-slate-400">, {node.organizationId}</span>}
+          <span className="text-slate-400">, {node.version}</span>
+          {node.state && <span className="text-slate-500">, {node.state}</span>}
         </span>
 
-        {/* Name */}
-        <span className="text-sm text-slate-500 truncate">{node.name}</span>
-
-        {/* Version & State */}
-        <span className="ml-auto flex items-center gap-2 text-xs flex-shrink-0">
-          {node.quantity != null && (
-            <span className="text-slate-400 font-mono">
-              ×{node.quantity}
-              {node.quantityUnit ? ` ${node.quantityUnit}` : ''}
-            </span>
-          )}
-          <span className="text-slate-400">{node.version}</span>
-          <span className={stateColor}>{node.state}</span>
-        </span>
+        {/* Quantity | Unit */}
+        {node.quantity != null && (
+          <span className="ml-auto flex items-center gap-1 text-xs flex-shrink-0 font-mono text-slate-400">
+            <span className="text-slate-300">|</span>
+            <span>{node.quantity}</span>
+            {node.quantityUnit && (
+              <>
+                <span className="text-slate-300">|</span>
+                <span>{node.quantityUnit}</span>
+              </>
+            )}
+          </span>
+        )}
       </div>
 
       {/* Expanded content */}

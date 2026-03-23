@@ -463,9 +463,9 @@ class SearchMixin:
         entity_types: list[str] | None = None,
         contexts: list[str] | None = None,
         state: str | None = None,
-        description: str | None = None,
         date_from: str | None = None,
         date_to: str | None = None,
+        date_field: str = "modified",
         attributes: dict[str, str] | None = None,
         limit: int = 200,
     ) -> list[dict]:
@@ -507,15 +507,14 @@ class SearchMixin:
             safe_st = state.strip().replace("'", "''")
             clauses.append(f"State eq '{safe_st}'")
 
-        if description:
-            safe_desc = description.replace("'", "''")
-            clauses.append(f"contains(Description,'{safe_desc}')")
+        # Date filter — choose OData field based on date_field param
+        _date_odata_field = "CreateStamp" if date_field == "created" else "ModifyStamp"
 
         if date_from:
-            clauses.append(f"ModifyStamp ge {date_from}T00:00:00Z")
+            clauses.append(f"{_date_odata_field} ge {date_from}T00:00:00Z")
 
         if date_to:
-            clauses.append(f"ModifyStamp le {date_to}T23:59:59Z")
+            clauses.append(f"{_date_odata_field} le {date_to}T23:59:59Z")
 
         if attributes:
             for attr_name, attr_val in attributes.items():

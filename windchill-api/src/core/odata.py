@@ -28,6 +28,9 @@ _FIELD_ALIASES: dict[str, list[str]] = {
     "context":       ["ContainerName", "Context", "FolderLocation"],
     "last_modified": ["LastModified", "ModifyTimestamp"],
     "created_on":    ["CreatedOn", "CreateTimestamp"],
+    "is_variant":    ["IsVariant", "Variant"],
+    "organization_id": ["OrganizationUniqueIdentifier", "OrganizationID", "Organization"],
+    "classification": ["TypeName", "Classification", "SubType"],
 }
 
 

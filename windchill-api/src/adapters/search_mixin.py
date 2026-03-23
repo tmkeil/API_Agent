@@ -127,12 +127,26 @@ class SearchMixin:
 
         safe = query.replace("'", "''")
 
-        # Wenn der Suchbegriff Ziffern enthaelt, ist er wahrscheinlich
-        # eine Nummer (z.B. S2200287364, BCC0812). In dem Fall ist
-        # contains(Name,...) sinnlos und erzwingt einen teuren Full-Text-Scan
-        # auf dem Name-Feld aller Entity-Typen (Documents: 10-17s!).
+        # Query-Intelligenz: den OData-Filter an die Art des Suchbegriffs anpassen.
+        #
+        # 1. Exakte Nummer (Ziffern + >= 5 Zeichen + keine Wildcards):
+        #    → Nur "Number eq" (Index-Lookup, ~0.5s statt ~7s).
+        #      Beispiel: S2200287364, BCC0812-P-A051-004
+        #
+        # 2. Kurze/partielle Nummer (Ziffern, aber < 5 Zeichen oder Wildcards):
+        #    → "Number eq" + "contains(Number,...)"
+        #      Beispiel: BCC08, Z03
+        #
+        # 3. Reiner Text (keine Ziffern):
+        #    → "contains(Number,...) or contains(Name,...)"
+        #      Beispiel: BCC, Sensor
         _has_digits = any(c.isdigit() for c in query)
-        if _has_digits:
+        _has_wildcards = "*" in query or "?" in query
+        _is_exact_number = _has_digits and len(query) >= 5 and not _has_wildcards
+
+        if _is_exact_number:
+            combined_filter = f"Number eq '{safe}'"
+        elif _has_digits:
             combined_filter = (
                 f"(Number eq '{safe}' or contains(Number,'{safe}'))"
             )
@@ -294,7 +308,11 @@ class SearchMixin:
         if query:
             safe_q = query.replace("'", "''")
             _has_digits = any(c.isdigit() for c in query)
-            if _has_digits:
+            _has_wildcards = "*" in query or "?" in query
+            _is_exact_number = _has_digits and len(query) >= 5 and not _has_wildcards
+            if _is_exact_number:
+                clauses.append(f"Number eq '{safe_q}'")
+            elif _has_digits:
                 clauses.append(
                     f"(contains(Number,'{safe_q}'))"
                 )

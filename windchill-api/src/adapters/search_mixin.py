@@ -141,8 +141,8 @@ class SearchMixin:
             url = f"{self.odata_base}/{service}/{entity_set}"
             params: dict[str, str] = {"$filter": combined_filter}
             try:
-                resp = self._get(url, params, suppress_errors=True)
-                if resp is None or resp.status_code != 200:
+                resp = self._raw_get(url, params)
+                if resp.status_code != 200:
                     return type_key, wc_type, [], None
                 data = resp.json()
                 items = list(data.get("value", []))
@@ -178,10 +178,13 @@ class SearchMixin:
                     nl = next_link
                     while nl and page < max_pages:
                         page += 1
-                        r = self._get(nl, suppress_errors=True)
-                        if r is None or r.status_code != 200:
+                        try:
+                            r = self._raw_get(nl)
+                            if r.status_code != 200:
+                                break
+                            d = r.json()
+                        except Exception:
                             break
-                        d = r.json()
                         for it in d.get("value", []):
                             it["_entity_type"] = wc_type
                             it["_entity_type_key"] = type_key
@@ -206,8 +209,8 @@ class SearchMixin:
             def _fetch_page(item: tuple[str, str, str]) -> list[dict]:
                 pg_url, tk, wct = item
                 try:
-                    r = self._get(pg_url, suppress_errors=True)
-                    if r is None or r.status_code != 200:
+                    r = self._raw_get(pg_url)
+                    if r.status_code != 200:
                         return []
                     items = list(r.json().get("value", []))
                     for it in items:
@@ -217,7 +220,7 @@ class SearchMixin:
                 except Exception:
                     return []
 
-            workers = min(len(remaining_urls), 15)
+            workers = min(len(remaining_urls), 20)
             with ThreadPoolExecutor(max_workers=workers) as pool:
                 futures = [pool.submit(_fetch_page, ru) for ru in remaining_urls]
                 for f in as_completed(futures):
@@ -314,8 +317,8 @@ class SearchMixin:
             if filter_str:
                 params["$filter"] = filter_str
             try:
-                resp = self._get(url, params, suppress_errors=True)
-                if resp is None or resp.status_code != 200:
+                resp = self._raw_get(url, params)
+                if resp.status_code != 200:
                     return type_key, wc_type, [], None
                 data = resp.json()
                 items = list(data.get("value", []))
@@ -349,10 +352,13 @@ class SearchMixin:
                     nl = next_link
                     while nl and page < max_pages:
                         page += 1
-                        r = self._get(nl, suppress_errors=True)
-                        if r is None or r.status_code != 200:
+                        try:
+                            r = self._raw_get(nl)
+                            if r.status_code != 200:
+                                break
+                            d = r.json()
+                        except Exception:
                             break
-                        d = r.json()
                         for it in d.get("value", []):
                             it["_entity_type"] = wc_type
                             it["_entity_type_key"] = type_key
@@ -375,8 +381,8 @@ class SearchMixin:
             def _fetch_page(item: tuple[str, str, str]) -> list[dict]:
                 pg_url, tk, wct = item
                 try:
-                    r = self._get(pg_url, suppress_errors=True)
-                    if r is None or r.status_code != 200:
+                    r = self._raw_get(pg_url)
+                    if r.status_code != 200:
                         return []
                     items = list(r.json().get("value", []))
                     for it in items:
@@ -386,7 +392,7 @@ class SearchMixin:
                 except Exception:
                     return []
 
-            workers = min(len(remaining_urls), 15)
+            workers = min(len(remaining_urls), 20)
             with ThreadPoolExecutor(max_workers=workers) as pool:
                 futures = [pool.submit(_fetch_page, ru) for ru in remaining_urls]
                 for f in as_completed(futures):

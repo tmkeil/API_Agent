@@ -194,6 +194,7 @@ def _map_document(
     return DocumentNode(
         docId=n["id"],
         type=doc_type,
+        subType=str(raw.get("ObjectType") or ""),
         number=n["number"],
         name=n["name"],
         version=n["version"],

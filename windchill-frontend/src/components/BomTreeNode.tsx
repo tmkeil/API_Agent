@@ -1,6 +1,7 @@
 import { useCallback, useState } from 'react'
 import { getBomChildren } from '../api/client'
 import type { BomTreeNode, BomViewColumn, DocumentNode } from '../api/types'
+import { subtypeBadgeStyle } from '../utils/labels'
 
 interface Props {
   node: BomTreeNode
@@ -131,8 +132,8 @@ export default function BomTreeRow({ node, depth, viewColumns, totalCols }: Prop
                 <span className="w-3 h-3" />
               )}
             </span>
-            <span className="inline-block bg-sky-50 text-sky-700 border border-sky-200 px-1 rounded text-[10px] font-medium">
-              {node.type === 'wt.part.WTPart' ? 'Part' : node.type?.replace(/^wt\.\w+\./, '') || 'Part'}
+            <span className={`inline-block border px-1 rounded text-[10px] font-medium ${subtypeBadgeStyle(node.type || 'Part')}`}>
+              {node.type || 'Part'}
             </span>
           </span>
         </td>
@@ -163,8 +164,8 @@ export default function BomTreeRow({ node, depth, viewColumns, totalCols }: Prop
           {documents.map((doc, i) => (
             <tr key={`doc-${doc.docId || i}`} className="text-xs border-b border-slate-100">
               <td style={{ paddingLeft: indent + 20 }} className="py-0.5">
-                <span className="inline-block bg-amber-50 text-amber-700 border border-amber-200 px-1 rounded text-[10px] font-medium">
-                  Doc
+                <span className={`inline-block border px-1 rounded text-[10px] font-medium ${subtypeBadgeStyle(doc.subType || 'Dokument')}`}>
+                  {doc.subType || 'Doc'}
                 </span>
               </td>
               {viewColumns.map((col) => {
@@ -187,8 +188,8 @@ export default function BomTreeRow({ node, depth, viewColumns, totalCols }: Prop
           {cadDocuments.map((doc, i) => (
             <tr key={`cad-${doc.docId || i}`} className="text-xs border-b border-slate-100">
               <td style={{ paddingLeft: indent + 20 }} className="py-0.5">
-                <span className="inline-block bg-violet-50 text-violet-700 border border-violet-200 px-1 rounded text-[10px] font-medium">
-                  CAD
+                <span className={`inline-block border px-1 rounded text-[10px] font-medium ${subtypeBadgeStyle(doc.subType || 'CAD-Dokument')}`}>
+                  {doc.subType || 'CAD'}
                 </span>
               </td>
               {viewColumns.map((col) => {

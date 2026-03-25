@@ -86,11 +86,13 @@ def search_parts(
         seen_ids.add(n["id"])
 
         obj_type = n.get("_entity_type", WcType.PART)
+        sub_type = str(item.get("ObjectType") or "")
 
         matches.append(
             PartSearchResult(
                 partId=n["id"],
                 objectType=obj_type,
+                subType=sub_type,
                 number=n["number"],
                 name=n["name"],
                 version=n["version"],
@@ -194,10 +196,12 @@ def advanced_search(
         if not n["id"]:
             continue
         obj_type = n.get("_entity_type", WcType.PART)
+        sub_type = str(item.get("ObjectType") or "")
         results.append(
             PartSearchResult(
                 partId=n["id"],
                 objectType=obj_type,
+                subType=sub_type,
                 number=n["number"],
                 name=n["name"],
                 version=n["version"],

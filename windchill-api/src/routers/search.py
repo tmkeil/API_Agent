@@ -97,9 +97,11 @@ async def search_stream(
         if not n["id"]:
             return None
         obj_type = n.get("_entity_type", WcType.PART)
+        sub_type = str(item.get("ObjectType") or "")
         return {
             "partId": n["id"],
             "objectType": obj_type,
+            "subType": sub_type,
             "number": n["number"],
             "name": n["name"],
             "version": n["version"],

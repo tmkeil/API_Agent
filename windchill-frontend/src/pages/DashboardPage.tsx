@@ -4,7 +4,7 @@ import { searchPartsStream } from '../api/client'
 import type { PartSearchResult } from '../api/types'
 import SearchBar from '../components/SearchBar'
 import AdvancedSearchPanel from '../components/AdvancedSearchPanel'
-import { TYPE_KEY_MAP, formatDate, typeLabel } from '../utils/labels'
+import { TYPE_KEY_MAP, formatDate, typeLabel, subtypeBadgeStyle } from '../utils/labels'
 
 // Bekannte Windchill-Kontexte (Folder-Toplevel)
 const WINDCHILL_CONTEXTS = [
@@ -211,8 +211,8 @@ export default function DashboardPage() {
                       className="cursor-pointer hover:bg-indigo-50 transition-colors"
                     >
                       <td className="px-3 py-2 whitespace-nowrap">
-                        <span className="inline-block px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-100 text-slate-600">
-                          {typeLabel(r.objectType)}
+                        <span className={`inline-block px-1.5 py-0.5 rounded border text-[10px] font-medium ${subtypeBadgeStyle(r.subType || typeLabel(r.objectType))}`}>
+                          {typeLabel(r.objectType, r.subType)}
                         </span>
                       </td>
                       <td className="px-3 py-2 font-mono whitespace-nowrap">

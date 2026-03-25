@@ -10,6 +10,7 @@ export interface TimingInfo {
 export interface PartSearchResult {
   partId: string
   objectType: string
+  subType?: string
   number: string
   name: string
   version: string
@@ -51,6 +52,7 @@ export interface BomTreeNode {
 export interface DocumentNode {
   docId: string
   type: string
+  subType?: string
   number: string
   name: string
   version: string

@@ -60,6 +60,7 @@ class ObjectDetailResponse(BaseModel):
 class PartSearchResult(BaseModel):
     partId: str = ""
     objectType: str = "WTPart"
+    subType: str = ""           # OData ObjectType (Product, Component, Auxiliary Material, …)
     number: str = ""
     name: str = ""
     version: str = ""
@@ -97,7 +98,8 @@ class BomTreeNode(BaseModel):
 
 class DocumentNode(BaseModel):
     docId: str = ""
-    type: str = "WTDocument"
+    type: str = "WTDocument"       # Windchill class (WTDocument, EPMDocument)
+    subType: str = ""              # OData ObjectType (Production Document, Approval Document, …)
     number: str = ""
     name: str = ""
     version: str = ""

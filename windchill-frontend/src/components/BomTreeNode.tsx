@@ -94,7 +94,10 @@ export default function BomTreeRow({ node, depth, viewColumns, totalCols }: Prop
         setCadDocuments(resp.cadDocuments)
         setLoaded(true)
         setExpanded(true)
-        if (resp.children.length === 0) setNoChildren(true)
+        // Only hide the expand arrow if there is truly nothing to show
+        const hasAnyContent =
+          resp.children.length > 0 || resp.documents.length > 0 || resp.cadDocuments.length > 0
+        if (!hasAnyContent) setNoChildren(true)
       } catch {
         // Fetch failed — keep current state
       } finally {
@@ -185,11 +188,7 @@ export default function BomTreeRow({ node, depth, viewColumns, totalCols }: Prop
             return (
             <tr
               key={`doc-${doc.docId || i}`}
-              className="text-xs border-b border-slate-100 cursor-pointer hover:bg-amber-50/40 transition-colors"
-              onClick={(e) => {
-                e.stopPropagation()
-                navigate(`/detail/${docTypeKey}/${encodeURIComponent(doc.number)}`)
-              }}
+              className="text-xs border-b border-slate-100"
             >
               <td style={{ paddingLeft: indent + 20 }} className="py-0.5">
                 <span className={`inline-block border px-1 rounded text-[10px] font-medium ${subtypeBadgeStyle(doc.subType || 'Dokument')}`}>
@@ -198,6 +197,7 @@ export default function BomTreeRow({ node, depth, viewColumns, totalCols }: Prop
               </td>
               {viewColumns.map((col) => {
                 const val = getDocCellValue(doc, col)
+                const isNumber = col.key === 'number' && col.source === 'part'
                 return (
                   <td
                     key={col.key}
@@ -205,7 +205,23 @@ export default function BomTreeRow({ node, depth, viewColumns, totalCols }: Prop
                       col.key === 'number' ? 'font-mono text-slate-600' : 'text-slate-400'
                     } ${col.key === 'name' ? 'max-w-[280px] truncate' : ''}`}
                   >
-                    {val}
+                    {isNumber && doc.number ? (
+                      <span className="inline-flex items-center gap-1">
+                        <span>{val}</span>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            navigate(`/detail/${docTypeKey}/${encodeURIComponent(doc.number)}`)
+                          }}
+                          className="text-indigo-400 hover:text-indigo-600 transition-colors"
+                          title="Details öffnen"
+                        >
+                          <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                          </svg>
+                        </button>
+                      </span>
+                    ) : val}
                   </td>
                 )
               })}
@@ -219,11 +235,7 @@ export default function BomTreeRow({ node, depth, viewColumns, totalCols }: Prop
             return (
             <tr
               key={`cad-${doc.docId || i}`}
-              className="text-xs border-b border-slate-100 cursor-pointer hover:bg-violet-50/40 transition-colors"
-              onClick={(e) => {
-                e.stopPropagation()
-                navigate(`/detail/${cadTypeKey}/${encodeURIComponent(doc.number)}`)
-              }}
+              className="text-xs border-b border-slate-100"
             >
               <td style={{ paddingLeft: indent + 20 }} className="py-0.5">
                 <span className={`inline-block border px-1 rounded text-[10px] font-medium ${subtypeBadgeStyle(doc.subType || 'CAD-Dokument')}`}>
@@ -232,6 +244,7 @@ export default function BomTreeRow({ node, depth, viewColumns, totalCols }: Prop
               </td>
               {viewColumns.map((col) => {
                 const val = getDocCellValue(doc, col)
+                const isNumber = col.key === 'number' && col.source === 'part'
                 return (
                   <td
                     key={col.key}
@@ -239,7 +252,23 @@ export default function BomTreeRow({ node, depth, viewColumns, totalCols }: Prop
                       col.key === 'number' ? 'font-mono text-slate-600' : 'text-slate-400'
                     } ${col.key === 'name' ? 'max-w-[280px] truncate' : ''}`}
                   >
-                    {val}
+                    {isNumber && doc.number ? (
+                      <span className="inline-flex items-center gap-1">
+                        <span>{val}</span>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            navigate(`/detail/${cadTypeKey}/${encodeURIComponent(doc.number)}`)
+                          }}
+                          className="text-indigo-400 hover:text-indigo-600 transition-colors"
+                          title="Details öffnen"
+                        >
+                          <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                          </svg>
+                        </button>
+                      </span>
+                    ) : val}
                   </td>
                 )
               })}

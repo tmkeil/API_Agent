@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { getBomRoot, getBomViews } from '../../api/client'
+import { diagnoseBomFields, getBomRoot, getBomViews } from '../../api/client'
 import type { BomTreeNode, BomViewConfig } from '../../api/types'
 import BomTreeRow from '../BomTreeNode'
 
@@ -32,6 +32,11 @@ export default function StructureTab({ partNumber }: Props) {
   const [views, setViews] = useState<BomViewConfig[]>([FALLBACK_VIEW])
   const [activeViewId, setActiveViewId] = useState('default')
 
+  // Raw fields diagnostic
+  const [rawFields, setRawFields] = useState<Record<string, unknown> | null>(null)
+  const [rawFieldsLoading, setRawFieldsLoading] = useState(false)
+  const [showRawFields, setShowRawFields] = useState(false)
+
   const activeView = views.find(v => v.id === activeViewId) ?? views[0]
 
   // Load available views once on mount
@@ -62,6 +67,23 @@ export default function StructureTab({ partNumber }: Props) {
       if (!signal?.aborted) setLoading(false)
     }
   }, [partNumber, loaded, loading])
+
+  const loadRawFields = useCallback(async () => {
+    if (rawFields || rawFieldsLoading) {
+      setShowRawFields(!showRawFields)
+      return
+    }
+    setRawFieldsLoading(true)
+    try {
+      const data = await diagnoseBomFields(partNumber)
+      setRawFields(data)
+      setShowRawFields(true)
+    } catch {
+      // ignore
+    } finally {
+      setRawFieldsLoading(false)
+    }
+  }, [partNumber, rawFields, rawFieldsLoading, showRawFields])
 
   // NO auto-load — user must click the load button
 
@@ -95,30 +117,51 @@ export default function StructureTab({ partNumber }: Props) {
 
   if (!root) return null
 
-  // Total column count = 1 (expand) + view columns
+  // Total column count = 1 (expand+type) + view columns
   const totalCols = 1 + activeView.columns.length
 
   return (
     <div className="space-y-2">
       {/* View selector bar */}
-      <div className="flex items-center gap-3 px-1">
-        <label className="text-xs font-medium text-slate-500">BOM-Ansicht:</label>
-        <div className="flex gap-1">
-          {views.map(v => (
-            <button
-              key={v.id}
-              onClick={() => setActiveViewId(v.id)}
-              className={`px-2.5 py-1 text-xs rounded-md transition-colors ${
-                v.id === activeViewId
-                  ? 'bg-indigo-600 text-white shadow-sm'
-                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-              }`}
-            >
-              {v.label}
-            </button>
-          ))}
+      <div className="flex items-center justify-between gap-3 px-1">
+        <div className="flex items-center gap-3">
+          <label className="text-xs font-medium text-slate-500">BOM-Ansicht:</label>
+          <div className="flex gap-1">
+            {views.map(v => (
+              <button
+                key={v.id}
+                onClick={() => setActiveViewId(v.id)}
+                className={`px-2.5 py-1 text-xs rounded-md transition-colors ${
+                  v.id === activeViewId
+                    ? 'bg-indigo-600 text-white shadow-sm'
+                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                }`}
+              >
+                {v.label}
+              </button>
+            ))}
+          </div>
         </div>
+        <button
+          onClick={loadRawFields}
+          className="px-2 py-1 text-[10px] font-medium rounded border border-slate-300 text-slate-500 hover:bg-slate-100 transition-colors"
+          title="Rohfelder von Windchill anzeigen (Diagnose)"
+        >
+          {rawFieldsLoading ? '…' : showRawFields ? 'Raw Fields ✕' : 'Raw Fields'}
+        </button>
       </div>
+
+      {/* Raw fields diagnostic panel */}
+      {showRawFields && rawFields && (
+        <div className="bg-slate-50 border border-slate-200 rounded p-3 text-xs font-mono max-h-[50vh] overflow-auto">
+          <div className="mb-2 font-sans text-[11px] font-semibold text-slate-600">
+            Windchill OData Raw Fields — {partNumber}
+          </div>
+          <RawFieldsSection title="Part Fields" data={(rawFields as Record<string, unknown>).part as Record<string, unknown> | undefined} />
+          <RawFieldsSection title="Usage Link Fields" data={(rawFields as Record<string, unknown>).usageLinks as Record<string, unknown> | undefined} />
+          <RawFieldsSection title="Child Part Fields" data={(rawFields as Record<string, unknown>).childPart as Record<string, unknown> | undefined} />
+        </div>
+      )}
 
       {/* BOM table */}
       <div
@@ -128,7 +171,7 @@ export default function StructureTab({ partNumber }: Props) {
         <table className="w-full text-sm border-collapse">
           <thead className="bg-slate-100 text-slate-600 text-xs border-b border-slate-200 sticky top-0 z-10">
             <tr>
-              <th className="text-left px-1 py-2 font-medium w-8" />
+              <th className="text-left px-1 py-2 font-medium w-16" />
               {activeView.columns.map(col => (
                 <th
                   key={col.key}
@@ -146,6 +189,36 @@ export default function StructureTab({ partNumber }: Props) {
           </tbody>
         </table>
       </div>
+    </div>
+  )
+}
+
+/** Collapsible section showing raw fields from the diagnostic endpoint. */
+function RawFieldsSection({ title, data }: { title: string; data?: Record<string, unknown> | null }) {
+  const [open, setOpen] = useState(true)
+  if (!data) return null
+
+  const fields = (data.fields as string[] | undefined) ?? []
+  const sample = (data.sample ?? data.samples) as Record<string, unknown> | Record<string, unknown>[] | undefined
+
+  return (
+    <div className="mb-3">
+      <button
+        onClick={() => setOpen(!open)}
+        className="text-[11px] font-semibold text-indigo-600 hover:text-indigo-800 mb-1"
+      >
+        {open ? '▾' : '▸'} {title} ({fields.length} Felder)
+      </button>
+      {open && (
+        <div className="ml-2">
+          <div className="text-slate-500 mb-1">Felder: {fields.join(', ')}</div>
+          {sample && (
+            <pre className="bg-white border border-slate-200 rounded p-2 text-[10px] overflow-x-auto whitespace-pre-wrap max-h-[30vh]">
+              {JSON.stringify(sample, null, 2)}
+            </pre>
+          )}
+        </div>
+      )}
     </div>
   )
 }

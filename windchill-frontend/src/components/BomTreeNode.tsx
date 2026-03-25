@@ -86,25 +86,29 @@ export default function BomTreeRow({ node, depth, viewColumns, totalCols }: Prop
         onClick={toggle}
         className="cursor-pointer select-none hover:bg-indigo-50/60 transition-colors border-b border-slate-200"
       >
-        {/* Expand icon + indentation */}
+        {/* Expand icon + type badge + indentation */}
         <td className="px-1 py-1.5 whitespace-nowrap" style={{ paddingLeft: indent }}>
-          <span className="inline-flex w-4 justify-center text-slate-400 text-[11px]">
-            {node.hasChildren && !noChildren ? (
-              loading ? (
-                <span className="animate-spin">⟳</span>
-              ) : expanded ? (
-                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-                </svg>
+          <span className="inline-flex items-center gap-1">
+            <span className="inline-flex w-4 justify-center text-slate-400 text-[11px]">
+              {node.hasChildren && !noChildren ? (
+                loading ? (
+                  <span className="animate-spin">⟳</span>
+                ) : expanded ? (
+                  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                  </svg>
+                ) : (
+                  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                  </svg>
+                )
               ) : (
-                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-                </svg>
-              )
-            ) : (
-              /* Leaf node — keep empty space for alignment, no dot */
-              <span className="w-3 h-3" />
-            )}
+                <span className="w-3 h-3" />
+              )}
+            </span>
+            <span className="inline-block bg-sky-50 text-sky-700 border border-sky-200 px-1 rounded text-[10px] font-medium">
+              {node.type === 'wt.part.WTPart' ? 'Part' : node.type?.replace(/^wt\.\w+\./, '') || 'Part'}
+            </span>
           </span>
         </td>
 

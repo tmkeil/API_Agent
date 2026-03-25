@@ -176,3 +176,96 @@ def diagnose_fields(
         "fields": fields,
         "records": items[:top],
     }
+
+
+@router.get(
+    "/diagnose/bom-fields",
+    summary="BOM Raw Fields — zeigt alle Part- und UsageLink-Felder fuer ein echtes Part",
+)
+def diagnose_bom_fields(
+    request: Request,
+    _: None = Depends(require_auth),
+    partNumber: str = Query(..., description="Part-Nummer"),
+):
+    """Holt ein Part + seine BOM Usage-Links und gibt alle Rohfelder zurueck.
+
+    Damit kann man ermitteln, welche Spalten (IBAs) Windchill tatsaechlich
+    fuer die Stueckliste liefert.  Nuetzlich fuer BOM-View-Konfiguration.
+    """
+    import time
+
+    t0 = time.monotonic()
+    client = get_client(request)
+
+    # 1) Part laden
+    try:
+        part_raw = client.find_part(partNumber)
+    except Exception as exc:
+        return {"error": str(exc), "partFields": [], "usageLinkFields": []}
+
+    part_fields = sorted(part_raw.keys())
+
+    # Filter out nested dicts/lists for display, but keep OData values
+    def _simplify(val):
+        if isinstance(val, dict):
+            # OData enum pattern {Value, Display}
+            if "Value" in val:
+                return val.get("Display") or val.get("Value")
+            if "ID" in val:
+                return f"<ref:{val.get('ID', '')[:20]}>"
+            return str(val)[:200]
+        if isinstance(val, list):
+            return f"<list:{len(val)} items>"
+        return val
+
+    part_simple = {k: _simplify(v) for k, v in part_raw.items() if not k.startswith("@")}
+
+    # 2) Usage-Links (BOM children) laden
+    from src.core.odata import extract_id
+
+    part_id = extract_id(part_raw)
+    usage_links_raw = client.get_bom_children(part_id)
+
+    link_fields: list[str] = []
+    links_simple: list[dict] = []
+    for link in usage_links_raw[:5]:  # max 5 links for overview
+        link_fields_set = set(link_fields)
+        for k in link.keys():
+            if not k.startswith("@") and k not in link_fields_set:
+                link_fields.append(k)
+                link_fields_set.add(k)
+        links_simple.append({k: _simplify(v) for k, v in link.items() if not k.startswith("@")})
+
+    # 3) Try resolving one child for child-Part field overview
+    child_raw = None
+    child_fields: list[str] = []
+    child_simple: dict = {}
+    if usage_links_raw:
+        child_raw = client.resolve_usage_link_child(usage_links_raw[0])
+        if child_raw:
+            child_fields = sorted(child_raw.keys())
+            child_simple = {k: _simplify(v) for k, v in child_raw.items() if not k.startswith("@")}
+
+    ms = round((time.monotonic() - t0) * 1000, 1)
+
+    return {
+        "partNumber": partNumber,
+        "durationMs": ms,
+        "part": {
+            "fieldCount": len(part_fields),
+            "fields": part_fields,
+            "sample": part_simple,
+        },
+        "usageLinks": {
+            "totalCount": len(usage_links_raw),
+            "shownCount": len(links_simple),
+            "fieldCount": len(link_fields),
+            "fields": link_fields,
+            "samples": links_simple,
+        },
+        "childPart": {
+            "fieldCount": len(child_fields),
+            "fields": child_fields,
+            "sample": child_simple,
+        } if child_raw else None,
+    }

@@ -291,6 +291,12 @@ export async function getBomViews(): Promise<BomViewConfig[]> {
   return request<BomViewConfig[]>(`${BASE}/bom/views`)
 }
 
+// BOM raw field diagnostics
+export async function diagnoseBomFields(partNumber: string): Promise<Record<string, unknown>> {
+  const params = new URLSearchParams({ partNumber })
+  return request<Record<string, unknown>>(`${BASE}/diagnose/bom-fields?${params}`)
+}
+
 // API Logs
 export async function getApiLogs(limit = 120): Promise<ApiLogEntry[]> {
   const data = await request<{ items: ApiLogEntry[] }>(

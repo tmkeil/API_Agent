@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { diagnoseBomFields, getBomRoot, getBomViews } from '../../api/client'
 import type { BomTreeNode, BomViewConfig } from '../../api/types'
 import BomTreeRow from '../BomTreeNode'
+import BomDetailPanel from './BomDetailPanel'
 
 interface Props {
   partNumber: string
@@ -36,6 +37,9 @@ export default function StructureTab({ partNumber }: Props) {
   const [rawFields, setRawFields] = useState<Record<string, unknown> | null>(null)
   const [rawFieldsLoading, setRawFieldsLoading] = useState(false)
   const [showRawFields, setShowRawFields] = useState(false)
+
+  // Selection for split-view detail panel
+  const [selectedNode, setSelectedNode] = useState<BomTreeNode | null>(null)
 
   const activeView = views.find(v => v.id === activeViewId) ?? views[0]
 
@@ -163,31 +167,54 @@ export default function StructureTab({ partNumber }: Props) {
         </div>
       )}
 
-      {/* BOM table */}
-      <div
-        className="bg-white rounded shadow-sm border border-slate-200 overflow-hidden"
-        style={{ maxHeight: '60vh', overflowY: 'auto', overflowX: 'auto' }}
-      >
-        <table className="w-full text-sm border-collapse">
-          <thead className="bg-slate-100 text-slate-600 text-xs border-b border-slate-200 sticky top-0 z-10">
-            <tr>
-              <th className="text-left px-1 py-2 font-medium w-16" />
-              {activeView.columns.map(col => (
-                <th
-                  key={col.key}
-                  className={`px-2 py-2 font-medium whitespace-nowrap ${
-                    col.align === 'right' ? 'text-right' : 'text-left'
-                  }`}
-                >
-                  {col.label}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody className="[&>tr:nth-child(even)]:bg-slate-50/70">
-            <BomTreeRow node={root} depth={0} viewColumns={activeView.columns} totalCols={totalCols} />
-          </tbody>
-        </table>
+      {/* ── Split layout: BOM table + detail panel ── */}
+      <div className="flex gap-0" style={{ height: '65vh' }}>
+        {/* LEFT — BOM table */}
+        <div
+          className={`bg-white rounded-l shadow-sm border border-slate-200 overflow-hidden flex flex-col transition-all ${
+            selectedNode ? 'w-[55%] min-w-[400px]' : 'w-full'
+          }`}
+        >
+          <div className="flex-1 overflow-auto">
+            <table className="w-full text-sm border-collapse">
+              <thead className="bg-slate-100 text-slate-600 text-xs border-b border-slate-200 sticky top-0 z-10">
+                <tr>
+                  <th className="text-left px-1 py-2 font-medium w-16" />
+                  {activeView.columns.map(col => (
+                    <th
+                      key={col.key}
+                      className={`px-2 py-2 font-medium whitespace-nowrap ${
+                        col.align === 'right' ? 'text-right' : 'text-left'
+                      }`}
+                    >
+                      {col.label}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="[&>tr:nth-child(even)]:bg-slate-50/70">
+                <BomTreeRow
+                  node={root}
+                  depth={0}
+                  viewColumns={activeView.columns}
+                  totalCols={totalCols}
+                  onSelect={setSelectedNode}
+                  selectedPartId={selectedNode?.partId}
+                />
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* RIGHT — Detail panel (shown when a node is selected) */}
+        {selectedNode && (
+          <div className="w-[45%] min-w-[320px] rounded-r shadow-sm border border-l-0 border-slate-200 overflow-hidden">
+            <BomDetailPanel
+              node={selectedNode}
+              onClose={() => setSelectedNode(null)}
+            />
+          </div>
+        )}
       </div>
     </div>
   )

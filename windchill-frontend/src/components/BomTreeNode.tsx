@@ -9,6 +9,10 @@ interface Props {
   depth: number
   viewColumns: BomViewColumn[]
   totalCols: number
+  /** Called when a row is clicked to select it (for split-view panel). */
+  onSelect?: (node: BomTreeNode) => void
+  /** The partId of the currently selected node (used for highlight). */
+  selectedPartId?: string
 }
 
 /** Resolve a column value from a BomTreeNode based on the column config. */
@@ -65,7 +69,7 @@ function getDocCellValue(doc: DocumentNode, col: BomViewColumn): string {
  * Children are lazily loaded on first expand click.
  * Columns are driven by the viewColumns config (BOM view support).
  */
-export default function BomTreeRow({ node, depth, viewColumns, totalCols }: Props) {
+export default function BomTreeRow({ node, depth, viewColumns, totalCols, onSelect, selectedPartId }: Props) {
   const hasInitialChildren = (node.children && node.children.length > 0) || node.childrenLoaded || false
   const [expanded, setExpanded] = useState(false)
   const [children, setChildren] = useState<BomTreeNode[]>(node.children || [])
@@ -75,6 +79,7 @@ export default function BomTreeRow({ node, depth, viewColumns, totalCols }: Prop
   const [loading, setLoading] = useState(false)
   const [noChildren, setNoChildren] = useState(false)
   const navigate = useNavigate()
+  const isSelected = selectedPartId === node.partId
 
   const toggle = useCallback(async () => {
     if (loading) return
@@ -114,8 +119,15 @@ export default function BomTreeRow({ node, depth, viewColumns, totalCols }: Prop
     <>
       {/* Main node row */}
       <tr
-        onClick={toggle}
-        className="cursor-pointer select-none hover:bg-indigo-50/60 transition-colors border-b border-slate-200"
+        onClick={() => {
+          toggle()
+          onSelect?.(node)
+        }}
+        className={`cursor-pointer select-none transition-colors border-b border-slate-200 ${
+          isSelected
+            ? 'bg-indigo-100/80 hover:bg-indigo-100'
+            : 'hover:bg-indigo-50/60'
+        }`}
       >
         {/* Expand icon + type badge + indentation */}
         <td className="px-1 py-1.5 whitespace-nowrap" style={{ paddingLeft: indent }}>
@@ -284,6 +296,8 @@ export default function BomTreeRow({ node, depth, viewColumns, totalCols }: Prop
               depth={depth + 1}
               viewColumns={viewColumns}
               totalCols={totalCols}
+              onSelect={onSelect}
+              selectedPartId={selectedPartId}
             />
           ))}
 

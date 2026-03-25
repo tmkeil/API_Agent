@@ -29,6 +29,13 @@ function getCellValue(node: BomTreeNode, col: BomViewColumn): string {
     const val = attrs[col.key]
     return val != null ? String(val) : ''
   }
+  // "partAttr" source: dynamic key inside partAttributes
+  if (col.source === 'partAttr') {
+    const attrs = node.partAttributes
+    if (!attrs) return ''
+    const val = attrs[col.key]
+    return val != null ? String(val) : ''
+  }
   return ''
 }
 

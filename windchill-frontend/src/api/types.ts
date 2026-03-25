@@ -39,6 +39,7 @@ export interface BomTreeNode {
   lineNumber?: string
   organizationId?: string
   usageLinkAttributes?: Record<string, unknown>
+  partAttributes?: Record<string, unknown>
   // Frontend-only state
   children?: BomTreeNode[]
   documents?: DocumentNode[]
@@ -68,7 +69,7 @@ export interface BomNodeResponse {
 export interface BomViewColumn {
   key: string
   label: string
-  source: 'part' | 'link' | 'usageLink'
+  source: 'part' | 'link' | 'usageLink' | 'partAttr'
   align: 'left' | 'right'
 }
 

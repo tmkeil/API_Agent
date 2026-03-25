@@ -92,6 +92,7 @@ class BomTreeNode(BaseModel):
     lineNumber: str = ""
     organizationId: str = ""
     usageLinkAttributes: dict[str, Any] = {}
+    partAttributes: dict[str, Any] = {}
 
 
 class DocumentNode(BaseModel):

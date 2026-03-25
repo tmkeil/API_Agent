@@ -82,13 +82,38 @@ def _has_children(raw: dict) -> bool:
     return True
 
 
+def _flatten_value(val: object) -> object:
+    """Flatten OData values for BOM column display.
+
+    - dict with Value/Display → Display or Value
+    - list → join first values with ', '
+    - None → skip
+    - scalar → as-is
+    """
+    if val is None:
+        return None
+    if isinstance(val, dict):
+        return str(val.get("Display") or val.get("Value") or val)
+    if isinstance(val, list):
+        if len(val) == 0:
+            return None
+        parts = []
+        for item in val:
+            if isinstance(item, dict):
+                parts.append(str(item.get("Value") or item.get("Display") or item))
+            else:
+                parts.append(str(item))
+        return ", ".join(parts)
+    return val
+
+
 def _map_tree_node(
     raw: dict, usage_link: Optional[dict] = None
 ) -> BomTreeNode:
     n = normalize_item(raw)
     node = BomTreeNode(
         partId=n["id"],
-        type=WcType.PART,
+        type=raw.get("ObjectType") or WcType.PART,
         number=n["number"],
         name=n["name"],
         version=n["version"],
@@ -98,6 +123,23 @@ def _map_tree_node(
         hasChildren=_has_children(raw),
         organizationId=n.get("organization_id", ""),
     )
+
+    # ── Capture ALL part-level attributes (for BOM view columns) ──
+    _SKIP_PART_KEYS = {
+        "ID", "Number", "Name", "Version", "Iteration", "State",
+        "Identity", "OrganizationName", "VersionID",
+    }
+    part_attrs: dict[str, object] = {}
+    for k, v in raw.items():
+        if k.startswith("@") or k.startswith("odata"):
+            continue
+        if k in _SKIP_PART_KEYS:
+            continue
+        flat = _flatten_value(v)
+        if flat is None:
+            continue
+        part_attrs[k] = flat
+    node.partAttributes = part_attrs
 
     if usage_link:
         qty = usage_link.get("Quantity", 1)
@@ -123,9 +165,9 @@ def _map_tree_node(
             or ""
         )
 
-        # Capture ALL remaining scalar usage-link attributes
+        # Capture ALL remaining usage-link attributes
         # (for BOM view column support and AI Agent access)
-        _SKIP_KEYS = {
+        _SKIP_LINK_KEYS = {
             "Quantity", "Unit", "QuantityUnit", "LineNumber", "FindNumber",
             "Uses", "RoleBObject", "Child", "Part", "ID",
             "UsesInterface", "BOMComponents", "PartStructure",
@@ -134,13 +176,12 @@ def _map_tree_node(
         for k, v in usage_link.items():
             if k.startswith("@") or k.startswith("odata"):
                 continue
-            if k in _SKIP_KEYS:
+            if k in _SKIP_LINK_KEYS:
                 continue
-            if isinstance(v, (dict, list)):
+            flat = _flatten_value(v)
+            if flat is None:
                 continue
-            if v is None:
-                continue
-            extra[k] = v
+            extra[k] = flat
         node.usageLinkAttributes = extra
 
     return node

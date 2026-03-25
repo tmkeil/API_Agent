@@ -9,6 +9,7 @@ interface Props {
 export default function DetailsTab({ detail }: Props) {
   const rows: [string, string][] = [
     ['Typ', TYPE_LABELS[detail.objectType] || detail.objectType],
+    ['Subtyp', detail.subType || '—'],
     ['Nummer', detail.number],
     ['Name', detail.name],
     ['Version', detail.version],

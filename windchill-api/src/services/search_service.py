@@ -132,14 +132,30 @@ def get_object_detail(
     client: WRSClient, type_key: str, code: str
 ) -> ObjectDetailResponse:
     """Generische Detail-Abfrage fuer jeden Windchill-Objekttyp."""
+    from src.services.parts_service import _flatten_value
     t0 = time.monotonic()
 
     raw = client.find_object(type_key, code)
     n = normalize_item(raw)
 
+    # Capture all raw attributes (flattened for display)
+    _SKIP_KEYS = {"ID", "id", "Number", "Name", "Version", "Iteration",
+                  "State", "Identity", "OrganizationName", "VersionID"}
+    all_attrs: dict[str, object] = {}
+    for k, v in raw.items():
+        if k.startswith("@") or k.startswith("odata") or k.startswith("_"):
+            continue
+        if k in _SKIP_KEYS:
+            continue
+        flat = _flatten_value(v)
+        if flat is None:
+            continue
+        all_attrs[k] = flat
+
     detail = ObjectDetail(
         objectId=n["id"],
         objectType=n.get("_entity_type", ""),
+        subType=str(raw.get("ObjectType") or ""),
         typeKey=n.get("_entity_type_key", type_key),
         number=n["number"],
         name=n["name"],
@@ -150,6 +166,7 @@ def get_object_detail(
         context=n["context"],
         lastModified=n["last_modified"],
         createdOn=n["created_on"],
+        allAttributes=all_attrs,
     )
 
     ms = round((time.monotonic() - t0) * 1000, 1)

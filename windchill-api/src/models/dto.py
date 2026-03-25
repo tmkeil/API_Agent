@@ -40,6 +40,7 @@ class ObjectDetail(BaseModel):
     """Generic detail for any Windchill object type."""
     objectId: str = ""
     objectType: str = ""       # WTPart, WTDocument, EPMDocument, ...
+    subType: str = ""          # OData ObjectType (Product, Component, Production Document, …)
     typeKey: str = ""          # part, document, cad_document, ...
     number: str = ""
     name: str = ""
@@ -50,6 +51,7 @@ class ObjectDetail(BaseModel):
     context: str = ""
     lastModified: str = ""
     createdOn: str = ""
+    allAttributes: dict[str, Any] = {}  # all raw OData attributes (flattened)
 
 
 class ObjectDetailResponse(BaseModel):

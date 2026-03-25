@@ -144,6 +144,7 @@ export interface PartDetailResponse {
 export interface ObjectDetail {
   objectId: string
   objectType: string
+  subType?: string
   typeKey: string
   number: string
   name: string
@@ -154,6 +155,7 @@ export interface ObjectDetail {
   context: string
   lastModified: string
   createdOn: string
+  allAttributes?: Record<string, unknown>
 }
 
 export interface ObjectDetailResponse {

@@ -1,4 +1,5 @@
 import { useCallback, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { getBomChildren } from '../api/client'
 import type { BomTreeNode, BomViewColumn, DocumentNode } from '../api/types'
 import { subtypeBadgeStyle } from '../utils/labels'
@@ -73,6 +74,7 @@ export default function BomTreeRow({ node, depth, viewColumns, totalCols }: Prop
   const [loaded, setLoaded] = useState(hasInitialChildren)
   const [loading, setLoading] = useState(false)
   const [noChildren, setNoChildren] = useState(false)
+  const navigate = useNavigate()
 
   const toggle = useCallback(async () => {
     if (loading) return
@@ -142,6 +144,7 @@ export default function BomTreeRow({ node, depth, viewColumns, totalCols }: Prop
         {viewColumns.map((col, ci) => {
           const val = getCellValue(node, col)
           const isFirst = ci === 0
+          const isNumber = col.key === 'number' && col.source === 'part'
           return (
             <td
               key={col.key}
@@ -151,7 +154,23 @@ export default function BomTreeRow({ node, depth, viewColumns, totalCols }: Prop
                 col.key === 'name' ? 'max-w-[280px] truncate' : ''
               }`}
             >
-              {val}
+              {isNumber && node.number ? (
+                <span className="inline-flex items-center gap-1">
+                  <span>{val}</span>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      navigate(`/detail/part/${encodeURIComponent(node.number)}`)
+                    }}
+                    className="text-indigo-400 hover:text-indigo-600 transition-colors"
+                    title="Details öffnen"
+                  >
+                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                    </svg>
+                  </button>
+                </span>
+              ) : val}
             </td>
           )
         })}
@@ -161,8 +180,17 @@ export default function BomTreeRow({ node, depth, viewColumns, totalCols }: Prop
       {expanded && (
         <>
           {/* Documents */}
-          {documents.map((doc, i) => (
-            <tr key={`doc-${doc.docId || i}`} className="text-xs border-b border-slate-100">
+          {documents.map((doc, i) => {
+            const docTypeKey = doc.type === 'EPMDocument' || doc.type === 'CADDocument' ? 'cad_document' : 'document'
+            return (
+            <tr
+              key={`doc-${doc.docId || i}`}
+              className="text-xs border-b border-slate-100 cursor-pointer hover:bg-amber-50/40 transition-colors"
+              onClick={(e) => {
+                e.stopPropagation()
+                navigate(`/detail/${docTypeKey}/${encodeURIComponent(doc.number)}`)
+              }}
+            >
               <td style={{ paddingLeft: indent + 20 }} className="py-0.5">
                 <span className={`inline-block border px-1 rounded text-[10px] font-medium ${subtypeBadgeStyle(doc.subType || 'Dokument')}`}>
                   {doc.subType || 'Doc'}
@@ -182,11 +210,21 @@ export default function BomTreeRow({ node, depth, viewColumns, totalCols }: Prop
                 )
               })}
             </tr>
-          ))}
+            )
+          })}
 
           {/* CAD Documents */}
-          {cadDocuments.map((doc, i) => (
-            <tr key={`cad-${doc.docId || i}`} className="text-xs border-b border-slate-100">
+          {cadDocuments.map((doc, i) => {
+            const cadTypeKey = doc.type === 'EPMDocument' || doc.type === 'CADDocument' ? 'cad_document' : 'document'
+            return (
+            <tr
+              key={`cad-${doc.docId || i}`}
+              className="text-xs border-b border-slate-100 cursor-pointer hover:bg-violet-50/40 transition-colors"
+              onClick={(e) => {
+                e.stopPropagation()
+                navigate(`/detail/${cadTypeKey}/${encodeURIComponent(doc.number)}`)
+              }}
+            >
               <td style={{ paddingLeft: indent + 20 }} className="py-0.5">
                 <span className={`inline-block border px-1 rounded text-[10px] font-medium ${subtypeBadgeStyle(doc.subType || 'CAD-Dokument')}`}>
                   {doc.subType || 'CAD'}
@@ -206,7 +244,8 @@ export default function BomTreeRow({ node, depth, viewColumns, totalCols }: Prop
                 )
               })}
             </tr>
-          ))}
+            )
+          })}
 
           {/* Children */}
           {children.map((child, idx) => (

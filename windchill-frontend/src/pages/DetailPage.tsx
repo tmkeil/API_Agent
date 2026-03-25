@@ -4,10 +4,13 @@ import { getAffectedItems, getObjectDetail, getResultingItems } from '../api/cli
 import type { ObjectDetail } from '../api/types'
 import DetailHeader from '../components/detail/DetailHeader'
 import DetailsTab from '../components/detail/DetailsTab'
+import AttributesTab from '../components/detail/AttributesTab'
 import StructureTab from '../components/detail/StructureTab'
 import DocumentsTab from '../components/detail/DocumentsTab'
 import CadTab from '../components/detail/CadTab'
+import AllDocumentsTab from '../components/detail/AllDocumentsTab'
 import WhereUsedTab from '../components/detail/WhereUsedTab'
+import OccurrencesTab from '../components/detail/OccurrencesTab'
 import ChangeItemsTab from '../components/detail/ChangeItemsTab'
 import ReferencingPartsTab from '../components/detail/ReferencingPartsTab'
 import FileInfoTab from '../components/detail/FileInfoTab'
@@ -15,7 +18,8 @@ import VersionsTab from '../components/detail/VersionsTab'
 import LifecycleTab from '../components/detail/LifecycleTab'
 import WriteActionsPanel from '../components/detail/WriteActionsPanel'
 
-type TabKey = 'details' | 'structure' | 'documents' | 'cad' | 'whereUsed'
+type TabKey = 'details' | 'attributes' | 'structure' | 'documents' | 'cad' | 'allDocuments'
+  | 'whereUsed' | 'occurrences'
   | 'affected' | 'resulting' | 'referencingParts' | 'files' | 'versions' | 'lifecycle' | 'actions'
 
 interface TabDef {
@@ -27,10 +31,11 @@ interface TabDef {
 const TABS_BY_TYPE: Record<string, TabDef[]> = {
   part: [
     { key: 'details', label: 'Details' },
+    { key: 'attributes', label: 'Attribute' },
     { key: 'structure', label: 'Struktur (BOM)' },
-    { key: 'documents', label: 'Dokumente' },
-    { key: 'cad', label: 'CAD' },
+    { key: 'allDocuments', label: 'Dokumente' },
     { key: 'whereUsed', label: 'Where-Used' },
+    { key: 'occurrences', label: 'Vorkommen' },
     { key: 'versions', label: 'Versionen' },
     { key: 'lifecycle', label: 'Lifecycle' },
     { key: 'actions', label: 'Aktionen' },
@@ -164,10 +169,13 @@ export default function DetailPage() {
       {/* Tab content */}
       <div>
         {activeTab === 'details' && <DetailsTab detail={detail} />}
+        {activeTab === 'attributes' && <AttributesTab detail={detail} />}
         {activeTab === 'structure' && <StructureTab partNumber={detail.number} />}
         {activeTab === 'documents' && <DocumentsTab partCode={code} />}
         {activeTab === 'cad' && <CadTab partCode={code} />}
+        {activeTab === 'allDocuments' && <AllDocumentsTab partCode={code} />}
         {activeTab === 'whereUsed' && <WhereUsedTab partCode={code} />}
+        {activeTab === 'occurrences' && <OccurrencesTab partCode={code} />}
         {activeTab === 'affected' && (
           <ChangeItemsTab
             label="Affected Items"

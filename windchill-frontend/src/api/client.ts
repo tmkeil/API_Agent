@@ -2,6 +2,7 @@ import type {
   AdvancedSearchRequest,
   BomNodeResponse,
   BomTreeNode,
+  BomViewConfig,
   BulkItem,
   BulkResponse,
   ChangeItemsResponse,
@@ -284,6 +285,10 @@ export async function getBomChildren(
 ): Promise<BomNodeResponse> {
   const params = new URLSearchParams({ partId })
   return request<BomNodeResponse>(`${BASE}/bom/children?${params}`)
+}
+
+export async function getBomViews(): Promise<BomViewConfig[]> {
+  return request<BomViewConfig[]>(`${BASE}/bom/views`)
 }
 
 // API Logs

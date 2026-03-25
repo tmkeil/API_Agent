@@ -13,10 +13,12 @@ import time
 from fastapi import APIRouter, Depends, Query, Request
 
 from src.core.auth import require_auth
+from src.core.bom_views import BOM_VIEWS
 from src.core.dependencies import get_client, get_session
 from src.core.session import log_session_event
 from src.models.dto import (
     BomNodeResponse,
+    BomViewConfig,
     DocumentListResponse,
     OccurrencesResponse,
     PartDetailResponse,
@@ -147,3 +149,17 @@ def bom_children(
             f"children={len(result.children)} docs={len(result.documents)} cad={len(result.cadDocuments)}",
         )
     return result
+
+
+@router.get(
+    "/bom/views",
+    response_model=list[BomViewConfig],
+    summary="Verfuegbare BOM-Ansichten (Spalten-Konfigurationen)",
+)
+def bom_views() -> list[BomViewConfig]:
+    """Return the list of available BOM view configurations.
+
+    Each view defines which columns to display in the BOM table.
+    No authentication required — view configs are static metadata.
+    """
+    return BOM_VIEWS

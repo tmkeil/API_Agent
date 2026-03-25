@@ -38,6 +38,7 @@ export interface BomTreeNode {
   quantityUnit?: string
   lineNumber?: string
   organizationId?: string
+  usageLinkAttributes?: Record<string, unknown>
   // Frontend-only state
   children?: BomTreeNode[]
   documents?: DocumentNode[]
@@ -60,6 +61,21 @@ export interface BomNodeResponse {
   documents: DocumentNode[]
   cadDocuments: DocumentNode[]
   timing: TimingInfo
+}
+
+// ── BOM View Configuration ──────────────────────────────────
+
+export interface BomViewColumn {
+  key: string
+  label: string
+  source: 'part' | 'link' | 'usageLink'
+  align: 'left' | 'right'
+}
+
+export interface BomViewConfig {
+  id: string
+  label: string
+  columns: BomViewColumn[]
 }
 
 export interface SystemInfo {

@@ -91,6 +91,7 @@ class BomTreeNode(BaseModel):
     quantityUnit: str = ""
     lineNumber: str = ""
     organizationId: str = ""
+    usageLinkAttributes: dict[str, Any] = {}
 
 
 class DocumentNode(BaseModel):
@@ -107,6 +108,24 @@ class BomNodeResponse(BaseModel):
     documents: list[DocumentNode] = []
     cadDocuments: list[DocumentNode] = []
     timing: TimingInfo = TimingInfo()
+
+
+# ── BOM View Configuration ──────────────────────────────────
+
+
+class BomViewColumn(BaseModel):
+    """Describes a single column in a BOM view."""
+    key: str                       # field key to display
+    label: str                     # column header label
+    source: str = "part"           # "part" | "link" | "usageLink"
+    align: str = "left"            # "left" | "right"
+
+
+class BomViewConfig(BaseModel):
+    """A named BOM view with its column set."""
+    id: str
+    label: str
+    columns: list[BomViewColumn]
 
 
 # ── Occurrences ──────────────────────────────────────────────

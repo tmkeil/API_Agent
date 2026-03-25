@@ -123,6 +123,26 @@ def _map_tree_node(
             or ""
         )
 
+        # Capture ALL remaining scalar usage-link attributes
+        # (for BOM view column support and AI Agent access)
+        _SKIP_KEYS = {
+            "Quantity", "Unit", "QuantityUnit", "LineNumber", "FindNumber",
+            "Uses", "RoleBObject", "Child", "Part", "ID",
+            "UsesInterface", "BOMComponents", "PartStructure",
+        }
+        extra: dict[str, object] = {}
+        for k, v in usage_link.items():
+            if k.startswith("@") or k.startswith("odata"):
+                continue
+            if k in _SKIP_KEYS:
+                continue
+            if isinstance(v, (dict, list)):
+                continue
+            if v is None:
+                continue
+            extra[k] = v
+        node.usageLinkAttributes = extra
+
     return node
 
 

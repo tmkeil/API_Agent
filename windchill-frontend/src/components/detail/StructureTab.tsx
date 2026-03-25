@@ -1,10 +1,24 @@
-import { useCallback, useState } from 'react'
-import { getBomRoot } from '../../api/client'
-import type { BomTreeNode } from '../../api/types'
+import { useCallback, useEffect, useState } from 'react'
+import { getBomRoot, getBomViews } from '../../api/client'
+import type { BomTreeNode, BomViewConfig } from '../../api/types'
 import BomTreeRow from '../BomTreeNode'
 
 interface Props {
   partNumber: string
+}
+
+/** Default view config used while views are loading or if fetch fails. */
+const FALLBACK_VIEW: BomViewConfig = {
+  id: 'default',
+  label: 'Standard',
+  columns: [
+    { key: 'number', label: 'Nummer', source: 'part', align: 'left' },
+    { key: 'name', label: 'Name', source: 'part', align: 'left' },
+    { key: 'version', label: 'Version', source: 'part', align: 'left' },
+    { key: 'state', label: 'Status', source: 'part', align: 'left' },
+    { key: 'quantity', label: 'Menge', source: 'link', align: 'right' },
+    { key: 'quantityUnit', label: 'Einheit', source: 'link', align: 'left' },
+  ],
 }
 
 /** Structure/BOM tab — loads root on first user interaction, not automatically. */
@@ -13,6 +27,23 @@ export default function StructureTab({ partNumber }: Props) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [loaded, setLoaded] = useState(false)
+
+  // BOM view state
+  const [views, setViews] = useState<BomViewConfig[]>([FALLBACK_VIEW])
+  const [activeViewId, setActiveViewId] = useState('default')
+
+  const activeView = views.find(v => v.id === activeViewId) ?? views[0]
+
+  // Load available views once on mount
+  useEffect(() => {
+    let cancelled = false
+    getBomViews()
+      .then(v => {
+        if (!cancelled && v.length > 0) setViews(v)
+      })
+      .catch(() => { /* keep fallback */ })
+    return () => { cancelled = true }
+  }, [])
 
   const load = useCallback(async (signal?: AbortSignal) => {
     if (loaded || loading) return
@@ -64,27 +95,57 @@ export default function StructureTab({ partNumber }: Props) {
 
   if (!root) return null
 
+  // Total column count = 1 (expand) + view columns
+  const totalCols = 1 + activeView.columns.length
+
   return (
-    <div
-      className="bg-white rounded shadow-sm border border-slate-200 overflow-hidden"
-      style={{ maxHeight: '60vh', overflowY: 'auto' }}
-    >
-      <table className="w-full text-sm border-collapse">
-        <thead className="bg-slate-100 text-slate-600 text-xs border-b border-slate-200 sticky top-0 z-10">
-          <tr>
-            <th className="text-left px-1 py-2 font-medium w-8" />
-            <th className="text-left px-2 py-2 font-medium">Nummer</th>
-            <th className="text-left px-2 py-2 font-medium">Name</th>
-            <th className="text-left px-2 py-2 font-medium">Version</th>
-            <th className="text-left px-2 py-2 font-medium">Status</th>
-            <th className="text-right px-2 py-2 font-medium">Menge</th>
-            <th className="text-left px-2 py-2 font-medium">Einheit</th>
-          </tr>
-        </thead>
-        <tbody className="[&>tr:nth-child(even)]:bg-slate-50/70">
-          <BomTreeRow node={root} depth={0} />
-        </tbody>
-      </table>
+    <div className="space-y-2">
+      {/* View selector bar */}
+      <div className="flex items-center gap-3 px-1">
+        <label className="text-xs font-medium text-slate-500">BOM-Ansicht:</label>
+        <div className="flex gap-1">
+          {views.map(v => (
+            <button
+              key={v.id}
+              onClick={() => setActiveViewId(v.id)}
+              className={`px-2.5 py-1 text-xs rounded-md transition-colors ${
+                v.id === activeViewId
+                  ? 'bg-indigo-600 text-white shadow-sm'
+                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+              }`}
+            >
+              {v.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* BOM table */}
+      <div
+        className="bg-white rounded shadow-sm border border-slate-200 overflow-hidden"
+        style={{ maxHeight: '60vh', overflowY: 'auto', overflowX: 'auto' }}
+      >
+        <table className="w-full text-sm border-collapse">
+          <thead className="bg-slate-100 text-slate-600 text-xs border-b border-slate-200 sticky top-0 z-10">
+            <tr>
+              <th className="text-left px-1 py-2 font-medium w-8" />
+              {activeView.columns.map(col => (
+                <th
+                  key={col.key}
+                  className={`px-2 py-2 font-medium whitespace-nowrap ${
+                    col.align === 'right' ? 'text-right' : 'text-left'
+                  }`}
+                >
+                  {col.label}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody className="[&>tr:nth-child(even)]:bg-slate-50/70">
+            <BomTreeRow node={root} depth={0} viewColumns={activeView.columns} totalCols={totalCols} />
+          </tbody>
+        </table>
+      </div>
     </div>
   )
 }

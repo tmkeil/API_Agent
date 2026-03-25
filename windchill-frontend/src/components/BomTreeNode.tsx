@@ -1,18 +1,44 @@
 import { useCallback, useState } from 'react'
 import { getBomChildren } from '../api/client'
-import type { BomTreeNode, DocumentNode } from '../api/types'
+import type { BomTreeNode, BomViewColumn, DocumentNode } from '../api/types'
 
 interface Props {
   node: BomTreeNode
   depth: number
+  viewColumns: BomViewColumn[]
+  totalCols: number
+}
+
+/** Resolve a column value from a BomTreeNode based on the column config. */
+function getCellValue(node: BomTreeNode, col: BomViewColumn): string {
+  const nodeRecord = node as unknown as Record<string, unknown>
+  // "part" source: direct field on node
+  if (col.source === 'part') {
+    const val = nodeRecord[col.key]
+    return val != null ? String(val) : ''
+  }
+  // "link" source: standard extracted usage-link fields
+  if (col.source === 'link') {
+    const val = nodeRecord[col.key]
+    return val != null ? String(val) : ''
+  }
+  // "usageLink" source: dynamic key inside usageLinkAttributes
+  if (col.source === 'usageLink') {
+    const attrs = node.usageLinkAttributes
+    if (!attrs) return ''
+    const val = attrs[col.key]
+    return val != null ? String(val) : ''
+  }
+  return ''
 }
 
 /**
  * BOM tree node rendered as <tr> rows inside a parent <table>.
  * Returns a React Fragment containing one or more <tr> elements.
  * Children are lazily loaded on first expand click.
+ * Columns are driven by the viewColumns config (BOM view support).
  */
-export default function BomTreeRow({ node, depth }: Props) {
+export default function BomTreeRow({ node, depth, viewColumns, totalCols }: Props) {
   const hasInitialChildren = (node.children && node.children.length > 0) || node.childrenLoaded || false
   const [expanded, setExpanded] = useState(false)
   const [children, setChildren] = useState<BomTreeNode[]>(node.children || [])
@@ -76,40 +102,29 @@ export default function BomTreeRow({ node, depth }: Props) {
                 </svg>
               )
             ) : (
-              <span className="text-slate-300">·</span>
+              /* Leaf node — keep empty space for alignment, no dot */
+              <span className="w-3 h-3" />
             )}
           </span>
         </td>
 
-        {/* Nummer */}
-        <td className="px-2 py-1.5 font-mono text-sm text-slate-800 whitespace-nowrap">
-          {node.number}
-        </td>
-
-        {/* Name */}
-        <td className="px-2 py-1.5 text-sm text-slate-600 max-w-[280px] truncate">
-          {node.name}
-        </td>
-
-        {/* Version */}
-        <td className="px-2 py-1.5 text-sm text-slate-500 whitespace-nowrap">
-          {node.version}
-        </td>
-
-        {/* Status */}
-        <td className="px-2 py-1.5 text-sm text-slate-500 whitespace-nowrap">
-          {node.state}
-        </td>
-
-        {/* Menge */}
-        <td className="px-2 py-1.5 text-sm text-slate-500 font-mono whitespace-nowrap text-right">
-          {node.quantity != null ? node.quantity : ''}
-        </td>
-
-        {/* Einheit */}
-        <td className="px-2 py-1.5 text-sm text-slate-500 whitespace-nowrap">
-          {node.quantityUnit || ''}
-        </td>
+        {/* Dynamic columns driven by view config */}
+        {viewColumns.map((col, ci) => {
+          const val = getCellValue(node, col)
+          const isFirst = ci === 0
+          return (
+            <td
+              key={col.key}
+              className={`px-2 py-1.5 text-sm whitespace-nowrap ${
+                col.align === 'right' ? 'text-right font-mono' : ''
+              } ${isFirst ? 'font-mono text-slate-800' : 'text-slate-500'} ${
+                col.key === 'name' ? 'max-w-[280px] truncate' : ''
+              }`}
+            >
+              {val}
+            </td>
+          )
+        })}
       </tr>
 
       {/* Expanded content */}
@@ -119,16 +134,16 @@ export default function BomTreeRow({ node, depth }: Props) {
           {documents.map((doc, i) => (
             <tr key={`doc-${doc.docId || i}`} className="text-xs border-b border-slate-100">
               <td style={{ paddingLeft: indent + 20 }} className="py-0.5" />
-              <td className="px-2 py-0.5 whitespace-nowrap">
+              <td className="px-2 py-0.5 whitespace-nowrap" colSpan={Math.min(2, viewColumns.length)}>
                 <span className="inline-block bg-amber-50 text-amber-700 border border-amber-200 px-1 rounded text-[10px] font-medium mr-1">
                   Doc
                 </span>
                 <span className="font-mono text-slate-600">{doc.number}</span>
+                {viewColumns.length > 1 && <span className="ml-2 text-slate-400">{doc.name}</span>}
               </td>
-              <td className="px-2 py-0.5 text-slate-400 truncate">{doc.name}</td>
-              <td className="px-2 py-0.5 text-slate-400">{doc.version}</td>
-              <td className="px-2 py-0.5 text-slate-400">{doc.state}</td>
-              <td colSpan={2} />
+              {viewColumns.length > 2 && <td className="px-2 py-0.5 text-slate-400">{doc.version}</td>}
+              {viewColumns.length > 3 && <td className="px-2 py-0.5 text-slate-400">{doc.state}</td>}
+              {viewColumns.length > 4 && <td colSpan={viewColumns.length - 4} />}
             </tr>
           ))}
 
@@ -136,16 +151,16 @@ export default function BomTreeRow({ node, depth }: Props) {
           {cadDocuments.map((doc, i) => (
             <tr key={`cad-${doc.docId || i}`} className="text-xs border-b border-slate-100">
               <td style={{ paddingLeft: indent + 20 }} className="py-0.5" />
-              <td className="px-2 py-0.5 whitespace-nowrap">
+              <td className="px-2 py-0.5 whitespace-nowrap" colSpan={Math.min(2, viewColumns.length)}>
                 <span className="inline-block bg-violet-50 text-violet-700 border border-violet-200 px-1 rounded text-[10px] font-medium mr-1">
                   CAD
                 </span>
                 <span className="font-mono text-slate-600">{doc.number}</span>
+                {viewColumns.length > 1 && <span className="ml-2 text-slate-400">{doc.name}</span>}
               </td>
-              <td className="px-2 py-0.5 text-slate-400 truncate">{doc.name}</td>
-              <td className="px-2 py-0.5 text-slate-400">{doc.version}</td>
-              <td className="px-2 py-0.5 text-slate-400">{doc.state}</td>
-              <td colSpan={2} />
+              {viewColumns.length > 2 && <td className="px-2 py-0.5 text-slate-400">{doc.version}</td>}
+              {viewColumns.length > 3 && <td className="px-2 py-0.5 text-slate-400">{doc.state}</td>}
+              {viewColumns.length > 4 && <td colSpan={viewColumns.length - 4} />}
             </tr>
           ))}
 
@@ -155,6 +170,8 @@ export default function BomTreeRow({ node, depth }: Props) {
               key={`${child.partId || child.number}-${idx}`}
               node={child}
               depth={depth + 1}
+              viewColumns={viewColumns}
+              totalCols={totalCols}
             />
           ))}
 
@@ -162,7 +179,7 @@ export default function BomTreeRow({ node, depth }: Props) {
           {loaded && children.length === 0 && documents.length === 0 && cadDocuments.length === 0 && (
             <tr>
               <td
-                colSpan={7}
+                colSpan={totalCols}
                 style={{ paddingLeft: indent + 20 }}
                 className="text-xs text-slate-400 italic py-1"
               >

@@ -125,17 +125,9 @@ def _map_tree_node(
     )
 
     # ── Capture ALL part-level attributes (for BOM view columns) ──
-    # Skip fields already extracted into named BomTreeNode fields
-    # (includes ALL aliases from odata._FIELD_ALIASES to prevent duplicates)
     _SKIP_PART_KEYS = {
-        "ID", "id",
-        "Number", "PartNumber",
-        "Name", "DisplayName",
-        "Version", "VersionID",
-        "Iteration", "IterationID",
-        "State", "LifeCycleState",
-        "Identity", "DisplayIdentity",
-        "OrganizationName",
+        "ID", "Number", "Name", "Version", "Iteration", "State",
+        "Identity", "OrganizationName", "VersionID",
     }
     part_attrs: dict[str, object] = {}
     for k, v in raw.items():

@@ -39,6 +39,24 @@ function getCellValue(node: BomTreeNode, col: BomViewColumn): string {
   return ''
 }
 
+/** Resolve a column value from a DocumentNode — maps shared fields dynamically. */
+function getDocCellValue(doc: DocumentNode, col: BomViewColumn): string {
+  // Documents only have number, name, version, state as named fields.
+  // Map them when the view column key matches, regardless of source.
+  const docRecord: Record<string, string | undefined> = {
+    number: doc.number,
+    name: doc.name,
+    version: doc.version,
+    state: doc.state,
+  }
+  // "part" source keys that Documents share with Parts
+  if (col.source === 'part') {
+    const val = docRecord[col.key]
+    return val != null ? String(val) : ''
+  }
+  return ''
+}
+
 /**
  * BOM tree node rendered as <tr> rows inside a parent <table>.
  * Returns a React Fragment containing one or more <tr> elements.
@@ -144,34 +162,48 @@ export default function BomTreeRow({ node, depth, viewColumns, totalCols }: Prop
           {/* Documents */}
           {documents.map((doc, i) => (
             <tr key={`doc-${doc.docId || i}`} className="text-xs border-b border-slate-100">
-              <td style={{ paddingLeft: indent + 20 }} className="py-0.5" />
-              <td className="px-2 py-0.5 whitespace-nowrap" colSpan={Math.min(2, viewColumns.length)}>
-                <span className="inline-block bg-amber-50 text-amber-700 border border-amber-200 px-1 rounded text-[10px] font-medium mr-1">
+              <td style={{ paddingLeft: indent + 20 }} className="py-0.5">
+                <span className="inline-block bg-amber-50 text-amber-700 border border-amber-200 px-1 rounded text-[10px] font-medium">
                   Doc
                 </span>
-                <span className="font-mono text-slate-600">{doc.number}</span>
-                {viewColumns.length > 1 && <span className="ml-2 text-slate-400">{doc.name}</span>}
               </td>
-              {viewColumns.length > 2 && <td className="px-2 py-0.5 text-slate-400">{doc.version}</td>}
-              {viewColumns.length > 3 && <td className="px-2 py-0.5 text-slate-400">{doc.state}</td>}
-              {viewColumns.length > 4 && <td colSpan={viewColumns.length - 4} />}
+              {viewColumns.map((col) => {
+                const val = getDocCellValue(doc, col)
+                return (
+                  <td
+                    key={col.key}
+                    className={`px-2 py-0.5 whitespace-nowrap ${
+                      col.key === 'number' ? 'font-mono text-slate-600' : 'text-slate-400'
+                    } ${col.key === 'name' ? 'max-w-[280px] truncate' : ''}`}
+                  >
+                    {val}
+                  </td>
+                )
+              })}
             </tr>
           ))}
 
           {/* CAD Documents */}
           {cadDocuments.map((doc, i) => (
             <tr key={`cad-${doc.docId || i}`} className="text-xs border-b border-slate-100">
-              <td style={{ paddingLeft: indent + 20 }} className="py-0.5" />
-              <td className="px-2 py-0.5 whitespace-nowrap" colSpan={Math.min(2, viewColumns.length)}>
-                <span className="inline-block bg-violet-50 text-violet-700 border border-violet-200 px-1 rounded text-[10px] font-medium mr-1">
+              <td style={{ paddingLeft: indent + 20 }} className="py-0.5">
+                <span className="inline-block bg-violet-50 text-violet-700 border border-violet-200 px-1 rounded text-[10px] font-medium">
                   CAD
                 </span>
-                <span className="font-mono text-slate-600">{doc.number}</span>
-                {viewColumns.length > 1 && <span className="ml-2 text-slate-400">{doc.name}</span>}
               </td>
-              {viewColumns.length > 2 && <td className="px-2 py-0.5 text-slate-400">{doc.version}</td>}
-              {viewColumns.length > 3 && <td className="px-2 py-0.5 text-slate-400">{doc.state}</td>}
-              {viewColumns.length > 4 && <td colSpan={viewColumns.length - 4} />}
+              {viewColumns.map((col) => {
+                const val = getDocCellValue(doc, col)
+                return (
+                  <td
+                    key={col.key}
+                    className={`px-2 py-0.5 whitespace-nowrap ${
+                      col.key === 'number' ? 'font-mono text-slate-600' : 'text-slate-400'
+                    } ${col.key === 'name' ? 'max-w-[280px] truncate' : ''}`}
+                  >
+                    {val}
+                  </td>
+                )
+              })}
             </tr>
           ))}
 

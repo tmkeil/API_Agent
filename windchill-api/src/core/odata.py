@@ -80,14 +80,7 @@ def normalize_item(raw: dict) -> dict:
             else:
                 result[canonical] = str(value)
         else:
-            # Unwrap OData dict values {Value, Display} for ALL fields
-            # (Windchill returns Version, Source, etc. sometimes as dicts)
-            if isinstance(value, dict):
-                result[canonical] = str(
-                    value.get("Display") or value.get("Value") or ""
-                )
-            else:
-                result[canonical] = str(value) if value is not None else ""
+            result[canonical] = str(value) if value is not None else ""
 
     # Fallback fuer Context: aus FolderLocation oder ContainerReference extrahieren
     if not result.get("context"):

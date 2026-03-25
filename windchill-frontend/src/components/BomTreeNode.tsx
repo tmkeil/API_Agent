@@ -58,7 +58,7 @@ export default function BomTreeRow({ node, depth }: Props) {
       {/* Main node row */}
       <tr
         onClick={toggle}
-        className="cursor-pointer select-none hover:bg-indigo-50/60 transition-colors"
+        className="cursor-pointer select-none hover:bg-indigo-50/60 transition-colors border-b border-slate-200"
       >
         {/* Expand icon + indentation */}
         <td className="px-1 py-1.5 whitespace-nowrap" style={{ paddingLeft: indent }}>
@@ -117,7 +117,7 @@ export default function BomTreeRow({ node, depth }: Props) {
         <>
           {/* Documents */}
           {documents.map((doc, i) => (
-            <tr key={`doc-${doc.docId || i}`} className="text-xs">
+            <tr key={`doc-${doc.docId || i}`} className="text-xs border-b border-slate-100">
               <td style={{ paddingLeft: indent + 20 }} className="py-0.5" />
               <td className="px-2 py-0.5 whitespace-nowrap">
                 <span className="inline-block bg-amber-50 text-amber-700 border border-amber-200 px-1 rounded text-[10px] font-medium mr-1">
@@ -134,7 +134,7 @@ export default function BomTreeRow({ node, depth }: Props) {
 
           {/* CAD Documents */}
           {cadDocuments.map((doc, i) => (
-            <tr key={`cad-${doc.docId || i}`} className="text-xs">
+            <tr key={`cad-${doc.docId || i}`} className="text-xs border-b border-slate-100">
               <td style={{ paddingLeft: indent + 20 }} className="py-0.5" />
               <td className="px-2 py-0.5 whitespace-nowrap">
                 <span className="inline-block bg-violet-50 text-violet-700 border border-violet-200 px-1 rounded text-[10px] font-medium mr-1">

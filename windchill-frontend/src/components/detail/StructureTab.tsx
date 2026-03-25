@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useState } from 'react'
 import { getBomRoot } from '../../api/client'
 import type { BomTreeNode } from '../../api/types'
 import BomTreeRow from '../BomTreeNode'
@@ -7,7 +7,7 @@ interface Props {
   partNumber: string
 }
 
-/** Structure/BOM tab — renders a tree-table with proper column headers. */
+/** Structure/BOM tab — loads root on first user interaction, not automatically. */
 export default function StructureTab({ partNumber }: Props) {
   const [root, setRoot] = useState<BomTreeNode | null>(null)
   const [loading, setLoading] = useState(false)
@@ -15,7 +15,7 @@ export default function StructureTab({ partNumber }: Props) {
   const [loaded, setLoaded] = useState(false)
 
   const load = useCallback(async (signal?: AbortSignal) => {
-    if (loaded) return
+    if (loaded || loading) return
     setLoading(true)
     setError('')
     try {
@@ -30,14 +30,22 @@ export default function StructureTab({ partNumber }: Props) {
     } finally {
       if (!signal?.aborted) setLoading(false)
     }
-  }, [partNumber, loaded])
+  }, [partNumber, loaded, loading])
 
-  // Auto-load via useEffect instead of during render
-  useEffect(() => {
-    const controller = new AbortController()
-    load(controller.signal)
-    return () => controller.abort()
-  }, [load])
+  // NO auto-load — user must click the load button
+
+  if (!loaded && !loading) {
+    return (
+      <div className="text-center py-6">
+        <button
+          onClick={() => load()}
+          className="px-4 py-2 text-sm font-medium rounded bg-indigo-600 text-white hover:bg-indigo-700 transition-colors"
+        >
+          Stückliste laden
+        </button>
+      </div>
+    )
+  }
 
   if (loading) {
     return <p className="text-sm text-slate-500 animate-pulse py-4">BOM wird geladen…</p>

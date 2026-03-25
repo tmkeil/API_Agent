@@ -128,6 +128,9 @@ export default function DashboardPage() {
 
   // ── Helpers ────────────────────────────────────────────
 
+  // Show Part-only columns only when all results are Parts
+  const allParts = results.length > 0 && results.every((r) => r.objectType === 'WTPart')
+
   // ── Render ─────────────────────────────────────────────
 
   return (
@@ -193,9 +196,9 @@ export default function DashboardPage() {
                     <th className="text-left px-3 py-2 font-medium">Version</th>
                     <th className="text-left px-3 py-2 font-medium">Status</th>
                     <th className="text-left px-3 py-2 font-medium">Kontext</th>
-                    <th className="text-left px-3 py-2 font-medium">Is Variant</th>
                     <th className="text-left px-3 py-2 font-medium">Organization ID</th>
-                    <th className="text-left px-3 py-2 font-medium">Classification</th>
+                    {allParts && <th className="text-left px-3 py-2 font-medium">Is Variant</th>}
+                    {allParts && <th className="text-left px-3 py-2 font-medium">Classification</th>}
                     <th className="text-left px-3 py-2 font-medium">Geändert</th>
                     <th className="text-left px-3 py-2 font-medium">Erstellt</th>
                   </tr>
@@ -219,9 +222,9 @@ export default function DashboardPage() {
                       <td className="px-3 py-2 text-slate-500 whitespace-nowrap">{r.version}</td>
                       <td className="px-3 py-2 text-slate-500 whitespace-nowrap">{r.state}</td>
                       <td className="px-3 py-2 text-slate-400 whitespace-nowrap text-xs">{r.context || '—'}</td>
-                      <td className="px-3 py-2 text-slate-500 whitespace-nowrap text-xs">{r.isVariant || '—'}</td>
                       <td className="px-3 py-2 text-slate-500 whitespace-nowrap text-xs">{r.organizationId || '—'}</td>
-                      <td className="px-3 py-2 text-slate-500 whitespace-nowrap text-xs">{r.classification || '—'}</td>
+                      {allParts && <td className="px-3 py-2 text-slate-500 whitespace-nowrap text-xs">{r.isVariant || '—'}</td>}
+                      {allParts && <td className="px-3 py-2 text-slate-500 whitespace-nowrap text-xs">{r.classification || '—'}</td>}
                       <td className="px-3 py-2 text-slate-400 whitespace-nowrap text-xs">{formatDate(r.lastModified)}</td>
                       <td className="px-3 py-2 text-slate-400 whitespace-nowrap text-xs">{formatDate(r.createdOn)}</td>
                     </tr>

@@ -25,11 +25,11 @@ _FIELD_ALIASES: dict[str, list[str]] = {
     "iteration":     ["Iteration", "IterationID"],
     "state":         ["State", "LifeCycleState"],
     "identity":      ["Identity", "DisplayIdentity"],
-    "context":       ["ContainerName", "Context", "FolderLocation"],
+    "context":       ["ContainerName", "FolderLocation"],
     "last_modified": ["LastModified", "ModifyTimestamp"],
     "created_on":    ["CreatedOn", "CreateTimestamp"],
-    "is_variant":    ["IsVariant", "Variant"],
-    "organization_id": ["OrganizationUniqueIdentifier", "OrganizationID", "Organization"],
+    "is_variant":    ["IsVariant", "BALISVARIANT", "Variant"],
+    "organization_id": ["OrganizationName", "Context", "OrganizationUniqueIdentifier", "OrganizationID", "Organization"],
     "classification": ["TypeName", "Classification", "SubType"],
 }
 

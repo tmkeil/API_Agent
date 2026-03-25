@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useState } from 'react'
 import { getBomChildren } from '../api/client'
 import type { BomTreeNode, DocumentNode } from '../api/types'
 
@@ -7,183 +7,171 @@ interface Props {
   depth: number
 }
 
-export default function BomTreeNodeComponent({ node, depth }: Props) {
+/**
+ * BOM tree node rendered as <tr> rows inside a parent <table>.
+ * Returns a React Fragment containing one or more <tr> elements.
+ * Children are lazily loaded on first expand click.
+ */
+export default function BomTreeRow({ node, depth }: Props) {
   const hasInitialChildren = (node.children && node.children.length > 0) || node.childrenLoaded || false
-  const [expanded, setExpanded] = useState(depth === 0)
-  const [children, setChildren] = useState<BomTreeNode[]>(
-    node.children || [],
-  )
-  const [documents, setDocuments] = useState<DocumentNode[]>(
-    node.documents || [],
-  )
-  const [cadDocuments, setCadDocuments] = useState<DocumentNode[]>(
-    node.cadDocuments || [],
-  )
+  const [expanded, setExpanded] = useState(false)
+  const [children, setChildren] = useState<BomTreeNode[]>(node.children || [])
+  const [documents, setDocuments] = useState<DocumentNode[]>(node.documents || [])
+  const [cadDocuments, setCadDocuments] = useState<DocumentNode[]>(node.cadDocuments || [])
   const [loaded, setLoaded] = useState(hasInitialChildren)
   const [loading, setLoading] = useState(false)
   const [noChildren, setNoChildren] = useState(false)
 
-  // Auto-load children for root node so the expanded state matches reality
-  const loadChildren = useCallback(async () => {
-    if (loaded || loading || !node.hasChildren || !node.partId) return
-    setLoading(true)
-    try {
-      const resp = await getBomChildren(node.partId)
-      setChildren(resp.children)
-      setDocuments(resp.documents)
-      setCadDocuments(resp.cadDocuments)
-      setLoaded(true)
-      if (resp.children.length === 0) {
-        setNoChildren(true)
-      }
-    } catch {
-      // Fetch failed — keep current state
-    } finally {
-      setLoading(false)
-    }
-  }, [loaded, loading, node.hasChildren, node.partId])
-
-  // Root node starts expanded → fetch children immediately
-  useEffect(() => {
-    if (depth === 0 && expanded && !loaded) {
-      loadChildren()
-    }
-  }, [depth, expanded, loaded, loadChildren])
-
   const toggle = useCallback(async () => {
+    if (loading) return
+
     if (expanded) {
       setExpanded(false)
       return
     }
 
-    // Prevent double-clicks while loading
-    if (loading) return
-
-    // Need to fetch children first?
-    if (!loaded) {
-      await loadChildren()
+    // If children not loaded yet, fetch and expand in one go
+    if (!loaded && node.hasChildren && node.partId) {
+      setLoading(true)
+      try {
+        const resp = await getBomChildren(node.partId)
+        setChildren(resp.children)
+        setDocuments(resp.documents)
+        setCadDocuments(resp.cadDocuments)
+        setLoaded(true)
+        setExpanded(true)
+        if (resp.children.length === 0) setNoChildren(true)
+      } catch {
+        // Fetch failed — keep current state
+      } finally {
+        setLoading(false)
+      }
+    } else {
+      setExpanded(true)
     }
+  }, [expanded, loaded, loading, node.hasChildren, node.partId])
 
-    // Expand
-    setExpanded(true)
-  }, [expanded, loaded, loading, loadChildren])
+  const indent = depth * 20 + 8
 
   return (
-    <div style={{ marginLeft: depth > 0 ? 20 : 0 }}>
-      {/* Node row */}
-      <div
-        className="flex items-center gap-2 py-1 group hover:bg-slate-50 rounded cursor-pointer select-none"
+    <>
+      {/* Main node row */}
+      <tr
         onClick={toggle}
-        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle() } }}
-        role="button"
-        tabIndex={0}
-        aria-expanded={expanded}
-        aria-label={`${node.number} ${node.name}`}
+        className="cursor-pointer select-none hover:bg-indigo-50/60 transition-colors"
       >
-        {/* Expand icon */}
-        <span className="w-4 text-center text-slate-400 text-[11px] flex-shrink-0">
-          {node.hasChildren && !noChildren ? (
-            loading ? (
-              <span className="animate-spin inline-block">⟳</span>
-            ) : expanded ? (
-              <svg className="w-3 h-3 inline" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
+        {/* Expand icon + indentation */}
+        <td className="px-1 py-1.5 whitespace-nowrap" style={{ paddingLeft: indent }}>
+          <span className="inline-flex w-4 justify-center text-slate-400 text-[11px]">
+            {node.hasChildren && !noChildren ? (
+              loading ? (
+                <span className="animate-spin">⟳</span>
+              ) : expanded ? (
+                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                </svg>
+              ) : (
+                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                </svg>
+              )
             ) : (
-              <svg className="w-3 h-3 inline" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
-            )
-          ) : (
-            <span className="text-slate-300">·</span>
-          )}
-        </span>
-
-        {/* Type badge */}
-        <span className="text-[10px] bg-slate-200 text-slate-600 px-1 rounded flex-shrink-0 font-medium">
-          {node.type === 'WTPart' ? 'Part' : node.type}
-        </span>
-
-        {/* Identity: Number, Name, OrgID, Version, State */}
-        <span className="text-sm text-slate-800 truncate">
-          <span className="font-mono font-medium">{node.number}</span>
-          {node.name && <span className="text-slate-500">, {node.name}</span>}
-          {node.organizationId && <span className="text-slate-400">, {node.organizationId}</span>}
-          <span className="text-slate-400">, {node.version}</span>
-          {node.state && <span className="text-slate-500">, {node.state}</span>}
-        </span>
-
-        {/* Quantity | Unit */}
-        {node.quantity != null && (
-          <span className="ml-auto flex items-center gap-1 text-xs flex-shrink-0 font-mono text-slate-400">
-            <span className="text-slate-300">|</span>
-            <span>{node.quantity}</span>
-            {node.quantityUnit && (
-              <>
-                <span className="text-slate-300">|</span>
-                <span>{node.quantityUnit}</span>
-              </>
+              <span className="text-slate-300">·</span>
             )}
           </span>
-        )}
-      </div>
+        </td>
+
+        {/* Nummer */}
+        <td className="px-2 py-1.5 font-mono text-sm text-slate-800 whitespace-nowrap">
+          {node.number}
+        </td>
+
+        {/* Name */}
+        <td className="px-2 py-1.5 text-sm text-slate-600 max-w-[280px] truncate">
+          {node.name}
+        </td>
+
+        {/* Version */}
+        <td className="px-2 py-1.5 text-sm text-slate-500 whitespace-nowrap">
+          {node.version}
+        </td>
+
+        {/* Status */}
+        <td className="px-2 py-1.5 text-sm text-slate-500 whitespace-nowrap">
+          {node.state}
+        </td>
+
+        {/* Menge */}
+        <td className="px-2 py-1.5 text-sm text-slate-500 font-mono whitespace-nowrap text-right">
+          {node.quantity != null ? node.quantity : ''}
+        </td>
+
+        {/* Einheit */}
+        <td className="px-2 py-1.5 text-sm text-slate-500 whitespace-nowrap">
+          {node.quantityUnit || ''}
+        </td>
+      </tr>
 
       {/* Expanded content */}
       {expanded && (
-        <div>
+        <>
           {/* Documents */}
-          {documents.length > 0 && (
-            <div style={{ marginLeft: 20 }} className="mb-1">
-              {documents.map((doc, i) => (
-                <div
-                  key={doc.docId || i}
-                  className="flex items-center gap-2 py-0.5 text-xs text-slate-500"
-                >
-                  <span className="w-4" />
-                  <span className="bg-amber-50 text-amber-700 border border-amber-200 px-1 rounded text-[10px] font-medium">
-                    Doc
-                  </span>
-                  <span className="font-mono text-slate-600">{doc.number}</span>
-                  <span className="truncate text-slate-400">{doc.name}</span>
-                </div>
-              ))}
-            </div>
-          )}
+          {documents.map((doc, i) => (
+            <tr key={`doc-${doc.docId || i}`} className="text-xs">
+              <td style={{ paddingLeft: indent + 20 }} className="py-0.5" />
+              <td className="px-2 py-0.5 whitespace-nowrap">
+                <span className="inline-block bg-amber-50 text-amber-700 border border-amber-200 px-1 rounded text-[10px] font-medium mr-1">
+                  Doc
+                </span>
+                <span className="font-mono text-slate-600">{doc.number}</span>
+              </td>
+              <td className="px-2 py-0.5 text-slate-400 truncate">{doc.name}</td>
+              <td className="px-2 py-0.5 text-slate-400">{doc.version}</td>
+              <td className="px-2 py-0.5 text-slate-400">{doc.state}</td>
+              <td colSpan={2} />
+            </tr>
+          ))}
 
           {/* CAD Documents */}
-          {cadDocuments.length > 0 && (
-            <div style={{ marginLeft: 20 }} className="mb-1">
-              {cadDocuments.map((doc, i) => (
-                <div
-                  key={doc.docId || i}
-                  className="flex items-center gap-2 py-0.5 text-xs text-slate-500"
-                >
-                  <span className="w-4" />
-                  <span className="bg-violet-50 text-violet-700 border border-violet-200 px-1 rounded text-[10px] font-medium">
-                    CAD
-                  </span>
-                  <span className="font-mono text-slate-600">{doc.number}</span>
-                  <span className="truncate text-slate-400">{doc.name}</span>
-                </div>
-              ))}
-            </div>
-          )}
+          {cadDocuments.map((doc, i) => (
+            <tr key={`cad-${doc.docId || i}`} className="text-xs">
+              <td style={{ paddingLeft: indent + 20 }} className="py-0.5" />
+              <td className="px-2 py-0.5 whitespace-nowrap">
+                <span className="inline-block bg-violet-50 text-violet-700 border border-violet-200 px-1 rounded text-[10px] font-medium mr-1">
+                  CAD
+                </span>
+                <span className="font-mono text-slate-600">{doc.number}</span>
+              </td>
+              <td className="px-2 py-0.5 text-slate-400 truncate">{doc.name}</td>
+              <td className="px-2 py-0.5 text-slate-400">{doc.version}</td>
+              <td className="px-2 py-0.5 text-slate-400">{doc.state}</td>
+              <td colSpan={2} />
+            </tr>
+          ))}
 
           {/* Children */}
           {children.map((child, idx) => (
-            <BomTreeNodeComponent
+            <BomTreeRow
               key={`${child.partId || child.number}-${idx}`}
               node={child}
               depth={depth + 1}
             />
           ))}
 
+          {/* Empty state */}
           {loaded && children.length === 0 && documents.length === 0 && cadDocuments.length === 0 && (
-            <div
-              style={{ marginLeft: 20 }}
-              className="text-xs text-slate-400 italic py-1"
-            >
-              Keine Unterelemente
-            </div>
+            <tr>
+              <td
+                colSpan={7}
+                style={{ paddingLeft: indent + 20 }}
+                className="text-xs text-slate-400 italic py-1"
+              >
+                Keine Unterelemente
+              </td>
+            </tr>
           )}
-        </div>
+        </>
       )}
-    </div>
+    </>
   )
 }

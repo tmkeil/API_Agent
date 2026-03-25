@@ -193,9 +193,9 @@ export default function DashboardPage() {
                     <th className="text-left px-3 py-2 font-medium">Version</th>
                     <th className="text-left px-3 py-2 font-medium">Status</th>
                     <th className="text-left px-3 py-2 font-medium">Kontext</th>
-                    <th className="text-left px-3 py-2 font-medium">Variante</th>
-                    <th className="text-left px-3 py-2 font-medium">Org-ID</th>
-                    <th className="text-left px-3 py-2 font-medium">Klassifikation</th>
+                    <th className="text-left px-3 py-2 font-medium">Is Variant</th>
+                    <th className="text-left px-3 py-2 font-medium">Organization ID</th>
+                    <th className="text-left px-3 py-2 font-medium">Classification</th>
                     <th className="text-left px-3 py-2 font-medium">Geändert</th>
                     <th className="text-left px-3 py-2 font-medium">Erstellt</th>
                   </tr>

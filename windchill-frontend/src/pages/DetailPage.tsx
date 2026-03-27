@@ -4,6 +4,7 @@ import { getAffectedItems, getObjectDetail, getResultingItems } from '../api/cli
 import type { ObjectDetail } from '../api/types'
 import DetailHeader from '../components/detail/DetailHeader'
 import DetailsTab from '../components/detail/DetailsTab'
+import PartDetailsTab from '../components/detail/PartDetailsTab'
 import AttributesTab from '../components/detail/AttributesTab'
 import StructureTab from '../components/detail/StructureTab'
 import DocumentsTab from '../components/detail/DocumentsTab'
@@ -42,6 +43,7 @@ const TABS_BY_TYPE: Record<string, TabDef[]> = {
   ],
   document: [
     { key: 'details', label: 'Details' },
+    { key: 'attributes', label: 'Attribute' },
     { key: 'referencingParts', label: 'Referenzierende Parts' },
     { key: 'files', label: 'Dateien' },
     { key: 'versions', label: 'Versionen' },
@@ -50,6 +52,7 @@ const TABS_BY_TYPE: Record<string, TabDef[]> = {
   ],
   cad_document: [
     { key: 'details', label: 'Details' },
+    { key: 'attributes', label: 'Attribute' },
     { key: 'referencingParts', label: 'Verknüpftes Part' },
     { key: 'files', label: 'Dateien' },
     { key: 'versions', label: 'Versionen' },
@@ -58,6 +61,7 @@ const TABS_BY_TYPE: Record<string, TabDef[]> = {
   ],
   change_notice: [
     { key: 'details', label: 'Details' },
+    { key: 'attributes', label: 'Attribute' },
     { key: 'affected', label: 'Affected Items' },
     { key: 'resulting', label: 'Resulting Items' },
     { key: 'versions', label: 'Versionen' },
@@ -66,6 +70,7 @@ const TABS_BY_TYPE: Record<string, TabDef[]> = {
   ],
   change_request: [
     { key: 'details', label: 'Details' },
+    { key: 'attributes', label: 'Attribute' },
     { key: 'affected', label: 'Affected Items' },
     { key: 'versions', label: 'Versionen' },
     { key: 'lifecycle', label: 'Lifecycle' },
@@ -73,6 +78,7 @@ const TABS_BY_TYPE: Record<string, TabDef[]> = {
   ],
   problem_report: [
     { key: 'details', label: 'Details' },
+    { key: 'attributes', label: 'Attribute' },
     { key: 'affected', label: 'Affected Items' },
     { key: 'versions', label: 'Versionen' },
     { key: 'lifecycle', label: 'Lifecycle' },
@@ -168,7 +174,9 @@ export default function DetailPage() {
 
       {/* Tab content */}
       <div>
-        {activeTab === 'details' && <DetailsTab detail={detail} />}
+        {activeTab === 'details' && (
+          typeKey === 'part' ? <PartDetailsTab detail={detail} /> : <DetailsTab detail={detail} />
+        )}
         {activeTab === 'attributes' && <AttributesTab detail={detail} />}
         {activeTab === 'structure' && <StructureTab partNumber={detail.number} />}
         {activeTab === 'documents' && <DocumentsTab partCode={code} />}

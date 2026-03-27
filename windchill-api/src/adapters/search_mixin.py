@@ -25,15 +25,6 @@ _WC_PAGE_SIZE = 25
 # 200 Seiten × 25 = 5000 Items pro Typ.
 _DEFAULT_SEARCH_MAX_PAGES = 200
 
-# $select fields for search results — reduces payload and speeds up Windchill queries.
-# Only request the fields we actually use for display/normalization.
-_SEARCH_SELECT_FIELDS = (
-    "ID,Number,Name,Version,Iteration,State,LifeCycleState,"
-    "Identity,DisplayIdentity,ContainerName,FolderLocation,"
-    "LastModified,CreatedOn,ObjectType,TypeName,OrganizationName,"
-    "IsVariant,BALISVARIANT,View"
-)
-
 
 class SearchMixin:
     """Multi-Entity-Suche (Mixin fuer WRSClientBase)."""
@@ -211,7 +202,7 @@ class SearchMixin:
                 for ver, svc_path in self._CAD_FALLBACK_BASES:
                     base = f"{self.base_url}/servlet/odata/{ver}"
                     url = f"{base}/{svc_path}"
-                    params: dict[str, str] = {"$filter": combined_filter, "$select": _SEARCH_SELECT_FIELDS}
+                    params: dict[str, str] = {"$filter": combined_filter}
                     try:
                         resp = self._raw_get(url, params)
                         if resp.status_code == 200:
@@ -228,7 +219,7 @@ class SearchMixin:
                 return type_key, wc_type, [], None
 
             url = f"{self.odata_base}/{service}/{entity_set}"
-            params: dict[str, str] = {"$filter": combined_filter, "$select": _SEARCH_SELECT_FIELDS}
+            params: dict[str, str] = {"$filter": combined_filter}
             try:
                 resp = self._raw_get(url, params)
                 if resp.status_code != 200:
@@ -440,7 +431,7 @@ class SearchMixin:
                 for ver, svc_path in self._CAD_FALLBACK_BASES:
                     base = f"{self.base_url}/servlet/odata/{ver}"
                     url = f"{base}/{svc_path}"
-                    params: dict[str, str] = {"$filter": combined_filter, "$select": _SEARCH_SELECT_FIELDS}
+                    params: dict[str, str] = {"$filter": combined_filter}
                     try:
                         resp = self._raw_get(url, params)
                         if resp.status_code == 200:
@@ -457,7 +448,7 @@ class SearchMixin:
                 return type_key, wc_type, [], None
 
             url = f"{self.odata_base}/{service}/{entity_set}"
-            params: dict[str, str] = {"$filter": combined_filter, "$select": _SEARCH_SELECT_FIELDS}
+            params: dict[str, str] = {"$filter": combined_filter}
             try:
                 resp = self._raw_get(url, params)
                 if resp.status_code != 200:
@@ -624,7 +615,7 @@ class SearchMixin:
 
         def _fetch_first(type_key: str, service: str, entity_set: str, wc_type: str):
             url = f"{self.odata_base}/{service}/{entity_set}"
-            params: dict[str, str] = {"$select": _SEARCH_SELECT_FIELDS}
+            params: dict[str, str] = {}
             if filter_str:
                 params["$filter"] = filter_str
             try:

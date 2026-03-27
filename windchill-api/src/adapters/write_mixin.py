@@ -63,7 +63,9 @@ class WriteMixin:
             raise WRSError(f"Unbekannter Objekttyp: '{type_key}'", status_code=400)
 
         service, entity_set = self._WRITABLE_ENTITIES[type_key]
-        url = f"{self.odata_base}/{service}/{entity_set}"
+        # CADDocumentMgmt only exists in v4
+        odata_base = f"{self.base_url}/servlet/odata/v4" if type_key == "cad_document" else self.odata_base
+        url = f"{odata_base}/{service}/{entity_set}"
 
         resp = self._post(url, json_body=attributes)
         if resp is None:
@@ -101,7 +103,9 @@ class WriteMixin:
             raise WRSError(f"Unbekannter Objekttyp: '{type_key}'", status_code=400)
 
         service, entity_set = self._WRITABLE_ENTITIES[type_key]
-        url = f"{self.odata_base}/{service}/{entity_set}('{obj_id}')"
+        # CADDocumentMgmt only exists in v4
+        odata_base = f"{self.base_url}/servlet/odata/v4" if type_key == "cad_document" else self.odata_base
+        url = f"{odata_base}/{service}/{entity_set}('{obj_id}')"
 
         resp = self._patch(url, json_body=attributes)
         if resp is None:
@@ -144,9 +148,12 @@ class WriteMixin:
 
         service, entity_set = self._WRITABLE_ENTITIES[type_key]
 
+        # CADDocumentMgmt only exists in v4
+        odata_base = f"{self.base_url}/servlet/odata/v4" if type_key == "cad_document" else self.odata_base
+
         # Strategie 1: OData Action (Windchill 12+)
         action_url = (
-            f"{self.odata_base}/{service}/{entity_set}('{obj_id}')"
+            f"{odata_base}/{service}/{entity_set}('{obj_id}')"
             f"/PTC.{service}.SetLifeCycleState"
         )
         body: dict[str, Any] = {"State": target_state}
@@ -161,11 +168,11 @@ class WriteMixin:
                 except Exception:
                     pass
             # Erfolg — Objekt neu laden
-            obj_url = f"{self.odata_base}/{service}/{entity_set}('{obj_id}')"
+            obj_url = f"{odata_base}/{service}/{entity_set}('{obj_id}')"
             return self._get_json(obj_url)
 
         # Strategie 2: Generischer LifeCycleState Patch (Fallback)
-        patch_url = f"{self.odata_base}/{service}/{entity_set}('{obj_id}')"
+        patch_url = f"{odata_base}/{service}/{entity_set}('{obj_id}')"
         state_body: dict[str, Any] = {"State": target_state}
         resp = self._patch(patch_url, json_body=state_body, suppress_errors=True)
         if resp and resp.status_code in (200, 204):
@@ -198,7 +205,9 @@ class WriteMixin:
             raise WRSError(f"Unbekannter Objekttyp: '{type_key}'", status_code=400)
 
         service, entity_set = self._WRITABLE_ENTITIES[type_key]
-        url = f"{self.odata_base}/{service}/{entity_set}('{obj_id}')/PTC.{service}.CheckOut"
+        # CADDocumentMgmt only exists in v4
+        odata_base = f"{self.base_url}/servlet/odata/v4" if type_key == "cad_document" else self.odata_base
+        url = f"{odata_base}/{service}/{entity_set}('{obj_id}')/PTC.{service}.CheckOut"
 
         resp = self._post(url, json_body={})
         if resp is None:
@@ -229,7 +238,9 @@ class WriteMixin:
             raise WRSError(f"Unbekannter Objekttyp: '{type_key}'", status_code=400)
 
         service, entity_set = self._WRITABLE_ENTITIES[type_key]
-        url = f"{self.odata_base}/{service}/{entity_set}('{obj_id}')/PTC.{service}.CheckIn"
+        # CADDocumentMgmt only exists in v4
+        odata_base = f"{self.base_url}/servlet/odata/v4" if type_key == "cad_document" else self.odata_base
+        url = f"{odata_base}/{service}/{entity_set}('{obj_id}')/PTC.{service}.CheckIn"
 
         body: dict[str, Any] = {}
         if comment:

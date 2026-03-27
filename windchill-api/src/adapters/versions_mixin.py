@@ -52,7 +52,14 @@ class VersionsMixin:
             raise WRSError(f"Unbekannter Objekttyp fuer Versionen: '{type_key}'", status_code=400)
 
         service, entity_set = self._VERSION_ENTITIES[type_key]
-        url = f"{self.odata_base}/{service}/{entity_set}"
+
+        # CADDocumentMgmt only exists in v4
+        if type_key == "cad_document":
+            odata_base = f"{self.base_url}/servlet/odata/v4"
+        else:
+            odata_base = self.odata_base
+
+        url = f"{odata_base}/{service}/{entity_set}"
         safe = number.replace("'", "''")
 
         # Alle Versionen/Iterationen fuer diese Nummer
@@ -111,9 +118,15 @@ class VersionsMixin:
 
         service, entity_set = self._VERSION_ENTITIES[type_key]
 
+        # CADDocumentMgmt only exists in v4
+        if type_key == "cad_document":
+            odata_base = f"{self.base_url}/servlet/odata/v4"
+        else:
+            odata_base = self.odata_base
+
         nav_props = ["LifeCycleHistory", "LifeCycleEvents", "StateHistory"]
         for nav in nav_props:
-            url = f"{self.odata_base}/{service}/{entity_set}('{obj_id}')/{nav}"
+            url = f"{odata_base}/{service}/{entity_set}('{obj_id}')/{nav}"
             items = self._get_all_pages(url, return_none_on_error=True)
             if items:
                 return items

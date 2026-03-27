@@ -118,13 +118,19 @@ class DocumentsMixin:
           2. DescribedByParts Navigation (CAD-Dokumente)
           3. AssociatedParts Navigation
         """
+        # CADDocumentMgmt only exists in v4
+        if service == "CADDocumentMgmt":
+            odata_base = f"{self.base_url}/servlet/odata/v4"
+        else:
+            odata_base = self.odata_base
+
         results: list[dict] = []
         seen: set[str] = set()
 
         # Try verschiedene Nav-Properties
         nav_props = ["Describes", "DescribesObjects", "DescribedByParts", "AssociatedParts"]
         for nav in nav_props:
-            url = f"{self.odata_base}/{service}/{entity_set}('{doc_id}')/{nav}"
+            url = f"{odata_base}/{service}/{entity_set}('{doc_id}')/{nav}"
             items = self._get_all_pages(url, return_none_on_error=True)
             if items:
                 for item in items:
@@ -150,13 +156,19 @@ class DocumentsMixin:
           2. PrimaryContent Navigation
           3. Attachments / ContentItems Fallback
         """
+        # CADDocumentMgmt only exists in v4
+        if service == "CADDocumentMgmt":
+            odata_base = f"{self.base_url}/servlet/odata/v4"
+        else:
+            odata_base = self.odata_base
+
         results: list[dict] = []
         seen: set[str] = set()
 
         # Strategie 1: ContentHolders (gibt alle Dateien)
         nav_props = ["ContentHolders", "PrimaryContent", "Attachments", "ContentItems"]
         for nav in nav_props:
-            url = f"{self.odata_base}/{service}/{entity_set}('{doc_id}')/{nav}"
+            url = f"{odata_base}/{service}/{entity_set}('{doc_id}')/{nav}"
             items = self._get_all_pages(url, return_none_on_error=True)
             if items:
                 for item in items:
@@ -191,16 +203,22 @@ class DocumentsMixin:
         """
         from src.adapters.base import WRSError
 
+        # CADDocumentMgmt only exists in v4
+        if service == "CADDocumentMgmt":
+            odata_base = f"{self.base_url}/servlet/odata/v4"
+        else:
+            odata_base = self.odata_base
+
         urls: list[str] = []
         if file_id:
             urls.append(
-                f"{self.odata_base}/{service}/{entity_set}('{doc_id}')"
+                f"{odata_base}/{service}/{entity_set}('{doc_id}')"
                 f"/ContentHolders('{file_id}')/$value"
             )
         urls.extend([
-            f"{self.odata_base}/{service}/{entity_set}('{doc_id}')/PrimaryContent/$value",
-            f"{self.odata_base}/{service}/{entity_set}('{doc_id}')/Content/$value",
-            f"{self.odata_base}/{service}/{entity_set}('{doc_id}')/$value",
+            f"{odata_base}/{service}/{entity_set}('{doc_id}')/PrimaryContent/$value",
+            f"{odata_base}/{service}/{entity_set}('{doc_id}')/Content/$value",
+            f"{odata_base}/{service}/{entity_set}('{doc_id}')/$value",
         ])
 
         for url in urls:

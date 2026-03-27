@@ -129,7 +129,7 @@ class SearchMixin:
         # Query-Intelligenz: den OData-Filter an die Art des Suchbegriffs anpassen.
         #
         # 1. Exakte Nummer (Ziffern + >= 5 Zeichen + keine Wildcards):
-        #    → Nur "Number eq" (Index-Lookup, ~0.5s statt ~7s).
+        #    → "Number eq" + "contains(Number,...)"
         #      Beispiel: S2200287364, BCC0812-P-A051-004
         #
         # 2. Kurze/partielle Nummer (Ziffern, aber < 5 Zeichen oder Wildcards):
@@ -141,11 +141,8 @@ class SearchMixin:
         #      Beispiel: BCC, Sensor
         _has_digits = any(c.isdigit() for c in query)
         _has_wildcards = "*" in query or "?" in query
-        _is_exact_number = _has_digits and len(query) >= 5 and not _has_wildcards
 
-        if _is_exact_number:
-            combined_filter = f"Number eq '{safe}'"
-        elif _has_digits:
+        if _has_digits:
             combined_filter = (
                 f"(Number eq '{safe}' or contains(Number,'{safe}'))"
             )
@@ -167,6 +164,9 @@ class SearchMixin:
             try:
                 resp = self._raw_get(url, params)
                 if resp.status_code != 200:
+                    logger.warning("search %s/%s returned %s for filter: %s",
+                                   service, entity_set, resp.status_code,
+                                   combined_filter[:200])
                     return type_key, wc_type, [], None
                 data = resp.json()
                 items = list(data.get("value", []))
@@ -319,12 +319,8 @@ class SearchMixin:
 
         safe = query.replace("'", "''")
         _has_digits = any(c.isdigit() for c in query)
-        _has_wildcards = "*" in query or "?" in query
-        _is_exact_number = _has_digits and len(query) >= 5 and not _has_wildcards
 
-        if _is_exact_number:
-            combined_filter = f"Number eq '{safe}'"
-        elif _has_digits:
+        if _has_digits:
             combined_filter = f"(Number eq '{safe}' or contains(Number,'{safe}'))"
         else:
             combined_filter = (
@@ -369,6 +365,9 @@ class SearchMixin:
             try:
                 resp = self._raw_get(url, params)
                 if resp.status_code != 200:
+                    logger.warning("stream search %s/%s returned %s for filter: %s",
+                                   service, entity_set, resp.status_code,
+                                   combined_filter[:200])
                     return type_key, wc_type, [], None
                 data = resp.json()
                 items = list(data.get("value", []))

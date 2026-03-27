@@ -5,6 +5,7 @@ import type { ObjectDetail } from '../api/types'
 import DetailHeader from '../components/detail/DetailHeader'
 import DetailsTab from '../components/detail/DetailsTab'
 import PartDetailsTab from '../components/detail/PartDetailsTab'
+import DocDetailsTab from '../components/detail/DocDetailsTab'
 import AttributesTab from '../components/detail/AttributesTab'
 import StructureTab from '../components/detail/StructureTab'
 import DocumentsTab from '../components/detail/DocumentsTab'
@@ -175,7 +176,9 @@ export default function DetailPage() {
       {/* Tab content */}
       <div>
         {activeTab === 'details' && (
-          typeKey === 'part' ? <PartDetailsTab detail={detail} /> : <DetailsTab detail={detail} />
+          typeKey === 'part' ? <PartDetailsTab detail={detail} /> :
+          (typeKey === 'document' || typeKey === 'cad_document') ? <DocDetailsTab detail={detail} /> :
+          <DetailsTab detail={detail} />
         )}
         {activeTab === 'attributes' && <AttributesTab detail={detail} />}
         {activeTab === 'structure' && <StructureTab partNumber={detail.number} />}

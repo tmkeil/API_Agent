@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { diagnoseBomFields, getBomRoot, getBomViews } from '../../api/client'
+import { diagnoseBomFields, exportBom, getBomRoot, getBomViews } from '../../api/client'
 import type { BomTreeNode, BomViewConfig } from '../../api/types'
 import BomTreeRow from '../BomTreeNode'
 import BomDetailPanel from './BomDetailPanel'
@@ -40,6 +40,9 @@ export default function StructureTab({ partNumber }: Props) {
 
   // Selection for split-view detail panel
   const [selectedNode, setSelectedNode] = useState<BomTreeNode | null>(null)
+
+  // Export state
+  const [exporting, setExporting] = useState<'expanded' | 'full' | null>(null)
 
   const activeView = views.find(v => v.id === activeViewId) ?? views[0]
 
@@ -88,6 +91,22 @@ export default function StructureTab({ partNumber }: Props) {
       setRawFieldsLoading(false)
     }
   }, [partNumber, rawFields, rawFieldsLoading, showRawFields])
+
+  const handleExport = useCallback(async (mode: 'expandedOnly' | 'fullTree') => {
+    setExporting(mode === 'expandedOnly' ? 'expanded' : 'full')
+    try {
+      const res = await exportBom(mode, partNumber, mode === 'expandedOnly' ? root : undefined)
+      // Trigger download
+      const a = document.createElement('a')
+      a.href = res.downloadUrl
+      a.download = res.filename
+      a.click()
+    } catch (e) {
+      alert(`Export fehlgeschlagen: ${e instanceof Error ? e.message : String(e)}`)
+    } finally {
+      setExporting(null)
+    }
+  }, [partNumber, root])
 
   // NO auto-load — user must click the load button
 
@@ -146,13 +165,31 @@ export default function StructureTab({ partNumber }: Props) {
             ))}
           </div>
         </div>
-        <button
-          onClick={loadRawFields}
-          className="px-2 py-1 text-[10px] font-medium rounded border border-slate-300 text-slate-500 hover:bg-slate-100 transition-colors"
-          title="Rohfelder von Windchill anzeigen (Diagnose)"
-        >
-          {rawFieldsLoading ? '…' : showRawFields ? 'Raw Fields ✕' : 'Raw Fields'}
-        </button>
+        <div className="flex items-center gap-1">
+          <button
+            onClick={() => handleExport('expandedOnly')}
+            disabled={!!exporting}
+            className="px-2 py-1 text-[10px] font-medium rounded border border-slate-300 text-slate-500 hover:bg-slate-100 transition-colors disabled:opacity-40"
+            title="Geladenen Baum als JSON exportieren"
+          >
+            {exporting === 'expanded' ? '…' : '⬇ Export'}
+          </button>
+          <button
+            onClick={() => handleExport('fullTree')}
+            disabled={!!exporting}
+            className="px-2 py-1 text-[10px] font-medium rounded border border-indigo-300 text-indigo-600 hover:bg-indigo-50 transition-colors disabled:opacity-40"
+            title="Vollständige Stückliste serverseitig exportieren"
+          >
+            {exporting === 'full' ? '…' : '⬇ Vollständiger Export'}
+          </button>
+          <button
+            onClick={loadRawFields}
+            className="px-2 py-1 text-[10px] font-medium rounded border border-slate-300 text-slate-500 hover:bg-slate-100 transition-colors"
+            title="Rohfelder von Windchill anzeigen (Diagnose)"
+          >
+            {rawFieldsLoading ? '…' : showRawFields ? 'Raw Fields ✕' : 'Raw Fields'}
+          </button>
+        </div>
       </div>
 
       {/* Raw fields diagnostic panel */}

@@ -41,16 +41,18 @@ def search_parts(
     limit: int = 200,
     entity_types: list[str] | None = None,
     session: Optional[UserSession] = None,
+    mode: str = "auto",
 ) -> list[PartSearchResult]:
     """Search with wildcard support, ranking, and session-level caching.
 
     Args:
         entity_types: Optional list of type keys to search.
                       None → all types. E.g. ["part","document","cad_document"]
+        mode: 'number' = Number only (fast), 'keyword' = Number+Name, 'auto' = detect.
     """
     # Check session cache first
     types_key = ",".join(sorted(entity_types)) if entity_types else "all"
-    cache_key = f"{query.lower()}|{limit}|{types_key}"
+    cache_key = f"{query.lower()}|{limit}|{types_key}|{mode}"
     if session:
         with session.lock:
             cached = session.search_cache.get(cache_key)
@@ -60,7 +62,7 @@ def search_parts(
 
     # Use multi-entity search (parallel, single query per type)
     raw_items = client.search_entities(
-        query, entity_types=entity_types, contexts=None, limit=limit,
+        query, entity_types=entity_types, contexts=None, limit=limit, mode=mode,
     )
 
     # Wildcard-Support: zusaetzliche clientseitige Regex-Filterung

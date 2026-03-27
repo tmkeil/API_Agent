@@ -6,6 +6,7 @@ import DetailHeader from '../components/detail/DetailHeader'
 import DetailsTab from '../components/detail/DetailsTab'
 import PartDetailsTab from '../components/detail/PartDetailsTab'
 import DocDetailsTab from '../components/detail/DocDetailsTab'
+import CadDetailsTab from '../components/detail/CadDetailsTab'
 import AttributesTab from '../components/detail/AttributesTab'
 import StructureTab from '../components/detail/StructureTab'
 import DocumentsTab from '../components/detail/DocumentsTab'
@@ -18,10 +19,11 @@ import ReferencingPartsTab from '../components/detail/ReferencingPartsTab'
 import FileInfoTab from '../components/detail/FileInfoTab'
 import VersionsTab from '../components/detail/VersionsTab'
 import LifecycleTab from '../components/detail/LifecycleTab'
+import EquivalenceTab from '../components/detail/EquivalenceTab'
 import WriteActionsPanel from '../components/detail/WriteActionsPanel'
 
 type TabKey = 'details' | 'attributes' | 'structure' | 'documents' | 'cad' | 'allDocuments'
-  | 'whereUsed' | 'occurrences'
+  | 'whereUsed' | 'occurrences' | 'equivalence'
   | 'affected' | 'resulting' | 'referencingParts' | 'files' | 'versions' | 'lifecycle' | 'actions'
 
 interface TabDef {
@@ -38,6 +40,7 @@ const TABS_BY_TYPE: Record<string, TabDef[]> = {
     { key: 'allDocuments', label: 'Dokumente' },
     { key: 'whereUsed', label: 'Where-Used' },
     { key: 'occurrences', label: 'Vorkommen' },
+    { key: 'equivalence', label: 'Equivalence Network' },
     { key: 'versions', label: 'Versionen' },
     { key: 'lifecycle', label: 'Lifecycle' },
     { key: 'actions', label: 'Aktionen' },
@@ -177,7 +180,8 @@ export default function DetailPage() {
       <div>
         {activeTab === 'details' && (
           typeKey === 'part' ? <PartDetailsTab detail={detail} /> :
-          (typeKey === 'document' || typeKey === 'cad_document') ? <DocDetailsTab detail={detail} /> :
+          typeKey === 'cad_document' ? <CadDetailsTab detail={detail} /> :
+          typeKey === 'document' ? <DocDetailsTab detail={detail} /> :
           <DetailsTab detail={detail} />
         )}
         {activeTab === 'attributes' && <AttributesTab detail={detail} />}
@@ -187,6 +191,7 @@ export default function DetailPage() {
         {activeTab === 'allDocuments' && <AllDocumentsTab partCode={code} />}
         {activeTab === 'whereUsed' && <WhereUsedTab partCode={code} />}
         {activeTab === 'occurrences' && <OccurrencesTab partCode={code} />}
+        {activeTab === 'equivalence' && <EquivalenceTab detail={detail} />}
         {activeTab === 'affected' && (
           <ChangeItemsTab
             label="Affected Items"

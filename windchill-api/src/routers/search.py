@@ -44,6 +44,11 @@ def search(
                     "change_notice,change_request,problem_report. "
                     "Leer = alle Typen.",
     ),
+    mode: str = Query(
+        "auto",
+        description="Suchmodus: 'number' = nur Nummernsuche (schneller), "
+                    "'keyword' = Nummer + Name, 'auto' = automatisch.",
+    ),
     request: Request = None,
     _: None = Depends(require_auth),
 ) -> SearchResponse:
@@ -56,7 +61,7 @@ def search(
 
     t0 = time.perf_counter()
     results = search_service.search_parts(
-        client, q, limit, entity_types=entity_types, session=session,
+        client, q, limit, entity_types=entity_types, session=session, mode=mode,
     )
     duration_ms = int((time.perf_counter() - t0) * 1000)
     if session:
@@ -75,6 +80,7 @@ async def search_stream(
     q: str = Query(..., min_length=1, description="Suchbegriff"),
     limit: int = Query(0, ge=0, le=10000),
     types: str = Query(None),
+    mode: str = Query("auto"),
     request: Request = None,
     _: None = Depends(require_auth),
 ):
@@ -132,7 +138,7 @@ async def search_stream(
             try:
                 for batch in client.search_entities_stream(
                     q, entity_types=entity_types, limit=limit,
-                    cancelled=cancelled,
+                    cancelled=cancelled, mode=mode,
                 ):
                     if cancelled.is_set():
                         break

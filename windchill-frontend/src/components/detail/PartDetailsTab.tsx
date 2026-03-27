@@ -158,21 +158,21 @@ function resolveValue(detail: ObjectDetail, key: string): string {
   return String(raw)
 }
 
-/* ── Parse Equivalence Network string into clickable links ── */
+/* ── Parse Equivalence Network into Design↔Manufacturing pairs ── */
 interface EquivEntry { number: string; name: string; org: string; version: string; view: string }
+interface EquivPair { design: EquivEntry; manufacturing: EquivEntry }
 
-function parseEquivNetwork(value: string): EquivEntry[] {
+function parseEquivEntries(value: string): EquivEntry[] {
   if (!value) return []
 
-  // BALUPSTREAM is just a plain number (e.g. "1200209432") — no commas, no view
+  // BALUPSTREAM can be just plain numbers (e.g. "1200209432")
   if (!value.includes('(')) {
-    // Could be a comma-separated list of plain numbers
     return value.split(',').map(s => s.trim()).filter(Boolean).map(num => ({
       number: num, name: '', org: '', version: '', view: 'Design',
     }))
   }
 
-  // BALDOWNSTREAM: "NUMBER, NAME, ORG, VERSION (VIEW), NUMBER, NAME, ..." — groups of 4
+  // Full format: "NUMBER, NAME, ORG, VERSION (VIEW), …" — groups of 4
   const parts = value.split(',').map(s => s.trim())
   const all: EquivEntry[] = []
   let i = 0
@@ -183,24 +183,59 @@ function parseEquivNetwork(value: string): EquivEntry[] {
     const versionView = parts[i + 3]
     const vMatch = versionView.match(/^(.+?)\s*\((.+?)\)$/)
     all.push({
-      number,
-      name,
-      org,
+      number, name, org,
       version: vMatch ? vMatch[1] : versionView,
       view: vMatch ? vMatch[2] : '',
     })
     i += 4
   }
+  return all
+}
 
-  // Deduplicate: keep only the latest version per number (like Windchill does)
-  const latest = new Map<string, EquivEntry>()
-  for (const e of all) {
-    const existing = latest.get(e.number)
-    if (!existing || e.version.localeCompare(existing.version) > 0) {
-      latest.set(e.number, e)
+function buildEquivPairs(detail: ObjectDetail): EquivPair[] {
+  const attrs = detail.allAttributes || {}
+  const down = String(attrs['BALDOWNSTREAM'] ?? '')
+  const up = String(attrs['BALUPSTREAM'] ?? '')
+
+  // Current part info
+  const self: EquivEntry = {
+    number: detail.number,
+    name: detail.name,
+    org: '', // not needed for display
+    version: detail.version,
+    view: String(attrs['View'] ?? ''),
+  }
+
+  const isDesign = self.view === 'Design'
+  const pairs: EquivPair[] = []
+
+  if (isDesign && down) {
+    // Design part → BALDOWNSTREAM lists Manufacturing counterparts
+    const entries = parseEquivEntries(down)
+    // Deduplicate: keep latest version per number
+    const latest = new Map<string, EquivEntry>()
+    for (const e of entries) {
+      const existing = latest.get(e.number)
+      if (!existing || e.version.localeCompare(existing.version) > 0)
+        latest.set(e.number, e)
+    }
+    for (const mfg of latest.values()) {
+      pairs.push({ design: self, manufacturing: mfg })
+    }
+  } else if (!isDesign && up) {
+    // Manufacturing part → BALUPSTREAM lists Design counterparts
+    const entries = parseEquivEntries(up)
+    const latest = new Map<string, EquivEntry>()
+    for (const e of entries) {
+      const existing = latest.get(e.number)
+      if (!existing || e.version.localeCompare(existing.version) > 0)
+        latest.set(e.number, e)
+    }
+    for (const dsn of latest.values()) {
+      pairs.push({ design: dsn, manufacturing: self })
     }
   }
-  return Array.from(latest.values())
+  return pairs
 }
 
 /* ── Collapsible section component ──────────────────────────── */
@@ -230,32 +265,44 @@ function Section({ title, children, defaultCollapsed = false }: {
   )
 }
 
-/* ── Equivalence Network display ─────────────────────────────── */
-function EquivNetworkValue({ value }: { value: string }) {
+/* ── Equivalence Network display (Design ↔ Manufacturing pairs) ───── */
+function EquivNetworkValue({ detail }: { detail: ObjectDetail }) {
   const navigate = useNavigate()
-  const entries = parseEquivNetwork(value)
+  const pairs = buildEquivPairs(detail)
 
-  if (entries.length === 0) return <span className="text-slate-400">—</span>
+  if (pairs.length === 0) return <span className="text-slate-400">—</span>
 
   return (
-    <div className="space-y-1">
-      {entries.map((e, i) => (
-        <div key={i} className="flex items-center gap-2 text-sm">
+    <div className="space-y-1.5">
+      {pairs.map((p, i) => (
+        <div key={i} className="flex items-center gap-1.5 text-sm flex-wrap">
+          {/* Design side */}
           <button
-            onClick={() => navigate(`/detail/part/${e.number}`)}
+            onClick={() => navigate(`/detail/part/${p.design.number}`)}
             className="text-indigo-600 hover:text-indigo-800 hover:underline font-mono text-xs"
           >
-            {e.number}
+            {p.design.number}
           </button>
-          <span className="text-slate-500">{e.name}</span>
-          <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${
-            e.view === 'Manufacturing'
-              ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-              : 'bg-sky-50 text-sky-700 border border-sky-200'
-          }`}>
-            {e.view}
+          {p.design.name && <span className="text-slate-500 text-xs truncate max-w-48">{p.design.name}</span>}
+          <span className="text-slate-400 text-xs">{p.design.version}</span>
+          <span className="px-1 py-0.5 rounded text-[10px] font-medium bg-sky-50 text-sky-700 border border-sky-200">
+            Design
           </span>
-          <span className="text-slate-400 text-xs">{e.version}</span>
+
+          <span className="text-slate-300 mx-1">—</span>
+
+          {/* Manufacturing side */}
+          <button
+            onClick={() => navigate(`/detail/part/${p.manufacturing.number}`)}
+            className="text-indigo-600 hover:text-indigo-800 hover:underline font-mono text-xs"
+          >
+            {p.manufacturing.number}
+          </button>
+          {p.manufacturing.name && <span className="text-slate-500 text-xs truncate max-w-48">{p.manufacturing.name}</span>}
+          <span className="text-slate-400 text-xs">{p.manufacturing.version}</span>
+          <span className="px-1 py-0.5 rounded text-[10px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
+            Manufacturing
+          </span>
         </div>
       ))}
     </div>
@@ -296,7 +343,7 @@ export default function PartDetailsTab({ detail }: Props) {
                       </td>
                       <td className="px-4 py-2 text-slate-700">
                         {f.format === 'date' ? formatDate(val) :
-                         f.format === 'equivNetwork' ? <EquivNetworkValue value={val} /> :
+                         f.format === 'equivNetwork' ? <EquivNetworkValue detail={detail} /> :
                          val || '—'}
                       </td>
                     </tr>

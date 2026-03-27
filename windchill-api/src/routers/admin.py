@@ -79,19 +79,28 @@ async def export_bom(
         raise HTTPException(400, "partNumber fehlt")
     if mode not in ("expandedOnly", "fullTree"):
         raise HTTPException(400, "Ungültiger Exportmodus")
-    if mode != "expandedOnly":
-        raise HTTPException(501, "fullTree-Export wird noch nicht unterstützt")
 
-    root_tree = payload.get("tree")
-    if not isinstance(root_tree, dict):
-        raise HTTPException(400, "Für expandedOnly ist ein Tree-Objekt erforderlich")
+    if mode == "fullTree":
+        # Server-side full BOM explosion
+        client = get_client(request)
+        try:
+            _, filename = admin_service.build_full_tree_export(
+                client, part_number, session.system_url, session.username,
+            )
+        except Exception as e:
+            raise HTTPException(500, f"Full-Tree-Export fehlgeschlagen: {e}")
+    else:
+        # expandedOnly — uses frontend-provided tree
+        root_tree = payload.get("tree")
+        if not isinstance(root_tree, dict):
+            raise HTTPException(400, "Für expandedOnly ist ein Tree-Objekt erforderlich")
 
-    try:
-        _, filename = admin_service.build_export(
-            root_tree, part_number, session.system_url, session.username,
-        )
-    except ValueError as e:
-        raise HTTPException(400, str(e))
+        try:
+            _, filename = admin_service.build_export(
+                root_tree, part_number, session.system_url, session.username,
+            )
+        except ValueError as e:
+            raise HTTPException(400, str(e))
 
     log_session_event(
         session, "POST", "/api/export", 200, 0, "web",

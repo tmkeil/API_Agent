@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from '
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { searchPartsStream } from '../api/client'
 import type { PartSearchResult } from '../api/types'
-import SearchBar from '../components/SearchBar'
+import SearchBar, { type SearchMode } from '../components/SearchBar'
 import AdvancedSearchPanel from '../components/AdvancedSearchPanel'
 import { TYPE_KEY_MAP, formatDate, typeLabel, subtypeBadgeStyle } from '../utils/labels'
 
@@ -49,7 +49,7 @@ function subscribeStore(cb: () => void): () => void {
   return () => { _listeners.delete(cb) }
 }
 
-function startSearch(query: string, types?: string[]) {
+function startSearch(query: string, types?: string[], mode?: SearchMode) {
   // Abort previous stream
   _abortCtrl?.abort()
 
@@ -70,7 +70,7 @@ function startSearch(query: string, types?: string[]) {
       _store = { ..._store, searching: false, done: true, error: msg }
       _notify()
     },
-    { types },
+    { types, mode },
   )
   _abortCtrl = ctrl
 }
@@ -102,10 +102,10 @@ export default function DashboardPage() {
 
   // ── Search ──────────────────────────────────────────────
 
-  const handleSearch = useCallback((query: string) => {
+  const handleSearch = useCallback((query: string, mode?: SearchMode) => {
     // Persist query in URL so "Back" restores state
     setSearchParams(query ? { q: query } : {}, { replace: true })
-    startSearch(query, activeTypes.length > 0 ? activeTypes : undefined)
+    startSearch(query, activeTypes.length > 0 ? activeTypes : undefined, mode)
   }, [activeTypes, setSearchParams])
 
   // Restore search from URL params (e.g. after navigating back from detail page)

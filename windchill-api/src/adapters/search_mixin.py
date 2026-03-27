@@ -25,6 +25,15 @@ _WC_PAGE_SIZE = 25
 # 200 Seiten × 25 = 5000 Items pro Typ.
 _DEFAULT_SEARCH_MAX_PAGES = 200
 
+# $select fields for search results — reduces payload and speeds up Windchill queries.
+# Only request the fields we actually use for display/normalization.
+_SEARCH_SELECT_FIELDS = (
+    "ID,Number,Name,Version,Iteration,State,LifeCycleState,"
+    "Identity,DisplayIdentity,ContainerName,FolderLocation,"
+    "LastModified,CreatedOn,ObjectType,TypeName,OrganizationName,"
+    "IsVariant,BALISVARIANT,View"
+)
+
 
 class SearchMixin:
     """Multi-Entity-Suche (Mixin fuer WRSClientBase)."""
@@ -137,17 +146,9 @@ class SearchMixin:
         entity_types: list[str] | None = None,
         contexts: list[str] | None = None,
         limit: int = 0,
+        mode: str = "auto",
     ) -> list[dict]:
         """Suche ueber mehrere Windchill-Entity-Typen gleichzeitig.
-
-        Strategie (2-Phasen, flacher Thread-Pool):
-
-        Phase 1 — Erste Seite pro Typ parallel abrufen.
-                  Liefert Ergebnisse + Skiptoken-Muster.
-        Phase 2 — Alle verbleibenden Seiten aller Typen in einem
-                  einzigen Thread-Pool parallel abrufen.
-
-        Kein verschachtelter Thread-Pool, kein $count.
 
         Args:
             query:        Suchbegriff (Nummer oder Name, mit Wildcard * oder ?).
@@ -156,6 +157,8 @@ class SearchMixin:
             contexts:     Optional Liste von Kontexten (z.B. ['P - Design']).
                           Filter erfolgt clientseitig ueber FolderLocation.
             limit:        Max. Gesamtergebnisse (0 = kein clientseitiges Limit).
+            mode:         'number' = nur Nummer (schnell), 'keyword' = Nummer+Name,
+                          'auto' = automatisch (digits → number, sonst keyword).
 
         Returns:
             Liste von OData-Dicts, ergaenzt um '_entity_type' (z.B. 'WTPart').
@@ -173,31 +176,28 @@ class SearchMixin:
 
         safe = query.replace("'", "''")
 
-        # Query-Intelligenz: den OData-Filter an die Art des Suchbegriffs anpassen.
-        #
-        # 1. Exakte Nummer (Ziffern + >= 5 Zeichen + keine Wildcards):
-        #    → "Number eq" + "contains(Number,...)"
-        #      Beispiel: S2200287364, BCC0812-P-A051-004
-        #
-        # 2. Kurze/partielle Nummer (Ziffern, aber < 5 Zeichen oder Wildcards):
-        #    → "Number eq" + "contains(Number,...)"
-        #      Beispiel: BCC08, Z03
-        #
-        # 3. Reiner Text (keine Ziffern):
-        #    → "contains(Number,...) or contains(Name,...)"
-        #      Beispiel: BCC, Sensor
-        _has_digits = any(c.isdigit() for c in query)
-        _has_wildcards = "*" in query or "?" in query
-
-        if _has_digits:
+        # Search mode: 'number' only queries Number, 'keyword' also Name,
+        # 'auto' decides based on whether the query contains digits.
+        if mode == "number":
             combined_filter = (
                 f"(Number eq '{safe}' or contains(Number,'{safe}'))"
             )
-        else:
+        elif mode == "keyword":
             combined_filter = (
                 f"(Number eq '{safe}' or contains(Number,'{safe}') "
                 f"or contains(Name,'{safe}'))"
             )
+        else:  # auto
+            _has_digits = any(c.isdigit() for c in query)
+            if _has_digits:
+                combined_filter = (
+                    f"(Number eq '{safe}' or contains(Number,'{safe}'))"
+                )
+            else:
+                combined_filter = (
+                    f"(Number eq '{safe}' or contains(Number,'{safe}') "
+                    f"or contains(Name,'{safe}'))"
+                )
 
         max_pages = _DEFAULT_SEARCH_MAX_PAGES
         if limit > 0:
@@ -211,7 +211,7 @@ class SearchMixin:
                 for ver, svc_path in self._CAD_FALLBACK_BASES:
                     base = f"{self.base_url}/servlet/odata/{ver}"
                     url = f"{base}/{svc_path}"
-                    params: dict[str, str] = {"$filter": combined_filter}
+                    params: dict[str, str] = {"$filter": combined_filter, "$select": _SEARCH_SELECT_FIELDS}
                     try:
                         resp = self._raw_get(url, params)
                         if resp.status_code == 200:
@@ -228,7 +228,7 @@ class SearchMixin:
                 return type_key, wc_type, [], None
 
             url = f"{self.odata_base}/{service}/{entity_set}"
-            params: dict[str, str] = {"$filter": combined_filter}
+            params: dict[str, str] = {"$filter": combined_filter, "$select": _SEARCH_SELECT_FIELDS}
             try:
                 resp = self._raw_get(url, params)
                 if resp.status_code != 200:
@@ -356,26 +356,24 @@ class SearchMixin:
         contexts: list[str] | None = None,
         limit: int = 0,
         cancelled: "threading.Event | None" = None,
+        mode: str = "auto",
     ) -> Generator[list[dict], None, None]:
         """Streaming-Variante von search_entities.
 
         Yielded Batches von Ergebnissen sobald sie verfuegbar sind,
-        statt auf alle Seiten zu warten. Jeder Batch ist eine Liste
-        von OData-Dicts (dedupliziert, kontextgefiltert).
-
-        Phase 1 — Erste Seite pro Typ parallel → yield sofort.
-        Phase 2 — Restliche Seiten parallel → yield pro fertigem Batch.
+        statt auf alle Seiten zu warten.
 
         Args:
             cancelled: Optional threading.Event. Wenn gesetzt, bricht die
                        Suche fruehzeitig ab (z.B. bei Client-Disconnect).
+            mode:      'number' | 'keyword' | 'auto'.
         """
         import re as _re
         import threading as _threading
         from concurrent.futures import ThreadPoolExecutor, as_completed
 
         if cancelled is None:
-            cancelled = _threading.Event()  # Dummy, wird nie gesetzt
+            cancelled = _threading.Event()
 
         if entity_types is None:
             targets = list(self.SEARCHABLE_ENTITIES.items())
@@ -386,15 +384,23 @@ class SearchMixin:
             ]
 
         safe = query.replace("'", "''")
-        _has_digits = any(c.isdigit() for c in query)
 
-        if _has_digits:
+        if mode == "number":
             combined_filter = f"(Number eq '{safe}' or contains(Number,'{safe}'))"
-        else:
+        elif mode == "keyword":
             combined_filter = (
                 f"(Number eq '{safe}' or contains(Number,'{safe}') "
                 f"or contains(Name,'{safe}'))"
             )
+        else:  # auto
+            _has_digits = any(c.isdigit() for c in query)
+            if _has_digits:
+                combined_filter = f"(Number eq '{safe}' or contains(Number,'{safe}'))"
+            else:
+                combined_filter = (
+                    f"(Number eq '{safe}' or contains(Number,'{safe}') "
+                    f"or contains(Name,'{safe}'))"
+                )
 
         max_pages = _DEFAULT_SEARCH_MAX_PAGES
         if limit > 0:
@@ -434,7 +440,7 @@ class SearchMixin:
                 for ver, svc_path in self._CAD_FALLBACK_BASES:
                     base = f"{self.base_url}/servlet/odata/{ver}"
                     url = f"{base}/{svc_path}"
-                    params: dict[str, str] = {"$filter": combined_filter}
+                    params: dict[str, str] = {"$filter": combined_filter, "$select": _SEARCH_SELECT_FIELDS}
                     try:
                         resp = self._raw_get(url, params)
                         if resp.status_code == 200:
@@ -451,7 +457,7 @@ class SearchMixin:
                 return type_key, wc_type, [], None
 
             url = f"{self.odata_base}/{service}/{entity_set}"
-            params: dict[str, str] = {"$filter": combined_filter}
+            params: dict[str, str] = {"$filter": combined_filter, "$select": _SEARCH_SELECT_FIELDS}
             try:
                 resp = self._raw_get(url, params)
                 if resp.status_code != 200:
@@ -618,7 +624,7 @@ class SearchMixin:
 
         def _fetch_first(type_key: str, service: str, entity_set: str, wc_type: str):
             url = f"{self.odata_base}/{service}/{entity_set}"
-            params: dict[str, str] = {}
+            params: dict[str, str] = {"$select": _SEARCH_SELECT_FIELDS}
             if filter_str:
                 params["$filter"] = filter_str
             try:

@@ -301,6 +301,16 @@ export interface SetStateRequest {
   comment?: string
 }
 
+export interface AddBomChildRequest {
+  childPartNumber: string
+  quantity?: number
+  unit?: string
+}
+
+export interface RemoveBomChildRequest {
+  usageLinkId: string
+}
+
 export interface WriteResponse {
   ok: boolean
   objectId: string

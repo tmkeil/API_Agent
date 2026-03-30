@@ -6,8 +6,9 @@ Endpoints:
   PATCH  /write/{type_key}/{code}/attributes     → Attribute aendern
   POST   /write/{type_key}/{code}/state          → Lifecycle-Status setzen
   POST   /write/{type_key}/{code}/checkout       → Auschecken
-  POST   /write/{type_key}/{code}/checkin        → Einchecken
-"""
+  POST   /write/{type_key}/{code}/checkin        → Einchecken  POST   /write/{type_key}/{code}/revise         → Neue Revision erstellen
+  POST   /write/bom/{code}/add-child             → BOM Kind hinzufuegen
+  POST   /write/bom/remove-child                 → BOM Kind entfernen"""
 
 import logging
 
@@ -16,7 +17,9 @@ from fastapi import APIRouter, Depends, Request
 from src.core.auth import require_auth
 from src.core.dependencies import get_client
 from src.models.dto import (
+    AddBomChildRequest,
     CreateObjectRequest,
+    RemoveBomChildRequest,
     SetStateRequest,
     UpdateAttributesRequest,
     WriteResponse,
@@ -103,3 +106,55 @@ def checkin_object(
 ):
     client = get_client(request)
     return write_service.checkin(client, type_key, code)
+
+
+# ── Revise ───────────────────────────────────────────────────
+
+
+@router.post(
+    "/{type_key}/{code}/revise",
+    response_model=WriteResponse,
+    summary="Neue Revision erstellen",
+)
+def revise_object(
+    type_key: str,
+    code: str,
+    request: Request,
+    _: None = Depends(require_auth),
+):
+    client = get_client(request)
+    return write_service.revise(client, type_key, code)
+
+
+# ── BOM Children (UsageLinks) ───────────────────────────────
+
+
+@router.post(
+    "/bom/{code}/add-child",
+    response_model=WriteResponse,
+    summary="Kind-Part zur BOM hinzufuegen",
+)
+def add_bom_child(
+    code: str,
+    body: AddBomChildRequest,
+    request: Request,
+    _: None = Depends(require_auth),
+):
+    client = get_client(request)
+    return write_service.add_bom_child(
+        client, code, body.childPartNumber, body.quantity, body.unit,
+    )
+
+
+@router.post(
+    "/bom/remove-child",
+    response_model=WriteResponse,
+    summary="BOM-Kind-Beziehung entfernen",
+)
+def remove_bom_child(
+    body: RemoveBomChildRequest,
+    request: Request,
+    _: None = Depends(require_auth),
+):
+    client = get_client(request)
+    return write_service.remove_bom_child(client, body.usageLinkId)

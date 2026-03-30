@@ -260,6 +260,116 @@ class WriteMixin:
         )
 
 
+    # ── Revise ───────────────────────────────────────────────
+
+    def revise_object(
+        self: "WRSClientBase",
+        type_key: str,
+        obj_id: str,
+    ) -> dict:
+        """Neue Revision eines Objekts erstellen.
+
+        Nutzt OData Action PTC.{service}.Revise.
+        Windchill erstellt eine neue Revision und gibt das neue Objekt zurueck.
+        """
+        from src.adapters.base import WRSError
+
+        if type_key not in self._WRITABLE_ENTITIES:
+            raise WRSError(f"Unbekannter Objekttyp: '{type_key}'", status_code=400)
+
+        service, entity_set = self._WRITABLE_ENTITIES[type_key]
+        odata_base = (
+            f"{self.base_url}/servlet/odata/v4"
+            if type_key == "cad_document"
+            else self.odata_base
+        )
+        url = (
+            f"{odata_base}/{service}/{entity_set}('{obj_id}')"
+            f"/PTC.{service}.Revise"
+        )
+
+        resp = self._post(url, json_body={})
+        if resp is None:
+            raise WRSError("Revise fehlgeschlagen", status_code=502)
+
+        if resp.status_code in (200, 201):
+            return resp.json()
+
+        detail = _extract_error_detail(resp)
+        raise WRSError(
+            f"Revise fehlgeschlagen (HTTP {resp.status_code}): {detail}",
+            status_code=resp.status_code,
+        )
+
+    # ── BOM Usage Links (Kinder hinzufuegen / entfernen) ─────
+
+    def add_bom_child(
+        self: "WRSClientBase",
+        parent_part_id: str,
+        child_part_id: str,
+        quantity: float = 1.0,
+        unit: str = "each",
+    ) -> dict:
+        """Kind-Part ueber einen neuen UsageLink zur BOM hinzufuegen.
+
+        Args:
+            parent_part_id: OData-ID des Eltern-Parts.
+            child_part_id:  OData-ID des Kind-Parts.
+            quantity:       Menge (Default: 1).
+            unit:           Mengeneinheit (Default: 'each').
+
+        Returns:
+            Der erstellte UsageLink als OData-Dict.
+        """
+        from src.adapters.base import WRSError
+
+        url = f"{self.odata_base}/ProdMgmt/Parts('{parent_part_id}')/Uses"
+        body: dict = {
+            "Uses@odata.bind": f"Parts('{child_part_id}')",
+            "Quantity": quantity,
+            "Unit": unit,
+        }
+
+        resp = self._post(url, json_body=body)
+        if resp is None:
+            raise WRSError("BOM Kind hinzufuegen fehlgeschlagen", status_code=502)
+
+        if resp.status_code in (200, 201):
+            return resp.json()
+
+        detail = _extract_error_detail(resp)
+        raise WRSError(
+            f"BOM Kind hinzufuegen fehlgeschlagen (HTTP {resp.status_code}): {detail}",
+            status_code=resp.status_code,
+        )
+
+    def remove_bom_child(
+        self: "WRSClientBase",
+        usage_link_id: str,
+    ) -> None:
+        """Einen UsageLink (BOM-Kind-Beziehung) entfernen.
+
+        Args:
+            usage_link_id: OData-ID des UsageLinks.
+        """
+        from src.adapters.base import WRSError
+
+        url = f"{self.odata_base}/ProdMgmt/UsageLinks('{usage_link_id}')"
+
+        resp = self._delete(url)
+        if resp is None:
+            raise WRSError("BOM Kind entfernen fehlgeschlagen", status_code=502)
+
+        if resp.status_code in (200, 204):
+            return
+
+        detail = _extract_error_detail(resp)
+        raise WRSError(
+            f"BOM Kind entfernen fehlgeschlagen (HTTP {resp.status_code}): {detail}",
+            status_code=resp.status_code,
+        )
+
+
 def _extract_error_detail(resp) -> str:
     """Windchill-OData-Fehlermeldung aus der Response extrahieren."""
     try:

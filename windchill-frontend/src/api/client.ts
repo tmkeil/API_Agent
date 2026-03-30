@@ -1,4 +1,5 @@
 import type {
+  AddBomChildRequest,
   AdvancedSearchRequest,
   BomNodeResponse,
   BomTreeNode,
@@ -381,6 +382,41 @@ export async function checkinObject(
   return request<WriteResponse>(
     `${BASE}/write/${encodeURIComponent(typeKey)}/${encodeURIComponent(code)}/checkin`,
     { method: 'POST' },
+  )
+}
+
+export async function reviseObject(
+  typeKey: string,
+  code: string,
+): Promise<WriteResponse> {
+  return request<WriteResponse>(
+    `${BASE}/write/${encodeURIComponent(typeKey)}/${encodeURIComponent(code)}/revise`,
+    { method: 'POST' },
+  )
+}
+
+export async function addBomChild(
+  parentCode: string,
+  body: AddBomChildRequest,
+): Promise<WriteResponse> {
+  return request<WriteResponse>(
+    `${BASE}/write/bom/${encodeURIComponent(parentCode)}/add-child`,
+    {
+      method: 'POST',
+      body: JSON.stringify(body),
+    },
+  )
+}
+
+export async function removeBomChild(
+  usageLinkId: string,
+): Promise<WriteResponse> {
+  return request<WriteResponse>(
+    `${BASE}/write/bom/remove-child`,
+    {
+      method: 'POST',
+      body: JSON.stringify({ usageLinkId }),
+    },
   )
 }
 

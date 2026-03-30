@@ -349,6 +349,18 @@ class SetStateRequest(BaseModel):
     comment: str = ""
 
 
+class AddBomChildRequest(BaseModel):
+    """Request body for adding a child to a BOM."""
+    childPartNumber: str
+    quantity: float = 1.0
+    unit: str = "each"
+
+
+class RemoveBomChildRequest(BaseModel):
+    """Request body for removing a child from a BOM."""
+    usageLinkId: str
+
+
 class WriteResponse(BaseModel):
     """Generic response for write operations."""
     ok: bool = True

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { diagnoseBomFields, exportBom, getBomRoot, getBomViews } from '../../api/client'
 import type { BomTreeNode, BomViewConfig } from '../../api/types'
 import BomTreeRow from '../BomTreeNode'
@@ -39,6 +39,19 @@ export default function StructureTab({ partNumber }: Props) {
 
   // Export state
   const [exporting, setExporting] = useState<'expanded' | 'full' | 'extended' | null>(null)
+  const [exportMenuOpen, setExportMenuOpen] = useState(false)
+  const exportMenuRef = useRef<HTMLDivElement>(null)
+
+  // Close export dropdown on outside click
+  useEffect(() => {
+    if (!exportMenuOpen) return
+    const handler = (e: MouseEvent) => {
+      if (exportMenuRef.current && !exportMenuRef.current.contains(e.target as Node))
+        setExportMenuOpen(false)
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [exportMenuOpen])
 
   const activeView = views.find(v => v.id === activeViewId) ?? views[0]
 
@@ -162,30 +175,38 @@ export default function StructureTab({ partNumber }: Props) {
           </div>
         </div>
         <div className="flex items-center gap-1">
-          <button
-            onClick={() => handleExport('expandedOnly')}
-            disabled={!!exporting}
-            className="px-2 py-1 text-[10px] font-medium rounded border border-slate-300 text-slate-500 hover:bg-slate-100 transition-colors disabled:opacity-40"
-            title="Geladenen Baum als JSON exportieren"
-          >
-            {exporting === 'expanded' ? '…' : '⬇ Export'}
-          </button>
-          <button
-            onClick={() => handleExport('fullTree')}
-            disabled={!!exporting}
-            className="px-2 py-1 text-[10px] font-medium rounded border border-indigo-300 text-indigo-600 hover:bg-indigo-50 transition-colors disabled:opacity-40"
-            title="Vollständige Stückliste serverseitig exportieren"
-          >
-            {exporting === 'full' ? '…' : '⬇ Vollständiger Export'}
-          </button>
-          <button
-            onClick={() => handleExport('extended')}
-            disabled={!!exporting}
-            className="px-2 py-1 text-[10px] font-medium rounded border border-emerald-300 text-emerald-600 hover:bg-emerald-50 transition-colors disabled:opacity-40"
-            title="Design + Manufacturing-Äquivalente + deren Stücklisten exportieren"
-          >
-            {exporting === 'extended' ? '…' : '⬇ Erweiterter Export'}
-          </button>
+          {/* Export dropdown */}
+          <div className="relative" ref={exportMenuRef}>
+            <button
+              onClick={() => setExportMenuOpen(o => !o)}
+              disabled={!!exporting}
+              className="px-2 py-1 text-[10px] font-medium rounded border border-slate-300 text-slate-500 hover:bg-slate-100 transition-colors disabled:opacity-40"
+            >
+              {exporting ? '⬇ Exportiere…' : '⬇ Export ▾'}
+            </button>
+            {exportMenuOpen && !exporting && (
+              <div className="absolute right-0 mt-1 w-52 bg-white border border-slate-200 rounded shadow-lg z-30 py-1 text-xs">
+                <button
+                  onClick={() => { setExportMenuOpen(false); handleExport('expandedOnly') }}
+                  className="w-full text-left px-3 py-1.5 hover:bg-slate-100 text-slate-700"
+                >
+                  Geladenen Baum exportieren
+                </button>
+                <button
+                  onClick={() => { setExportMenuOpen(false); handleExport('fullTree') }}
+                  className="w-full text-left px-3 py-1.5 hover:bg-slate-100 text-slate-700"
+                >
+                  Vollständiger Export (Server)
+                </button>
+                <button
+                  onClick={() => { setExportMenuOpen(false); handleExport('extended') }}
+                  className="w-full text-left px-3 py-1.5 hover:bg-slate-100 text-slate-700"
+                >
+                  Erweiterter Export (Design + Mfg)
+                </button>
+              </div>
+            )}
+          </div>
           <button
             onClick={loadRawFields}
             className="px-2 py-1 text-[10px] font-medium rounded border border-slate-300 text-slate-500 hover:bg-slate-100 transition-colors"

@@ -80,6 +80,11 @@ class BomMixin:
             child = link.get(key)
             if isinstance(child, dict) and ("Number" in child or "ID" in child):
                 return child
+            # $expand kann eine Liste liefern (z.B. "Uses": [{...}])
+            if isinstance(child, list) and child:
+                first = child[0]
+                if isinstance(first, dict) and ("Number" in first or "ID" in first):
+                    return first
 
         # Kind per Navigation-Property nachladen
         link_id = link.get("ID", "")

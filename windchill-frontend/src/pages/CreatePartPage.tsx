@@ -62,7 +62,7 @@ export default function CreatePartPage() {
   const handleSubmit = useCallback(
     async (e: React.FormEvent) => {
       e.preventDefault()
-      if (!form.Number.trim() || !form.Name.trim()) return
+      if (!form.Name.trim()) return
 
       setBusy(true)
       setError('')
@@ -105,12 +105,11 @@ export default function CreatePartPage() {
 
       <form onSubmit={handleSubmit} className="bg-white rounded shadow-sm border border-slate-200 p-5 space-y-4">
         {/* Number */}
-        <Field label="Nummer *" hint="Windchill Part Number">
+        <Field label="Nummer" hint="Optional — Windchill vergibt automatisch eine Nummer">
           <input
             value={form.Number}
             onChange={(e) => set('Number', e.target.value)}
-            placeholder="z.B. S2200287364"
-            required
+            placeholder="Leer = automatische Vergabe"
             className="input"
           />
         </Field>
@@ -196,7 +195,7 @@ export default function CreatePartPage() {
         <div className="pt-2">
           <button
             type="submit"
-            disabled={busy || !form.Number.trim() || !form.Name.trim()}
+            disabled={busy || !form.Name.trim()}
             className="w-full px-4 py-2.5 text-sm font-medium rounded bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50 transition-colors"
           >
             {busy ? 'Wird erstellt…' : 'Part erstellen'}
@@ -218,7 +217,8 @@ export default function CreatePartPage() {
 
       {/* Info box */}
       <div className="mt-4 bg-slate-50 border border-slate-200 rounded p-4 text-xs text-slate-500 space-y-1">
-        <p><strong>Hinweis:</strong> Windchill vergibt Revision, Version und Lifecycle automatisch anhand des konfigurierten Templates.</p>
+        <p><strong>Hinweis:</strong> Wird keine Nummer angegeben, vergibt Windchill diese automatisch anhand der konfigurierten Nummerierungsregel.</p>
+        <p>Revision, Version und Lifecycle werden automatisch anhand des konfigurierten Templates gesetzt.</p>
         <p>Die <strong>View</strong> bestimmt, ob das Part unter "P - Design" oder "P - Manufacturing" angelegt wird.</p>
         <p>Weitere Attribute können nach dem Erstellen über den Aktionen-Tab bearbeitet werden.</p>
       </div>

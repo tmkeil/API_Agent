@@ -103,10 +103,11 @@ async def export_bom(
         root_tree = payload.get("tree")
         if not isinstance(root_tree, dict):
             raise HTTPException(400, "Für expandedOnly ist ein Tree-Objekt erforderlich")
-
+        client = get_client(request)
         try:
             _, filename = admin_service.build_export(
                 root_tree, part_number, session.system_url, session.username,
+                client=client,
             )
         except ValueError as e:
             raise HTTPException(400, str(e))

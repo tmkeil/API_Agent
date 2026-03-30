@@ -77,6 +77,11 @@ export default function BomTreeRow({ node, depth, viewColumns, totalCols, onSele
       setLoading(true)
       try {
         const resp = await getBomChildren(node.partId)
+        // Write back to the node object so the tree sent to export is always current
+        node.children = resp.children
+        node.documents = resp.documents
+        node.cadDocuments = resp.cadDocuments
+        node.childrenLoaded = true
         setChildren(resp.children)
         setDocuments(resp.documents)
         setCadDocuments(resp.cadDocuments)

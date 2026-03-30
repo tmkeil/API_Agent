@@ -48,13 +48,12 @@ def _export_doc_node(doc: dict, doc_type: str = WcType.DOCUMENT) -> OrderedDict:
 
 
 def _build_made_from(part_attrs: dict) -> OrderedDict | None:
-    """Extract Made From relationship data from part attributes."""
+    """Extract Made From RAW dimension data from part attributes (no lookup)."""
     mf_number = part_attrs.get("BALMADEFROMNUMBER", "")
     if not mf_number or mf_number == "<list:0 items>":
         return None
     raw_fields = OrderedDict()
     raw_fields["made_from_number"] = mf_number
-    # Raw dimension fields
     _RAW_KEYS = [
         ("BALSAPSTPOROMS1", "raw_dimension_1"),
         ("BALSAPSTPOROMS2", "raw_dimension_2"),
@@ -72,8 +71,93 @@ def _build_made_from(part_attrs: dict) -> OrderedDict | None:
     return raw_fields
 
 
-def frontend_tree_to_export(node: dict, _depth: int = 0) -> OrderedDict:
+def _resolve_made_from(
+    part_attrs: dict,
+    client=None,
+    mf_cache: dict[str, OrderedDict] | None = None,
+) -> OrderedDict | None:
+    """Resolve Made From relationship: full part lookup + RAW dimension data.
+
+    If *client* is provided, the Made-From part is loaded from Windchill with
+    all its attributes (same structure as any other part in the export).
+    A shared *mf_cache* avoids redundant lookups when multiple parts reference
+    the same Made-From part.
+
+    Falls back to ``_build_made_from`` (number + RAW dims only) when no client
+    is available or the lookup fails.
+    """
+    raw = _build_made_from(part_attrs)
+    if raw is None:
+        return None
+
+    mf_number = raw["made_from_number"]
+
+    if client is None:
+        return raw
+
+    if mf_cache is None:
+        mf_cache = {}
+
+    # Cache hit?
+    cached = mf_cache.get(mf_number)
+    if cached is not None:
+        result = copy.deepcopy(cached)
+        # Overlay position-specific RAW dimensions from the parent
+        result["raw_dimensions"] = OrderedDict(
+            (k, v) for k, v in raw.items() if k != "made_from_number"
+        )
+        return result
+
+    # Lookup the Made-From part in Windchill
+    try:
+        mf_raw = client.find_object("part", mf_number)
+    except Exception as exc:
+        logger.debug("Made-From part '%s' lookup failed: %s", mf_number, exc)
+        return raw  # graceful fallback
+
+    n = normalize_item(mf_raw)
+    _SKIP_MF = {"ID", "id", "Number", "Name", "Version", "Iteration",
+                "State", "LifeCycleState", "Identity", "OrganizationName",
+                "VersionID"}
+    mf_attrs = OrderedDict()
+    for k, v in mf_raw.items():
+        if k.startswith("@") or k.startswith("odata") or k.startswith("_"):
+            continue
+        if k in _SKIP_MF:
+            continue
+        flat = _flatten(v)
+        if flat is not None and flat != "" and flat != []:
+            mf_attrs[k] = flat
+
+    result = OrderedDict()
+    result["type"] = WcType.PART
+    result["number"] = n["number"]
+    result["name"] = n["name"]
+    result["version"] = n["version"]
+    result["iteration"] = n["iteration"]
+    result["state"] = n["state"]
+    result["identity"] = n["identity"]
+    if mf_attrs:
+        result["part_attributes"] = mf_attrs
+    result["raw_dimensions"] = OrderedDict(
+        (k, v) for k, v in raw.items() if k != "made_from_number"
+    )
+
+    # Cache the template (without position-specific RAW dims)
+    mf_cache[mf_number] = copy.deepcopy(result)
+
+    return result
+
+
+def frontend_tree_to_export(
+    node: dict,
+    _depth: int = 0,
+    client=None,
+    mf_cache: dict[str, OrderedDict] | None = None,
+) -> OrderedDict:
     """Convert a camelCase frontend BOM tree node to export format with ALL attributes.
+
+    When *client* is provided, Made-From parts are resolved with full attributes.
 
     Raises:
         ValueError: If tree depth exceeds 200 levels (cycle protection).
@@ -81,7 +165,10 @@ def frontend_tree_to_export(node: dict, _depth: int = 0) -> OrderedDict:
     if _depth > 200:
         raise ValueError("Baumstruktur ist zu tief verschachtelt (max. 200 Ebenen)")
 
-    children = [frontend_tree_to_export(child, _depth + 1) for child in node.get("children", [])]
+    children = [
+        frontend_tree_to_export(child, _depth + 1, client, mf_cache)
+        for child in node.get("children", [])
+    ]
 
     documents = [_export_doc_node(doc, WcType.DOCUMENT) for doc in node.get("documents", [])]
     cad_documents = [_export_doc_node(doc, WcType.CAD_DOCUMENT) for doc in node.get("cadDocuments", [])]
@@ -110,8 +197,8 @@ def frontend_tree_to_export(node: dict, _depth: int = 0) -> OrderedDict:
     if usage_attrs:
         result["usage_link_attributes"] = usage_attrs
 
-    # Made From relationship
-    made_from = _build_made_from(part_attrs)
+    # Made From relationship (resolved if client available)
+    made_from = _resolve_made_from(part_attrs, client, mf_cache)
     if made_from:
         result["made_from"] = made_from
 
@@ -151,8 +238,11 @@ def build_export(
     part_number: str,
     system_url: str,
     username: str,
+    client=None,
 ) -> tuple[OrderedDict, str]:
     """Build BOM export data and write to JSON file.
+
+    When *client* is provided, Made-From parts are resolved with full attributes.
 
     Returns:
         Tuple of (export_data, filename).
@@ -160,7 +250,8 @@ def build_export(
     Raises:
         ValueError: If tree is too deep.
     """
-    bom_tree = frontend_tree_to_export(root_tree)
+    mf_cache: dict[str, OrderedDict] = {}
+    bom_tree = frontend_tree_to_export(root_tree, client=client, mf_cache=mf_cache)
     stats = count_tree_stats(bom_tree)
 
     export_data = OrderedDict([
@@ -235,6 +326,7 @@ def _export_part_node(
     depth: int,
     seen_ids: set[str],
     part_cache: dict[str, OrderedDict] | None = None,
+    mf_cache: dict[str, OrderedDict] | None = None,
 ) -> OrderedDict:
     """Recursively export a part with its BOM, documents and CAD documents.
 
@@ -358,8 +450,8 @@ def _export_part_node(
     cad_documents = [_export_raw_doc(d, WcType.CAD_DOCUMENT) for d in (cad_raw or [])]
     referenced_by = [_export_raw_doc(d, WcType.DOCUMENT) for d in (referenced_by_raw or [])]
 
-    # ── Made From relationship ─────────────────────────────
-    made_from = _build_made_from(part_attrs)
+    # ── Made From relationship (resolved with full part data) ─
+    made_from = _resolve_made_from(part_attrs, client, mf_cache)
 
     # ── Recurse into children ──────────────────────────────
     children: list[OrderedDict] = []
@@ -373,7 +465,7 @@ def _export_part_node(
                 continue
             seen_ids.add(child_id)
             children.append(
-                _export_part_node(client, child_id, child_part, link, depth + 1, seen_ids, part_cache)
+                _export_part_node(client, child_id, child_part, link, depth + 1, seen_ids, part_cache, mf_cache)
             )
             seen_ids.discard(child_id)  # allow same part in different branches
 
@@ -442,12 +534,13 @@ def build_full_tree_export(
 
     seen_ids: set[str] = {part_id}
     part_cache: dict[str, OrderedDict] = {}
-    bom_tree = _export_part_node(client, part_id, raw_part, None, 0, seen_ids, part_cache)
+    mf_cache: dict[str, OrderedDict] = {}
+    bom_tree = _export_part_node(client, part_id, raw_part, None, 0, seen_ids, part_cache, mf_cache)
     stats = count_tree_stats(bom_tree)
 
     logger.info(
-        "Full tree export for %s: %d parts, %d cached reuses",
-        part_number, stats["parts"], len(part_cache),
+        "Full tree export for %s: %d parts, %d cached reuses, %d unique made-from",
+        part_number, stats["parts"], len(part_cache), len(mf_cache),
     )
 
     export_data = OrderedDict([
@@ -540,10 +633,11 @@ def build_extended_export(
     if not part_id:
         raise WRSError(f"Part '{part_number}' nicht gefunden", status_code=404)
 
-    # Shared cache across all trees in this export
+    # Shared caches across all trees in this export
     part_cache: dict[str, OrderedDict] = {}
+    mf_cache: dict[str, OrderedDict] = {}
     seen_ids: set[str] = {part_id}
-    design_tree = _export_part_node(client, part_id, raw_part, None, 0, seen_ids, part_cache)
+    design_tree = _export_part_node(client, part_id, raw_part, None, 0, seen_ids, part_cache, mf_cache)
 
     # ── 2. Find Manufacturing equivalents ──────────────────
     downstream_raw = _flatten(raw_part.get("BALDOWNSTREAM", ""))
@@ -575,13 +669,13 @@ def build_extended_export(
                 mfg_seen: set[str] = {mfg_id}
                 # Use depth=_MAX_DEPTH to prevent child loading
                 mfg_tree = _export_part_node(
-                    client, mfg_id, mfg_raw, None, _MAX_DEPTH, mfg_seen, part_cache,
+                    client, mfg_id, mfg_raw, None, _MAX_DEPTH, mfg_seen, part_cache, mf_cache,
                 )
                 mfg_tree["_gathering_part"] = True
             else:
                 mfg_seen = {mfg_id}
                 mfg_tree = _export_part_node(
-                    client, mfg_id, mfg_raw, None, 0, mfg_seen, part_cache,
+                    client, mfg_id, mfg_raw, None, 0, mfg_seen, part_cache, mf_cache,
                 )
 
             manufacturing_trees.append(mfg_tree)

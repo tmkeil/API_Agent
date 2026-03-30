@@ -16,33 +16,16 @@ interface Props {
 }
 
 /** Resolve a column value from a BomTreeNode based on the column config. */
+/** Attribute bags for nested sources; everything else reads directly from node. */
+const ATTR_BAGS: Record<string, (n: BomTreeNode) => Record<string, unknown> | undefined> = {
+  usageLink: n => n.usageLinkAttributes as Record<string, unknown> | undefined,
+  partAttr:  n => n.partAttributes as Record<string, unknown> | undefined,
+}
+
 function getCellValue(node: BomTreeNode, col: BomViewColumn): string {
-  const nodeRecord = node as unknown as Record<string, unknown>
-  // "part" source: direct field on node
-  if (col.source === 'part') {
-    const val = nodeRecord[col.key]
-    return val != null ? String(val) : ''
-  }
-  // "link" source: standard extracted usage-link fields
-  if (col.source === 'link') {
-    const val = nodeRecord[col.key]
-    return val != null ? String(val) : ''
-  }
-  // "usageLink" source: dynamic key inside usageLinkAttributes
-  if (col.source === 'usageLink') {
-    const attrs = node.usageLinkAttributes
-    if (!attrs) return ''
-    const val = attrs[col.key]
-    return val != null ? String(val) : ''
-  }
-  // "partAttr" source: dynamic key inside partAttributes
-  if (col.source === 'partAttr') {
-    const attrs = node.partAttributes
-    if (!attrs) return ''
-    const val = attrs[col.key]
-    return val != null ? String(val) : ''
-  }
-  return ''
+  const bag = ATTR_BAGS[col.source]?.(node) ?? (node as unknown as Record<string, unknown>)
+  const val = bag?.[col.key]
+  return val != null ? String(val) : ''
 }
 
 /** Resolve a column value from a DocumentNode — maps shared fields dynamically. */

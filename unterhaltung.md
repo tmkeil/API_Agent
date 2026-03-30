@@ -397,3 +397,27 @@ ein API‑Design (OpenAPI/Swagger) erstellen
 eine empfohlene JSON-Struktur für den BOM-Output generieren
 oder dir zeigen, welche Windchill-REST-Endpunkte du intern nutzen solltest
 Soll ich dir eine Beispiel-API-Spezifikation zusammenstellen?
+
+week_days = {
+    0: "Monday",
+    1: "Tuesday",
+    2: "Wednesday",
+    3: "Thursday",
+    4: "Friday",
+    5: "Saturday",
+    6: "Sunday"
+}
+
+def get_week_day(date):
+    print(week_days.get(date.weekday(), "Invalid date"))
+
+
+
+Statt (bad-practices):
+if date.weekday() == 0:
+    print("Monday")
+elif date.weekday() == 1:
+    print("Tuesday")
+elif date.weekday() == 2:
+    print("Wednesday")
+...

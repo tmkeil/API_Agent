@@ -101,8 +101,10 @@ export default function StructureTab({ partNumber }: Props) {
     }
   }, [partNumber, rawFields, rawFieldsLoading, showRawFields])
 
+  const EXPORT_LABEL: Record<string, 'expanded' | 'extended' | 'full'> = { expandedOnly: 'expanded', extended: 'extended', fullTree: 'full' }
+
   const handleExport = useCallback(async (mode: 'expandedOnly' | 'fullTree' | 'extended') => {
-    setExporting(mode === 'expandedOnly' ? 'expanded' : mode === 'extended' ? 'extended' : 'full')
+    setExporting(EXPORT_LABEL[mode] ?? 'full')
     try {
       const res = await exportBom(mode, partNumber, mode === 'expandedOnly' ? root : undefined)
       // Trigger download

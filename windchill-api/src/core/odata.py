@@ -34,6 +34,14 @@ _FIELD_ALIASES: dict[str, list[str]] = {
 }
 
 
+# ── Boolean normalization ────────────────────────────────────
+
+_BOOL_MAP: dict[str, str] = {
+    "true": "Yes", "yes": "Yes", "1": "Yes",
+    "false": "No", "no": "No", "0": "No",
+}
+
+
 # ── Normalization helpers ────────────────────────────────────
 
 
@@ -68,17 +76,12 @@ def normalize_item(raw: dict) -> dict:
         if canonical == "state":
             result[canonical] = normalize_state(value)
         elif canonical == "is_variant":
-            # Windchill returns boolean true/false → normalize to Yes/No
             if value is None or value == "":
                 result[canonical] = ""
             elif isinstance(value, bool):
                 result[canonical] = "Yes" if value else "No"
-            elif str(value).lower() in ("true", "yes", "1"):
-                result[canonical] = "Yes"
-            elif str(value).lower() in ("false", "no", "0"):
-                result[canonical] = "No"
             else:
-                result[canonical] = str(value)
+                result[canonical] = _BOOL_MAP.get(str(value).lower(), str(value))
         else:
             result[canonical] = str(value) if value is not None else ""
 

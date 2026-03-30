@@ -26,6 +26,21 @@ _WC_PAGE_SIZE = 25
 _DEFAULT_SEARCH_MAX_PAGES = 200
 
 
+def _build_search_filter(mode: str, query: str) -> str:
+    """Build OData $filter for the given search *mode* and *query*."""
+    safe = query.replace("'", "''")
+    number_only = f"(Number eq '{safe}' or contains(Number,'{safe}'))"
+    number_and_name = (
+        f"(Number eq '{safe}' or contains(Number,'{safe}') "
+        f"or contains(Name,'{safe}'))"
+    )
+    _MODES = {"number": number_only, "keyword": number_and_name}
+    if mode in _MODES:
+        return _MODES[mode]
+    # auto: digits → number only, otherwise include Name
+    return number_only if any(c.isdigit() for c in query) else number_and_name
+
+
 class SearchMixin:
     """Multi-Entity-Suche (Mixin fuer WRSClientBase)."""
 
@@ -167,28 +182,7 @@ class SearchMixin:
 
         safe = query.replace("'", "''")
 
-        # Search mode: 'number' only queries Number, 'keyword' also Name,
-        # 'auto' decides based on whether the query contains digits.
-        if mode == "number":
-            combined_filter = (
-                f"(Number eq '{safe}' or contains(Number,'{safe}'))"
-            )
-        elif mode == "keyword":
-            combined_filter = (
-                f"(Number eq '{safe}' or contains(Number,'{safe}') "
-                f"or contains(Name,'{safe}'))"
-            )
-        else:  # auto
-            _has_digits = any(c.isdigit() for c in query)
-            if _has_digits:
-                combined_filter = (
-                    f"(Number eq '{safe}' or contains(Number,'{safe}'))"
-                )
-            else:
-                combined_filter = (
-                    f"(Number eq '{safe}' or contains(Number,'{safe}') "
-                    f"or contains(Name,'{safe}'))"
-                )
+        combined_filter = _build_search_filter(mode, query)
 
         max_pages = _DEFAULT_SEARCH_MAX_PAGES
         if limit > 0:
@@ -376,22 +370,7 @@ class SearchMixin:
 
         safe = query.replace("'", "''")
 
-        if mode == "number":
-            combined_filter = f"(Number eq '{safe}' or contains(Number,'{safe}'))"
-        elif mode == "keyword":
-            combined_filter = (
-                f"(Number eq '{safe}' or contains(Number,'{safe}') "
-                f"or contains(Name,'{safe}'))"
-            )
-        else:  # auto
-            _has_digits = any(c.isdigit() for c in query)
-            if _has_digits:
-                combined_filter = f"(Number eq '{safe}' or contains(Number,'{safe}'))"
-            else:
-                combined_filter = (
-                    f"(Number eq '{safe}' or contains(Number,'{safe}') "
-                    f"or contains(Name,'{safe}'))"
-                )
+        combined_filter = _build_search_filter(mode, query)
 
         max_pages = _DEFAULT_SEARCH_MAX_PAGES
         if limit > 0:

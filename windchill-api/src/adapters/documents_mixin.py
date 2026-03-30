@@ -103,6 +103,39 @@ class DocumentsMixin:
                         all_cads.append(cad)
 
         return all_cads
+
+    def get_referenced_by_documents(
+        self: "WRSClientBase",
+        part_id: str,
+        exclude_ids: set[str] | None = None,
+    ) -> list:
+        """Dokumente laden, die dieses Part per References-Navigation referenzieren.
+
+        Anders als ``get_described_documents`` (DescribedBy) liefert dies die
+        umgekehrte Richtung: Dokumente, die das Part in ihrer References-Liste
+        haben.  Wird als eigene Kategorie im Export gefuehrt.
+
+        Args:
+            part_id: OData-ID des Parts.
+            exclude_ids: Bereits bekannte Dokument-IDs (z.B. aus DescribedBy),
+                         die hier nicht nochmal aufgefuehrt werden sollen.
+        """
+        if exclude_ids is None:
+            exclude_ids = set()
+
+        url = f"{self.odata_base}/ProdMgmt/Parts('{part_id}')/References"
+        items = self._get_all_pages(url, return_none_on_error=True)
+        if not items:
+            return []
+
+        result: list[dict] = []
+        seen: set[str] = set()
+        for item in items:
+            doc_id = item.get("ID", "")
+            if doc_id and doc_id not in seen and doc_id not in exclude_ids:
+                seen.add(doc_id)
+                result.append(item)
+        return result
     # ── Reverse Navigation: Document → Parts ─────────────────
 
     def get_document_referencing_parts(

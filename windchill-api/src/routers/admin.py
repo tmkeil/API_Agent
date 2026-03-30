@@ -77,10 +77,19 @@ async def export_bom(
 
     if not part_number:
         raise HTTPException(400, "partNumber fehlt")
-    if mode not in ("expandedOnly", "fullTree"):
+    if mode not in ("expandedOnly", "fullTree", "extended"):
         raise HTTPException(400, "Ungültiger Exportmodus")
 
-    if mode == "fullTree":
+    if mode == "extended":
+        # Extended: Design + Manufacturing Equivalents + their BOMs
+        client = get_client(request)
+        try:
+            _, filename = admin_service.build_extended_export(
+                client, part_number, session.system_url, session.username,
+            )
+        except Exception as e:
+            raise HTTPException(500, f"Extended-Export fehlgeschlagen: {e}")
+    elif mode == "fullTree":
         # Server-side full BOM explosion
         client = get_client(request)
         try:

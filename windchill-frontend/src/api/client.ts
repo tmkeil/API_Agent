@@ -314,7 +314,7 @@ export async function clearApiLogs(): Promise<void> {
 
 // Export
 export async function exportBom(
-  mode: 'expandedOnly' | 'fullTree',
+  mode: 'expandedOnly' | 'fullTree' | 'extended',
   partNumber: string,
   tree?: unknown,
 ): Promise<{ ok: boolean; filename: string; downloadUrl: string }> {

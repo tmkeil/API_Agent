@@ -247,3 +247,21 @@ Erzeugen neues Doc verknüpfen das Doc
 Probleme mit Performance
 Expands optimiert
 nur die Attribute abfragen, die man wirklich braucht.
+
+
+
+
+
+
+
+
+
+
+5. Was meint der Stakeholder mit der Baumstruktur?
+Die Struktur in b.md beschreibt genau das, was jetzt implementiert ist:
+
+Root: Part mit allen Attributen
+Pro Part: CAD Documents, Described By Documents, Referenced By Documents
+BOM: Positionen mit Line Number, Quantity, Unit, Reference Designator, etc.
+Pro Position: Child-Part mit eigenen Docs/CAD/BOM (rekursiv)
+Made From: Als zusätzliche Beziehung unter Parts die BALMADEFROMNUMBER haben, mit Raw-Dim-Parametern

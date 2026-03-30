@@ -1,9 +1,11 @@
 import { useAuth } from '../contexts/AuthContext'
 import type { ReactNode } from 'react'
+import { useNavigate } from 'react-router-dom'
 import ApiLogPanel from './ApiLogPanel'
 
 export default function Layout({ children }: { children: ReactNode }) {
   const { user, logout } = useAuth()
+  const navigate = useNavigate()
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -21,6 +23,12 @@ export default function Layout({ children }: { children: ReactNode }) {
           </div>
           {user && (
             <div className="flex items-center gap-4 text-sm">
+              <button
+                onClick={() => navigate('/create/part')}
+                className="px-2.5 py-1 text-xs font-medium rounded bg-indigo-600 text-white hover:bg-indigo-700 transition-colors"
+              >
+                + Neues Part
+              </button>
               <span className="text-slate-300 text-xs">{user.username}</span>
               <button
                 onClick={logout}

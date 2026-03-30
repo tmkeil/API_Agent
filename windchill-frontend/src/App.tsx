@@ -5,6 +5,7 @@ import ErrorBoundary from './components/ErrorBoundary'
 import LoginPage from './pages/LoginPage'
 import DashboardPage from './pages/DashboardPage'
 import DetailPage from './pages/DetailPage'
+import CreatePartPage from './pages/CreatePartPage'
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth()
@@ -40,6 +41,7 @@ function AppRoutes() {
             <Layout>
               <Routes>
                 <Route path="/" element={<DashboardPage />} />
+                <Route path="/create/part" element={<CreatePartPage />} />
                 <Route path="/detail/:typeKey/:code" element={<DetailPage />} />
                 <Route path="*" element={<NotFoundPage />} />
               </Routes>

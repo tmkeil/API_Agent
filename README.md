@@ -14,14 +14,16 @@ Entwickelt als AI-Agent-fähige Schnittstelle zu Windchill PLM.
 5. [Suche & Parallel Paging (SSE-Streaming)](#suche--parallel-paging-sse-streaming)
 6. [Hintergrund-Laden (Background Search Store)](#hintergrund-laden-background-search-store)
 7. [BOM-Struktur & Split-View](#bom-struktur--split-view)
-8. [API Log Modul](#api-log-modul)
-9. [Modularisierung & Erweiterbarkeit](#modularisierung--erweiterbarkeit)
-10. [Stabilität & Fehlertoleranz](#stabilität--fehlertoleranz)
-11. [Production-Readiness Assessment](#production-readiness-assessment)
-12. [Dateistruktur — Backend](#dateistruktur--backend)
-13. [Dateistruktur — Frontend](#dateistruktur--frontend)
-14. [Deployment](#deployment)
-15. [Kommandos](#kommandos)
+8. [BOM Export](#bom-export)
+9. [Schreiboperationen (Write Operations)](#schreiboperationen-write-operations)
+10. [API Log Modul](#api-log-modul)
+11. [Modularisierung & Erweiterbarkeit](#modularisierung--erweiterbarkeit)
+12. [Stabilität & Fehlertoleranz](#stabilität--fehlertoleranz)
+13. [Production-Readiness Assessment](#production-readiness-assessment)
+14. [Dateistruktur — Backend](#dateistruktur--backend)
+15. [Dateistruktur — Frontend](#dateistruktur--frontend)
+16. [Deployment](#deployment)
+17. [Kommandos](#kommandos)
 
 ---
 
@@ -708,6 +710,129 @@ Konfigurierbar über `GET /api/bom/views` (`bom_views.py`):
 | SAP | SAP-spezifische Attribute (BALSAPNAME etc.) | ERP-Integration |
 | Rohmaterial | Gewicht, Maße, Materialtyp | Engineering |
 | Alle Felder | ~20 Spalten | Diagnose |
+
+---
+
+## BOM Export
+
+Drei Exportmodi erzeugen eine vollständige JSON-Datei mit allen Attributen, Dokumenten und Made-From-Beziehungen.
+
+### Exportmodi
+
+| Modus | Trigger | Was passiert |
+|---|---|---|
+| **Geladenen Baum exportieren** (`expandedOnly`) | Frontend sendet den bereits geladenen BOM-Baum an `/api/export` | Nur die im Browser aufgeklappten Ebenen werden exportiert. Schnell, da keine zusätzlichen OData-Calls. |
+| **Vollständiger Export** (`fullTree`) | Server holt rekursiv die gesamte BOM | `_export_part_node()` traversiert alle Ebenen (max. 50 Tiefe). Pro Part: Kinder, Dokumente, CAD-Dokumente, Referenced-By-Dokumente. Duplikate werden per `part_cache` erkannt und wiederverwendet. |
+| **Erweiterter Export** (`extended`) | Design-Part + Manufacturing-Äquivalente | 1. Design-BOM vollständig exportieren. 2. `BALDOWNSTREAM` parsen → Manufacturing-Nummern. 3. Jede Manufacturing-Part-BOM separat exportieren. Gathering-Parts (Suffix=GATH) werden erfasst, aber nicht rekursiv expandiert. |
+
+Im Frontend wählt der User den Modus über ein Dropdown (⬇ Export ▾) im BOM-Tab.
+
+### Made-From-Auflösung
+
+Wenn ein Part ein `BALMADEFROMNUMBER`-Attribut hat, wird die referenzierte Made-From-Part **vollständig aufgelöst** — nicht nur die Nummer, sondern alle Attribute:
+
+```python
+# windchill-api/src/services/admin_service.py — _resolve_made_from()
+mf_raw = client.find_object("part", mf_number)     # Lookup in Windchill
+result = OrderedDict()
+result["type"]            = "part"
+result["number"]          = n["number"]
+result["name"]            = n["name"]
+result["version"]         = n["version"]
+result["iteration"]       = n["iteration"]
+result["state"]           = n["state"]
+result["part_attributes"] = mf_attrs                # Alle Properties
+result["raw_dimensions"]  = raw_dims                # BALRAW*-Felder
+```
+
+Ein **`mf_cache`** (analog zum `part_cache`) vermeidet doppelte Lookups, wenn mehrere Parts auf dieselbe Made-From-Part verweisen.
+
+### Export-Struktur (JSON)
+
+```json
+{
+  "export_info": {
+    "source_system": "https://windchill.example.com",
+    "odata_version": "v6",
+    "product_number": "0000012345",
+    "exported_by": "user01",
+    "export_timestamp": "2025-01-15T10:30:00+00:00",
+    "statistics": {
+      "total_parts": 142,
+      "total_documents": 58,
+      "total_cad_documents": 37,
+      "total_referenced_by_documents": 12,
+      "total_made_from": 8
+    }
+  },
+  "bom": { "type": "part", "number": "...", "children": [...], "made_from": {...} }
+}
+```
+
+Beim Extended-Export enthält die Datei zusätzlich `design_bom` und `manufacturing_boms` als getrennte Blöcke.
+
+### API-Endpoints
+
+| Methode | Pfad | Body | Beschreibung |
+|---|---|---|---|
+| `POST` | `/api/export` | `{ mode, partNumber, tree? }` | Export starten (Mode: `expandedOnly`, `fullTree`, `extended`) |
+| `GET` | `/api/export/download/{filename}` | — | Generierte JSON-Datei herunterladen |
+
+---
+
+## Schreiboperationen (Write Operations)
+
+Das System unterstützt schreibende Operationen auf Windchill-Objekte über OData. Alle Writes benötigen einen **CSRF_NONCE**, der automatisch bei jedem Response aktualisiert wird (`base.py`).
+
+### Unterstützte Objekttypen
+
+| Type Key | OData Service | Entity Set |
+|---|---|---|
+| `part` | ProdMgmt | Parts |
+| `document` | DocMgmt | Documents |
+| `cad_document` | CADDocumentMgmt | CADDocuments |
+| `change_notice` | ChangeMgmt | ChangeNotices |
+| `change_request` | ChangeMgmt | ChangeRequests |
+| `problem_report` | ChangeMgmt | ProblemReports |
+
+CAD-Dokumente nutzen **OData v4** (statt v6) — das Backend schaltet automatisch um.
+
+### 5 Operationen
+
+| Operation | HTTP | Endpoint | Beschreibung |
+|---|---|---|---|
+| **Erstellen** | `POST` | `/api/write/create` | Neues Objekt anlegen (Number, Name, Attribute) |
+| **Attribute ändern** | `PATCH` | `/api/write/{type}/{code}/attributes` | Einzelne Properties per PATCH aktualisieren |
+| **Status setzen** | `POST` | `/api/write/{type}/{code}/state` | Lifecycle-Status ändern (z.B. INWORK → RELEASED) |
+| **Auschecken** | `POST` | `/api/write/{type}/{code}/checkout` | Objekt für Bearbeitung sperren |
+| **Einchecken** | `POST` | `/api/write/{type}/{code}/checkin` | Gesperrtes Objekt wieder freigeben |
+
+### Lifecycle-Status: 2-Strategien-Ansatz
+
+```python
+# windchill-api/src/adapters/write_mixin.py — set_lifecycle_state()
+
+# Strategie 1: OData Action (Windchill 12+)
+action_url = f"{odata_base}/{service}/{entity_set}('{obj_id}')/PTC.{service}.SetLifeCycleState"
+resp = self._post(action_url, json_body={"State": target_state})
+
+# Strategie 2: Fallback — generischer PATCH
+patch_url = f"{odata_base}/{service}/{entity_set}('{obj_id}')"
+resp = self._patch(patch_url, json_body={"State": target_state})
+```
+
+Strategie 1 nutzt die Windchill OData Action. Falls diese fehlschlägt (ältere Windchill-Versionen), versucht Strategie 2 einen direkten PATCH.
+
+### Aktionen-Tab (Frontend)
+
+Im `WriteActionsPanel` stehen 4 Aktionen zur Verfügung:
+
+- **Auschecken** — Ein Klick, kein Formular nötig
+- **Einchecken** — Optionales Kommentarfeld
+- **Status ändern** — Eingabefeld für Zielstatus + optionaler Kommentar
+- **Attribut ändern** — Key/Value Eingabefelder
+
+Jede Aktion zeigt Erfolg/Fehler inline an. Nach Erfolg wird die Detailseite automatisch aktualisiert.
 
 ---
 

@@ -1,6 +1,6 @@
 # Windchill API Explorer — Präsentations-Leitfaden
 
-> Geschätzte Dauer: ~20 Minuten. 6 Stationen. Jede Station hat: **was zeigen**, **was sagen**, **welches File aufmachen**.
+> Geschätzte Dauer: ~25 Minuten. 8 Stationen. Jede Station hat: **was zeigen**, **was sagen**, **welches File aufmachen**.
 
 ---
 
@@ -410,7 +410,98 @@ def _get(self, url, params=None, *, suppress_errors=False):
 
 ---
 
-## Abschluss (30 Sekunden)
+## Station 7: BOM Export — Drei Modi
+
+### Zeigen
+
+**File:** `windchill-frontend/src/components/detail/StructureTab.tsx` — Export-Dropdown im BOM-Tab
+
+> Im BOM-Tab gibt es ein Dropdown "⬇ Export ▾" mit drei Optionen.
+
+**File:** `windchill-api/src/services/admin_service.py` — Zeile 236–290
+
+```python
+def build_export(root_tree, part_number, system_url, username, client=None):
+    """Build BOM export data and write to JSON file."""
+    mf_cache: dict[str, OrderedDict] = {}
+    bom_tree = frontend_tree_to_export(root_tree, client=client, mf_cache=mf_cache)
+    stats = count_tree_stats(bom_tree)
+    export_data = OrderedDict([
+        ("export_info", OrderedDict([...])),
+        ("bom", bom_tree),
+    ])
+```
+
+**File:** `windchill-api/src/services/admin_service.py` — Zeile 74–140 (Made-From)
+
+```python
+def _resolve_made_from(part_attrs, client=None, mf_cache=None):
+    mf_number = raw["made_from_number"]
+    cached = mf_cache.get(mf_number)          # Cache-Hit?
+    if cached is not None: return cached
+    mf_raw = client.find_object("part", mf_number)  # Windchill-Lookup
+    # → Ergebnis: type, number, name, version, state, part_attributes, raw_dimensions
+```
+
+### Sagen
+
+> Drei Exportmodi:
+>
+> **Geladenen Baum** — exportiert nur was der User im Browser aufgeklappt hat. Die Daten gehen vom Frontend zum Backend, werden dort mit allen Attributen angereichert und als JSON-Datei geschrieben.
+>
+> **Vollständiger Export** — der Server traversiert die komplette BOM rekursiv. Ein `part_cache` erkennt Duplikate, damit Parts die mehrfach verbaut sind nur einmal von Windchill geholt werden.
+>
+> **Erweiterter Export** — zusätzlich zum Design-BOM werden über `BALDOWNSTREAM` die Manufacturing-Äquivalente gefunden. Jede Manufacturing-Part bekommt ihren eigenen BOM-Baum. Gathering-Parts (Suffix=GATH) werden erfasst aber nicht expandiert.
+>
+> In jedem Modus werden **Made-From-Beziehungen vollständig aufgelöst**: nicht nur die Nummer, sondern Name, Version, Status, alle Attribute. Ein `mf_cache` verhindert doppelte Lookups.
+
+---
+
+## Station 8: Schreiboperationen — Aktionen-Tab
+
+### Zeigen
+
+**File:** `windchill-api/src/adapters/write_mixin.py` — Zeile 35–45
+
+```python
+_WRITABLE_ENTITIES: dict[str, tuple[str, str]] = {
+    "part":            ("ProdMgmt",        "Parts"),
+    "document":        ("DocMgmt",         "Documents"),
+    "cad_document":    ("CADDocumentMgmt", "CADDocuments"),
+    "change_notice":   ("ChangeMgmt",      "ChangeNotices"),
+    "change_request":  ("ChangeMgmt",      "ChangeRequests"),
+    "problem_report":  ("ChangeMgmt",      "ProblemReports"),
+}
+```
+
+**File:** `windchill-api/src/adapters/write_mixin.py` — Zeile 130–180 (Lifecycle-Status)
+
+```python
+# Strategie 1: OData Action (Windchill 12+)
+action_url = f".../{entity_set}('{obj_id}')/PTC.{service}.SetLifeCycleState"
+resp = self._post(action_url, json_body={"State": target_state})
+
+# Strategie 2: Fallback — generischer PATCH
+resp = self._patch(patch_url, json_body={"State": target_state})
+```
+
+**File:** `windchill-frontend/src/components/detail/WriteActionsPanel.tsx`
+
+> Auf der Detailseite jedes Objekts gibt es einen "Aktionen"-Tab mit 4 Buttons: Auschecken, Einchecken, Status ändern, Attribut ändern.
+
+### Sagen
+
+> 5 Schreiboperationen auf 6 Objekttypen — alles über einen einzigen Router `/write`.
+>
+> Jede Write-Operation braucht einen **CSRF_NONCE**, den Windchill bei jedem Response als Header mitschickt. Der wird im `base.py` automatisch ge-tracked und bei der nächsten Anfrage mitgesendet.
+>
+> Der Lifecycle-Status-Wechsel hat einen **2-Strategien-Ansatz**: Zuerst OData Action (das ist der offizielle Weg ab Windchill 12). Falls das fehlschlägt, Fallback auf einen direkten PATCH. Damit funktioniert es auch auf älteren Windchill-Versionen.
+>
+> Im Frontend gibt es den "Aktionen"-Tab: Auschecken, Einchecken, Status ändern, Attribut ändern — mit inline Mini-Formularen und Erfolgs-/Fehlermeldungen.
+
+---
+
+## Abschluss der Haupt-Stationen (30 Sekunden)
 
 ### Sagen
 
@@ -419,6 +510,10 @@ def _get(self, url, params=None, *, suppress_errors=False):
 > Login verbindet sich einmal zu Windchill — erkennt automatisch Basic oder Form Auth. Pro User eine eigene Verbindung mit Caches.
 >
 > Die Suche parallelisiert über 6 Objekttypen mit 2-Phasen-Paging und bis zu 40 Threads. SSE streamt die Ergebnisse sofort zum Browser.
+>
+> BOM-Daten lassen sich in drei Modi als JSON exportieren — inklusive vollständiger Made-From-Auflösung. Der Extended Export traversiert automatisch Design → Manufacturing.
+>
+> Schreibende Operationen nutzen CSRF_NONCE und einen 2-Strategien-Ansatz für Lifecycle-Änderungen.
 >
 > Alles ist nach Router/Service/Adapter getrennt. Ein neuer Windchill-Bereich = neues Mixin + Service + Router. Kein bestehender Code wird angefasst.
 
@@ -440,8 +535,12 @@ def _get(self, url, params=None, *, suppress_errors=False):
 | 10 | `windchill-api/src/routers/search.py` | 74–178 | SSE + Disconnect-Detection |
 | 11 | `windchill-api/src/core/odata.py` | 20–70 | normalize_item() |
 | 12 | `windchill-frontend/src/pages/DetailPage.tsx` | 31–50 | TABS_BY_TYPE |
-| 13 | `windchill-api/src/adapters/base.py` | 273–310 | Retry + Backoff |
-| 14 | `windchill-api/src/core/session.py` | 82–110, 21–55 | Logging + Caches |
+| 13 | `windchill-api/src/services/admin_service.py` | 74–150 | Made-From-Auflösung + mf_cache |
+| 14 | `windchill-api/src/services/admin_service.py` | 610–700 | Extended Export (Design → Mfg) |
+| 15 | `windchill-api/src/adapters/write_mixin.py` | 130–180 | Lifecycle 2-Strategien |
+| 16 | `windchill-frontend/src/components/detail/WriteActionsPanel.tsx` | 1–50 | Aktionen-Tab |
+| 17 | `windchill-api/src/adapters/base.py` | 273–310 | Retry + Backoff |
+| 18 | `windchill-api/src/core/session.py` | 82–110, 21–55 | Logging + Caches |
 
 ---
 
@@ -770,6 +869,8 @@ Jede Schicht transformiert die Daten in ihr Format: Windchill liefert OData-JSON
 | "Wie erweiterbar ist das?" | Neuer Windchill-Bereich = 1 Mixin + 1 Service + 1 Router + 1 Zeile in `wrs_client.py`. Kein bestehender Code wird geändert. |
 | "Warum Python und nicht Node?" | httpx gibt uns Connection-Pooling, echtes Threading (ThreadPoolExecutor), synchrone OData-Calls in Parallel — passt besser als Node's Event-Loop für CPU-armes I/O-Batching. |
 | "Wie sicher sind die Credentials?" | Windchill-Passwort nur im Backend-RAM (httpx.Client). Session-Token als HttpOnly+SameSite Cookie — kein JS-Zugriff. API-Key via HMAC constant-time compare. |
+| "Wie funktioniert der CSRF-Schutz bei Writes?" | Windchill schickt bei jedem Response einen `CSRF_NONCE`-Header. Der wird in `base.py` automatisch gespeichert und bei der nächsten Write-Anfrage mitgesendet. |
+| "Warum zwei Strategien für Lifecycle-State?" | OData Action ist der offizielle Weg (Windchill 12+). Der PATCH-Fallback funktioniert auch auf älteren Versionen. Das Backend probiert automatisch beides. |
 
 
 

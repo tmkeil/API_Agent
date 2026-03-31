@@ -337,13 +337,20 @@ export async function createObject(
   })
 }
 
+/** Build URL with optional objectId query param. */
+function writeUrl(path: string, objectId?: string): string {
+  const base = `${BASE}/write/${path}`
+  return objectId ? `${base}?objectId=${encodeURIComponent(objectId)}` : base
+}
+
 export async function updateAttributes(
   typeKey: string,
   code: string,
   attributes: Record<string, string>,
+  objectId?: string,
 ): Promise<WriteResponse> {
   return request<WriteResponse>(
-    `${BASE}/write/${encodeURIComponent(typeKey)}/${encodeURIComponent(code)}/attributes`,
+    writeUrl(`${encodeURIComponent(typeKey)}/${encodeURIComponent(code)}/attributes`, objectId),
     {
       method: 'PATCH',
       body: JSON.stringify({ attributes }),
@@ -355,9 +362,10 @@ export async function setLifecycleState(
   typeKey: string,
   code: string,
   body: SetStateRequest,
+  objectId?: string,
 ): Promise<WriteResponse> {
   return request<WriteResponse>(
-    `${BASE}/write/${encodeURIComponent(typeKey)}/${encodeURIComponent(code)}/state`,
+    writeUrl(`${encodeURIComponent(typeKey)}/${encodeURIComponent(code)}/state`, objectId),
     {
       method: 'POST',
       body: JSON.stringify(body),
@@ -368,9 +376,10 @@ export async function setLifecycleState(
 export async function checkoutObject(
   typeKey: string,
   code: string,
+  objectId?: string,
 ): Promise<WriteResponse> {
   return request<WriteResponse>(
-    `${BASE}/write/${encodeURIComponent(typeKey)}/${encodeURIComponent(code)}/checkout`,
+    writeUrl(`${encodeURIComponent(typeKey)}/${encodeURIComponent(code)}/checkout`, objectId),
     { method: 'POST' },
   )
 }
@@ -378,9 +387,10 @@ export async function checkoutObject(
 export async function checkinObject(
   typeKey: string,
   code: string,
+  objectId?: string,
 ): Promise<WriteResponse> {
   return request<WriteResponse>(
-    `${BASE}/write/${encodeURIComponent(typeKey)}/${encodeURIComponent(code)}/checkin`,
+    writeUrl(`${encodeURIComponent(typeKey)}/${encodeURIComponent(code)}/checkin`, objectId),
     { method: 'POST' },
   )
 }
@@ -388,9 +398,10 @@ export async function checkinObject(
 export async function reviseObject(
   typeKey: string,
   code: string,
+  objectId?: string,
 ): Promise<WriteResponse> {
   return request<WriteResponse>(
-    `${BASE}/write/${encodeURIComponent(typeKey)}/${encodeURIComponent(code)}/revise`,
+    writeUrl(`${encodeURIComponent(typeKey)}/${encodeURIComponent(code)}/revise`, objectId),
     { method: 'POST' },
   )
 }

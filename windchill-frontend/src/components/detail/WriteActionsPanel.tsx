@@ -13,6 +13,7 @@ import type { WriteResponse } from '../../api/types'
 interface Props {
   typeKey: string
   code: string
+  objectId?: string
   onSuccess?: () => void
 }
 
@@ -24,7 +25,7 @@ type Action = 'checkout' | 'checkin' | 'state' | 'attributes' | 'addChild' | 're
  * Provides buttons for checkout, checkin, set-state, and attribute-update.
  * Each opens an inline mini-form where needed.
  */
-export default function WriteActionsPanel({ typeKey, code, onSuccess }: Props) {
+export default function WriteActionsPanel({ typeKey, code, objectId, onSuccess }: Props) {
   const [action, setAction] = useState<Action>(null)
   const [busy, setBusy] = useState(false)
   const [result, setResult] = useState<WriteResponse | null>(null)
@@ -69,22 +70,22 @@ export default function WriteActionsPanel({ typeKey, code, onSuccess }: Props) {
     }
   }, [onSuccess])
 
-  const handleCheckout = () => exec(() => checkoutObject(typeKey, code))
-  const handleCheckin = () => exec(() => checkinObject(typeKey, code))
+  const handleCheckout = () => exec(() => checkoutObject(typeKey, code, objectId))
+  const handleCheckin = () => exec(() => checkinObject(typeKey, code, objectId))
   const handleSetState = () => {
     if (!targetState.trim()) return
     exec(() =>
       setLifecycleState(typeKey, code, {
         targetState: targetState.trim(),
         comment: stateComment.trim() || undefined,
-      }),
+      }, objectId),
     )
   }
   const handleUpdateAttrs = () => {
     if (!attrKey.trim()) return
-    exec(() => updateAttributes(typeKey, code, { [attrKey.trim()]: attrVal }))
+    exec(() => updateAttributes(typeKey, code, { [attrKey.trim()]: attrVal }, objectId))
   }
-  const handleRevise = () => exec(() => reviseObject(typeKey, code))
+  const handleRevise = () => exec(() => reviseObject(typeKey, code, objectId))
   const handleAddChild = () => {
     if (!childNumber.trim()) return
     exec(() =>

@@ -36,21 +36,31 @@ def create_object(
     )
 
 
+def _resolve_object_id(
+    client: WRSClient, type_key: str, code: str, object_id: str | None,
+) -> str:
+    """Object-ID ermitteln: direkt verwenden oder per Suche."""
+    if object_id:
+        return object_id
+    from src.adapters.base import WRSError
+    raw_obj = client.find_object(type_key, code)
+    obj_id = extract_id(raw_obj)
+    if not obj_id:
+        raise WRSError(f"Keine ID fuer {type_key} '{code}'", status_code=404)
+    return obj_id
+
+
 def update_attributes(
     client: WRSClient,
     type_key: str,
     code: str,
     attributes: dict[str, Any],
+    object_id: str | None = None,
 ) -> WriteResponse:
     """Attribute eines bestehenden Objekts aendern."""
     t0 = time.monotonic()
 
-    # Objekt finden → ID ermitteln
-    raw_obj = client.find_object(type_key, code)
-    obj_id = extract_id(raw_obj)
-    if not obj_id:
-        from src.adapters.base import WRSError
-        raise WRSError(f"Keine ID fuer {type_key} '{code}'", status_code=404)
+    obj_id = _resolve_object_id(client, type_key, code, object_id)
 
     raw = client.update_object_attributes(type_key, obj_id, attributes)
     n = normalize_item(raw)
@@ -70,15 +80,12 @@ def set_lifecycle_state(
     code: str,
     target_state: str,
     comment: str = "",
+    object_id: str | None = None,
 ) -> WriteResponse:
     """Lifecycle-Status aendern."""
     t0 = time.monotonic()
 
-    raw_obj = client.find_object(type_key, code)
-    obj_id = extract_id(raw_obj)
-    if not obj_id:
-        from src.adapters.base import WRSError
-        raise WRSError(f"Keine ID fuer {type_key} '{code}'", status_code=404)
+    obj_id = _resolve_object_id(client, type_key, code, object_id)
 
     raw = client.set_lifecycle_state(type_key, obj_id, target_state, comment)
     n = normalize_item(raw)
@@ -96,15 +103,12 @@ def checkout(
     client: WRSClient,
     type_key: str,
     code: str,
+    object_id: str | None = None,
 ) -> WriteResponse:
     """Objekt auschecken."""
     t0 = time.monotonic()
 
-    raw_obj = client.find_object(type_key, code)
-    obj_id = extract_id(raw_obj)
-    if not obj_id:
-        from src.adapters.base import WRSError
-        raise WRSError(f"Keine ID fuer {type_key} '{code}'", status_code=404)
+    obj_id = _resolve_object_id(client, type_key, code, object_id)
 
     raw = client.checkout_object(type_key, obj_id)
     n = normalize_item(raw)
@@ -123,15 +127,12 @@ def checkin(
     type_key: str,
     code: str,
     comment: str = "",
+    object_id: str | None = None,
 ) -> WriteResponse:
     """Objekt einchecken."""
     t0 = time.monotonic()
 
-    raw_obj = client.find_object(type_key, code)
-    obj_id = extract_id(raw_obj)
-    if not obj_id:
-        from src.adapters.base import WRSError
-        raise WRSError(f"Keine ID fuer {type_key} '{code}'", status_code=404)
+    obj_id = _resolve_object_id(client, type_key, code, object_id)
 
     raw = client.checkin_object(type_key, obj_id, comment)
     n = normalize_item(raw)
@@ -149,15 +150,12 @@ def revise(
     client: WRSClient,
     type_key: str,
     code: str,
+    object_id: str | None = None,
 ) -> WriteResponse:
     """Neue Revision eines Objekts erstellen."""
     t0 = time.monotonic()
 
-    raw_obj = client.find_object(type_key, code)
-    obj_id = extract_id(raw_obj)
-    if not obj_id:
-        from src.adapters.base import WRSError
-        raise WRSError(f"Keine ID fuer {type_key} '{code}'", status_code=404)
+    obj_id = _resolve_object_id(client, type_key, code, object_id)
 
     raw = client.revise_object(type_key, obj_id)
     n = normalize_item(raw)

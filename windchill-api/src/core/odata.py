@@ -57,6 +57,31 @@ def extract_id(raw: dict) -> str:
     return str(raw.get("ID") or raw.get("id") or "")
 
 
+def version_sort_key(p: dict) -> tuple[int, int, int]:
+    """Sort-Key fuer Windchill-Objekte: neuste Version zuerst,
+    bei Gleichstand Manufacturing vor Design.
+
+    Windchill Version-Strings haben das Format ``"RR.I (View)"``
+    z.B. ``"00.1 (Manufacturing)"`` oder ``"01.3 (Design)"``.
+    ``int("00.1 (Manufacturing)")`` schlaegt fehl — deshalb wird
+    hier der numerische Teil vor der Klammer geparst.
+    """
+    ver_str = str(p.get("Version") or "")
+    num_part = ver_str.split("(")[0].strip()
+    segments = num_part.split(".")
+    try:
+        major = int(segments[0])
+    except (ValueError, TypeError, IndexError):
+        major = 0
+    try:
+        minor = int(segments[1]) if len(segments) > 1 else 0
+    except (ValueError, TypeError):
+        minor = 0
+    # Manufacturing-View bevorzugen (SAP-Attribute, Made-From etc.)
+    view_prio = 1 if str(p.get("View") or "") == "Manufacturing" else 0
+    return (major, minor, view_prio)
+
+
 def normalize_item(raw: dict) -> dict:
     """Alle OData-Feld-Aliase in kanonische Keys aufloesen.
 

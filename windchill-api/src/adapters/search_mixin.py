@@ -12,7 +12,7 @@ import logging
 import threading
 from typing import TYPE_CHECKING, Generator
 
-from src.core.odata import extract_id
+from src.core.odata import extract_id, version_sort_key
 
 if TYPE_CHECKING:
     from src.adapters.base import WRSClientBase
@@ -81,10 +81,7 @@ class SearchMixin:
                 if resp and resp.status_code == 200:
                     items = resp.json().get("value", [])
                     if items:
-                        items.sort(
-                            key=lambda p: (p.get("Version", ""), p.get("Iteration", "")),
-                            reverse=True,
-                        )
+                        items.sort(key=version_sort_key, reverse=True)
                         return items[0]
         return None
 
@@ -124,6 +121,7 @@ class SearchMixin:
         safe = number.replace("'", "''")
 
         filters = [
+            f"Number eq '{safe}' and Latest eq true",
             f"Number eq '{safe}'",
             f"contains(Number,'{safe}')",
         ]
@@ -133,10 +131,7 @@ class SearchMixin:
             if resp and resp.status_code == 200:
                 items = resp.json().get("value", [])
                 if items:
-                    items.sort(
-                        key=lambda p: (p.get("Version", ""), p.get("Iteration", "")),
-                        reverse=True,
-                    )
+                    items.sort(key=version_sort_key, reverse=True)
                     result = items[0]
                     result["_entity_type"] = wc_type
                     result["_entity_type_key"] = type_key

@@ -11,7 +11,7 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING, Optional
 
-from src.core.odata import extract_id
+from src.core.odata import extract_id, version_sort_key
 
 if TYPE_CHECKING:
     from src.adapters.base import WRSClientBase
@@ -52,16 +52,8 @@ class PartsMixin:
             if resp and resp.status_code == 200:
                 items = resp.json().get("value", [])
                 if items:
-                    # Neuste Version + Iteration zuerst (numerisch, nicht lexikographisch)
-                    def _version_key(p: dict) -> tuple[int, int]:
-                        def _to_int(val: str) -> int:
-                            try:
-                                return int(val)
-                            except (ValueError, TypeError):
-                                return 0
-                        return (_to_int(p.get("Version", "")), _to_int(p.get("Iteration", "")))
-
-                    items.sort(key=_version_key, reverse=True)
+                    # Neuste Version zuerst; bei Gleichstand Manufacturing bevorzugen
+                    items.sort(key=version_sort_key, reverse=True)
                     return items[0]
 
         raise WRSError(f"Part '{part_number}' nicht in Windchill gefunden", 404)

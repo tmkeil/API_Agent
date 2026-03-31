@@ -521,17 +521,6 @@ with ThreadPoolExecutor(max_workers=workers) as pool:
 
 **Warum 2 Phasen?** — Kein verschachtelter Thread-Pool (vermeidet Deadlocks), kein `$count` (spart Round-Trip pro Typ), Skiptoken-Sortierung priorisiert niedrige Offsets.
 
-### Design- und Manufacturing-Duplikate in Suchergebnissen
-
-In Windchill existieren Design- und Manufacturing-Parts als **separate Objekte** mit **unterschiedlichen Nummern**, aber identischem Namen. Beispiel:
-
-| View | Number | Name | Version |
-|---|---|---|---|
-| Design | `1200207569` | BES M12ME-POC40B-S04G-003 | 00.1 |
-| Manufacturing | `S2200236014` | BES M12ME-POC40B-S04G-003 | 00.1 |
-
-Bei einer Suche nach dem **Namen** (z.B. `BES M12ME`) erscheinen daher beide Varianten als eigenständige Treffer. Bei einer Suche nach der **exakten Nummer** (z.B. `1200207569`) erscheint nur das Design-Part, weil die Nummern verschieden sind. Die `View`-Spalte in der Ergebnisliste zeigt an, ob es sich um ein Design- oder Manufacturing-Part handelt.
-
 ### Query-Intelligenz
 
 Der OData-Filter wird automatisch an den Suchbegriff angepasst:

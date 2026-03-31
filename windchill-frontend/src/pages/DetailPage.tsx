@@ -217,7 +217,7 @@ export default function DetailPage() {
           <LifecycleTab typeKey={typeKey} code={code} />
         )}
         {activeTab === 'actions' && (
-          <WriteActionsPanel typeKey={typeKey} code={code} onSuccess={load} />
+          <WriteActionsPanel typeKey={typeKey} code={code} objectId={detail?.objectId} onSuccess={load} />
         )}
       </div>
     </div>

@@ -12,7 +12,7 @@ Endpoints:
 
 import logging
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, Query, Request
 
 from src.core.auth import require_auth
 from src.core.dependencies import get_client
@@ -55,9 +55,10 @@ def update_attributes(
     body: UpdateAttributesRequest,
     request: Request,
     _: None = Depends(require_auth),
+    objectId: str | None = Query(None, description="Direkte OData Object-ID (ueberspringt Nummernsuche)"),
 ):
     client = get_client(request)
-    return write_service.update_attributes(client, type_key, code, body.attributes)
+    return write_service.update_attributes(client, type_key, code, body.attributes, object_id=objectId)
 
 
 @router.post(
@@ -71,10 +72,12 @@ def set_state(
     body: SetStateRequest,
     request: Request,
     _: None = Depends(require_auth),
+    objectId: str | None = Query(None, description="Direkte OData Object-ID"),
 ):
     client = get_client(request)
     return write_service.set_lifecycle_state(
-        client, type_key, code, body.targetState, body.comment or ""
+        client, type_key, code, body.targetState, body.comment or "",
+        object_id=objectId,
     )
 
 
@@ -88,9 +91,10 @@ def checkout_object(
     code: str,
     request: Request,
     _: None = Depends(require_auth),
+    objectId: str | None = Query(None, description="Direkte OData Object-ID"),
 ):
     client = get_client(request)
-    return write_service.checkout(client, type_key, code)
+    return write_service.checkout(client, type_key, code, object_id=objectId)
 
 
 @router.post(
@@ -103,9 +107,10 @@ def checkin_object(
     code: str,
     request: Request,
     _: None = Depends(require_auth),
+    objectId: str | None = Query(None, description="Direkte OData Object-ID"),
 ):
     client = get_client(request)
-    return write_service.checkin(client, type_key, code)
+    return write_service.checkin(client, type_key, code, object_id=objectId)
 
 
 # ── Revise ───────────────────────────────────────────────────
@@ -121,9 +126,10 @@ def revise_object(
     code: str,
     request: Request,
     _: None = Depends(require_auth),
+    objectId: str | None = Query(None, description="Direkte OData Object-ID"),
 ):
     client = get_client(request)
-    return write_service.revise(client, type_key, code)
+    return write_service.revise(client, type_key, code, object_id=objectId)
 
 
 # ── BOM Children (UsageLinks) ───────────────────────────────

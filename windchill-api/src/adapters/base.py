@@ -154,46 +154,11 @@ class WRSClientBase:
         # Schritt 2a: Basic Auth akzeptiert (Erfolg)
         if resp.status_code < 400 and "text/html" not in content_type:
             logger.info("Basic Auth akzeptiert (status=%d)", resp.status_code)
+            self._http.auth = (self._username, self._password)
             self._uses_basic_auth = True
 
-            # Origin/Referer setzen
-            from urllib.parse import urlparse
-            parsed = urlparse(self.base_url)
-            origin = f"{parsed.scheme}://{parsed.netloc}"
-            self._http.headers["Origin"] = origin
-            self._http.headers["Referer"] = f"{self.base_url}/"
-
-            # Cookies loggen — Windchill setzt JSESSIONID o.ae.
-            logger.info(
-                "Cookies nach Auth-Probe: %s",
-                {k: v[:20] + "…" if len(v) > 20 else v
-                 for k, v in self._http.cookies.items()},
-            )
-
-            # ── Cookie-Session + CSRF_NONCE ─────────────────
-            # Windchill liefert CSRF_NONCE moeglicherweise NUR bei
-            # Cookie-Sessions (nicht bei permanentem Basic-Auth-Header).
-            # self._http.auth ist hier noch NICHT gesetzt, daher geht
-            # der naechste GET nur mit den Session-Cookies raus.
-            nonce = self._try_csrf_fetch(
-                f"{self.odata_base}/ProdMgmt/Parts",
-                params={"$top": "0", "$select": "ID"},
-            )
-
-            if nonce:
-                self._http.headers["CSRF_NONCE"] = nonce
-                logger.info(
-                    "CSRF via Cookie-Session: %s… — bleibe im Cookie-Modus",
-                    nonce[:12],
-                )
-                # KEINEN permanenten Basic Auth → Session laeuft ueber Cookies.
-                # Bei 401 wird automatisch re-authentifiziert.
-            else:
-                # Cookie-Session liefert keinen Nonce → Fallback Basic Auth
-                logger.info(
-                    "Kein CSRF_NONCE ueber Cookie-Session — setze permanenten Basic Auth"
-                )
-                self._http.auth = (self._username, self._password)
+            # CSRF-Token via offizielle OData-Function holen
+            self._fetch_csrf_token()
             return
 
         # Schritt 2b: Server-Fehler (5xx) → System ist nicht verfuegbar
@@ -321,14 +286,6 @@ class WRSClientBase:
             params=params,
             timeout=timeout or self._timeout,
         )
-        # 401 in Cookie-Modus: Re-Auth + Retry
-        if resp.status_code == 401 and self._uses_basic_auth and not self._http.auth:
-            self._reauth_basic()
-            resp = self._http.get(
-                url,
-                params=params,
-                timeout=timeout or self._timeout,
-            )
         nonce = resp.headers.get("CSRF_NONCE")
         if nonce:
             with self._lock:
@@ -543,101 +500,38 @@ class WRSClientBase:
     # ── Write-Operations (POST / PATCH / DELETE) ────────────
 
     def _refresh_csrf(self) -> None:
-        """Frischen CSRF_NONCE von Windchill holen.
+        """Frischen CSRF_NONCE von Windchill holen via GetCSRFToken()."""
+        self._fetch_csrf_token()
 
-        Strategie:
-        1. GET an OData-Endpoint mit ``CSRF_NONCE: fetch`` Header.
-        2. Falls kein Nonce: GET an Windchill-Basis-URL.
-        3. Falls immer noch kein Nonce: erneuter Form-Login.
+    def _fetch_csrf_token(self) -> None:
+        """CSRF-Token via offizielle OData-Function ``PTC/GetCSRFToken()`` holen.
+
+        Doku: https://support.ptc.com/help/windchill_rest_services/r1.6/en/
+              windchill_rest_services/WCCG_RESTAPIsNonceTokenFunction.html
+
+        Antwort-Format:
+            {"NonceKey": "CSRF_NONCE", "NonceValue": "<token>"}
         """
-        old = self._http.headers.get("CSRF_NONCE", "")
-
-        # Strategie 1: OData GET mit fetch-Header
-        nonce = self._try_csrf_fetch(
-            f"{self.odata_base}/ProdMgmt/Parts",
-            params={"$top": "0", "$select": "ID"},
-        )
-
-        # Strategie 2: Windchill Basis-URL (nicht OData)
-        if not nonce:
-            nonce = self._try_csrf_fetch(f"{self.base_url}/app/")
-
-        # Strategie 3: Erneuter Form-Login (nur bei Form Auth)
-        if not nonce and not self._uses_basic_auth:
-            logger.info("CSRF refresh: Fallback auf erneuten Form-Login")
-            self._authenticate_form()
-            nonce = self._http.headers.get("CSRF_NONCE", "")
-
-        if nonce and nonce != old:
-            with self._lock:
-                self._http.headers["CSRF_NONCE"] = nonce
-            logger.info("CSRF_NONCE refreshed: %s… → %s…", old[:12] or "(leer)", nonce[:12])
-        elif not nonce:
-            logger.warning("CSRF refresh: konnte keinen Nonce erhalten")
-
-    def _try_csrf_fetch(self, url: str, params: dict | None = None) -> str:
-        """Versucht, einen CSRF_NONCE per GET mit 'fetch' Header zu holen."""
+        url = f"{self.base_url}/servlet/odata/PTC/GetCSRFToken()"
         try:
-            # Explizit auth mitgeben, falls httpx.Client.auth gesetzt ist
-            resp = self._http.get(
-                url,
-                params=params,
-                headers={"CSRF_NONCE": "fetch"},
-                timeout=self._timeout,
-            )
-            nonce = resp.headers.get("CSRF_NONCE")
-            logger.info(
-                "_try_csrf_fetch(%s): status=%d, CSRF_NONCE=%s, all_csrf_headers=%s",
-                url, resp.status_code,
-                (nonce[:12] + "…") if nonce else "(none)",
-                {k: v for k, v in resp.headers.items()
-                 if "csrf" in k.lower() or "nonce" in k.lower()},
-            )
-            if nonce and nonce != "fetch":
-                return nonce
-            # Auch in Redirect-History suchen
-            for hist_resp in getattr(resp, "history", []):
-                nonce = hist_resp.headers.get("CSRF_NONCE")
-                if nonce and nonce != "fetch":
-                    return nonce
-        except Exception:
-            logger.debug("_try_csrf_fetch(%s) fehlgeschlagen", url, exc_info=True)
-        return ""
-
-    def _reauth_basic(self) -> None:
-        """Erneute Basic-Auth-Authentifizierung fuer Cookie-Modus.
-
-        Wird aufgerufen wenn die Cookie-Session abgelaufen ist (401).
-        Sendet einen GET mit explizitem Basic Auth um neue Session-Cookies
-        zu erhalten und holt anschliessend den CSRF_NONCE.
-        """
-        logger.info("Re-Auth via Basic Auth (Cookie-Session abgelaufen)")
-        try:
-            resp = self._http.get(
-                f"{self.odata_base}/ProdMgmt",
-                auth=(self._username, self._password),
-                timeout=15,
-            )
-            if resp.status_code >= 400:
-                logger.warning("Re-Auth fehlgeschlagen (status=%d)", resp.status_code)
+            resp = self._http.get(url, timeout=self._timeout)
+            if resp.status_code != 200:
+                logger.warning(
+                    "GetCSRFToken() fehlgeschlagen: status=%d body=%s",
+                    resp.status_code, resp.text[:500],
+                )
                 return
-            logger.info(
-                "Re-Auth erfolgreich (status=%d), Cookies: %s",
-                resp.status_code,
-                {k: v[:20] + "…" if len(v) > 20 else v
-                 for k, v in self._http.cookies.items()},
-            )
-            # CSRF_NONCE holen
-            nonce = self._try_csrf_fetch(
-                f"{self.odata_base}/ProdMgmt/Parts",
-                params={"$top": "0", "$select": "ID"},
-            )
-            if nonce:
+            data = resp.json()
+            key = data.get("NonceKey", "CSRF_NONCE")
+            value = data.get("NonceValue", "")
+            if value:
                 with self._lock:
-                    self._http.headers["CSRF_NONCE"] = nonce
-                logger.info("CSRF_NONCE nach Re-Auth: %s…", nonce[:12])
+                    self._http.headers[key] = value
+                logger.info("CSRF-Token erhalten: %s=%s…", key, value[:12])
+            else:
+                logger.warning("GetCSRFToken() lieferte keinen NonceValue: %s", data)
         except Exception:
-            logger.warning("Re-Auth fehlgeschlagen", exc_info=True)
+            logger.warning("GetCSRFToken() Aufruf fehlgeschlagen", exc_info=True)
 
     @staticmethod
     def _is_csrf_error(resp: httpx.Response) -> bool:
@@ -668,12 +562,6 @@ class WRSClientBase:
 
         for attempt in range(self._max_retries):
             try:
-                current_nonce = self._http.headers.get("CSRF_NONCE", "(none)")
-                logger.info(
-                    "POST attempt %d: %s — CSRF_NONCE=%s… Origin=%s",
-                    attempt + 1, url, current_nonce[:12],
-                    self._http.headers.get("Origin", "(none)"),
-                )
                 resp = self._http.post(
                     url,
                     json=json_body,
@@ -684,25 +572,11 @@ class WRSClientBase:
                     with self._lock:
                         self._http.headers["CSRF_NONCE"] = resp_nonce
 
-                # Bei 400: vollstaendigen Response-Body loggen fuer Diagnose
-                if resp.status_code == 400:
-                    logger.warning(
-                        "POST 400 response body: %s\nResponse headers: %s",
-                        resp.text[:2000],
-                        dict(resp.headers),
-                    )
-
                 # CSRF-Fehler: einmal refresh + retry
                 if self._is_csrf_error(resp) and not csrf_retried:
                     logger.info("CSRF-Fehler erkannt — refreshe Nonce und wiederhole")
                     csrf_retried = True
                     self._refresh_csrf()
-                    continue
-
-                # 401 in Cookie-Modus: Re-Auth + Retry
-                if resp.status_code == 401 and self._uses_basic_auth and not self._http.auth:
-                    logger.info("POST 401 in Cookie-Modus — Re-Auth und Retry")
-                    self._reauth_basic()
                     continue
 
                 if resp.status_code < 500:
@@ -749,12 +623,6 @@ class WRSClientBase:
                     self._refresh_csrf()
                     continue
 
-                # 401 in Cookie-Modus: Re-Auth + Retry
-                if resp.status_code == 401 and self._uses_basic_auth and not self._http.auth:
-                    logger.info("PATCH 401 in Cookie-Modus — Re-Auth und Retry")
-                    self._reauth_basic()
-                    continue
-
                 if resp.status_code < 500:
                     return resp
                 last_exc = WRSError(f"Server error {resp.status_code}", resp.status_code)
@@ -795,12 +663,6 @@ class WRSClientBase:
                     logger.info("CSRF-Fehler bei DELETE %s — refreshe Nonce und wiederhole", url)
                     csrf_retried = True
                     self._refresh_csrf()
-                    continue
-
-                # 401 in Cookie-Modus: Re-Auth + Retry
-                if resp.status_code == 401 and self._uses_basic_auth and not self._http.auth:
-                    logger.info("DELETE 401 in Cookie-Modus — Re-Auth und Retry")
-                    self._reauth_basic()
                     continue
 
                 if resp.status_code < 500:

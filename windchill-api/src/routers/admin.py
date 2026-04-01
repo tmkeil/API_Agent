@@ -288,3 +288,40 @@ def diagnose_bom_fields(
             "sample": child_simple,
         } if child_raw else None,
     }
+
+
+@router.get("/diagnose/service-doc", summary="OData Service-Dokument — zeigt alle Entity Sets")
+def diagnose_service_doc(
+    request: Request,
+    _: None = Depends(require_auth),
+    domain: str = Query("ProdMgmt", description="OData Domain, z.B. ProdMgmt, DocMgmt"),
+):
+    """Ruft das OData Service-Dokument ab und listet alle Entity Sets.
+
+    Testet sowohl den versionierten (z.B. /odata/v6/ProdMgmt)
+    als auch den unversionierten Pfad (/odata/ProdMgmt).
+    """
+    client = get_client(request)
+    results = {}
+
+    for label, base in [
+        ("versioned", client.odata_base),
+        ("unversioned", f"{client.base_url}/servlet/odata"),
+    ]:
+        url = f"{base}/{domain}"
+        try:
+            resp = client._raw_get(url, timeout=15)
+            results[label] = {
+                "url": url,
+                "status": resp.status_code,
+                "entity_sets": [],
+            }
+            if resp.status_code == 200:
+                data = resp.json()
+                # OData service doc: {"value": [{"name": "Parts", "url": "Parts"}, ...]}
+                entity_sets = [item.get("name", item.get("url", "")) for item in data.get("value", [])]
+                results[label]["entity_sets"] = sorted(entity_sets)
+        except Exception as e:
+            results[label] = {"url": url, "error": str(e)}
+
+    return {"domain": domain, "results": results}

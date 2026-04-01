@@ -1,29 +1,173 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { createObject, fetchContainers, fetchPartFormConfig } from '../api/client'
-import type { PartFormOption } from '../api/client'
+import { createObject, fetchContainers } from '../api/client'
 import type { ContainerItem } from '../api/types'
 
-/* ── Fallback-Optionen (falls Config-API nicht erreichbar) ── */
+/* ── Windchill-Systemkonstanten (aus Part-Erstellformular) ── */
 
-const FB_VIEWS: PartFormOption[] = [
+const VIEWS = [
   { value: 'Design', label: 'Design' },
   { value: 'Manufacturing', label: 'Manufacturing' },
+  { value: '0002', label: '0002' },
+  { value: 'CN01', label: 'CN01' },
+  { value: 'MX02', label: 'MX02' },
 ]
-const FB_SOURCES: PartFormOption[] = [
+
+const SOURCES = [
   { value: 'notapplicable', label: 'Not Applicable' },
   { value: 'make', label: 'Make' },
   { value: 'buy', label: 'Buy' },
 ]
-const FB_ASSEMBLY: PartFormOption[] = [
+
+const ASSEMBLY_MODES = [
   { value: 'separable', label: 'Separable' },
   { value: 'inseparable', label: 'Inseparable' },
   { value: 'component', label: 'Component' },
 ]
-const FB_UNITS: PartFormOption[] = [
+
+const UNITS = [
   { value: 'ea', label: 'each' },
+  { value: 'as_needed', label: 'as needed' },
   { value: 'kg', label: 'kilograms' },
   { value: 'm', label: 'meters' },
+  { value: 'l', label: 'liters' },
+  { value: 'sq_m', label: 'square meters' },
+  { value: 'cu_m', label: 'cubic meters' },
+  { value: 'g', label: 'gram' },
+  { value: 'mm', label: 'millimeter' },
+  { value: 'fraction', label: 'partial each' },
+  { value: 'ml', label: 'milliliter' },
+  { value: 'KAN', label: 'can' },
+  { value: 'FLA', label: 'bottle' },
+  { value: 'mg', label: 'milligram' },
+  { value: 'sq_mm', label: 'square millimeter' },
+  { value: 'cm', label: 'centimeters' },
+  { value: 'km', label: 'kilometer' },
+  { value: 'sq_cm', label: 'square centimeters' },
+  { value: 'FT', label: 'feed' },
+  { value: 'IN', label: 'inch' },
+]
+
+const PRODUCT_FAMILIES = [
+  '', 'BAE', 'BAI', 'BAM', 'BAV', 'BAW', 'BCC', 'BCM', 'BCS', 'BCW',
+  'BDG', 'BEN', 'BES', 'BFB', 'BFD', 'BFF', 'BFO', 'BFS', 'BFT',
+  'BGL', 'BHS', 'BIC', 'BID', 'BIL', 'BIP', 'BIR', 'BIS', 'BIU', 'BIW',
+  'BKT', 'BLA', 'BLG', 'BLT', 'BMD', 'BMF', 'BML', 'BMP', 'BNI', 'BNL',
+  'BNN', 'BNP', 'BNS', 'BOD', 'BOH', 'BOL', 'BOS', 'BOW', 'BPI',
+  'BSE', 'BSG', 'BSI', 'BSP', 'BSS', 'BSW', 'BTL', 'BTM', 'BTS',
+  'BUS', 'BVS', 'BWL', 'EQU', 'FHW', 'PIU', 'PLP', 'SET',
+]
+
+/* ── Classification Tree (Windchill Part Classification) ─── */
+
+interface ClassificationEntry {
+  name: string
+  depth: number
+  isGroup: boolean
+}
+
+const CLASSIFICATIONS: ClassificationEntry[] = [
+  { name: 'Component', depth: 0, isGroup: true },
+  { name: 'Label', depth: 1, isGroup: false },
+  { name: 'TBD', depth: 1, isGroup: false },
+  { name: 'Accessory', depth: 1, isGroup: true },
+  { name: 'Nut Kit', depth: 2, isGroup: false },
+  { name: 'Auxiliary and operating materials', depth: 1, isGroup: true },
+  { name: 'Adhesive', depth: 2, isGroup: false },
+  { name: 'Adhesive strip', depth: 2, isGroup: false },
+  { name: 'Potting Material', depth: 2, isGroup: false },
+  { name: 'Tin Solder', depth: 2, isGroup: false },
+  { name: 'ECAD Electrical Component', depth: 1, isGroup: true },
+  { name: 'ECAD Undefined', depth: 2, isGroup: false },
+  { name: 'Pseudo Components', depth: 2, isGroup: false },
+  { name: 'Circuit Protection', depth: 2, isGroup: true },
+  { name: 'Fuses', depth: 3, isGroup: false },
+  { name: 'Inrush Current Limiters', depth: 3, isGroup: false },
+  { name: 'Power Controllers', depth: 3, isGroup: false },
+  { name: 'Resettable Fuses', depth: 3, isGroup: false },
+  { name: 'Reverse Polarity Protection', depth: 3, isGroup: false },
+  { name: 'TVS Diodes', depth: 3, isGroup: false },
+  { name: 'Varistors', depth: 3, isGroup: false },
+  { name: 'Connectors', depth: 2, isGroup: true },
+  { name: 'Audio_Video Connectors', depth: 3, isGroup: false },
+  { name: 'Card Edge Connectors', depth: 3, isGroup: false },
+  { name: 'Circular Connectors', depth: 3, isGroup: false },
+  { name: 'D-Sub', depth: 3, isGroup: false },
+  { name: 'FFC_FPC Connectors', depth: 3, isGroup: false },
+  { name: 'Modular_Ethernet Connectors', depth: 3, isGroup: false },
+  { name: 'Pin Headers', depth: 3, isGroup: false },
+  { name: 'Power Connectors', depth: 3, isGroup: false },
+  { name: 'RF_Coaxial Connectors', depth: 3, isGroup: false },
+  { name: 'Ribbon Connectors', depth: 3, isGroup: false },
+  { name: 'Terminal Blocks', depth: 3, isGroup: false },
+  { name: 'Terminals', depth: 3, isGroup: false },
+  { name: 'USB Connectors', depth: 3, isGroup: false },
+  { name: 'Discrete Semiconductors', depth: 2, isGroup: true },
+  { name: 'Diodes', depth: 3, isGroup: true },
+  { name: 'Current Limiting_Regulator', depth: 4, isGroup: false },
+  { name: 'General Diodes', depth: 4, isGroup: false },
+  { name: 'Zener', depth: 4, isGroup: false },
+  { name: 'Thyristors', depth: 3, isGroup: true },
+  { name: 'DIACs & SIDACs', depth: 4, isGroup: false },
+  { name: 'SCRs', depth: 4, isGroup: false },
+  { name: 'Transistors', depth: 3, isGroup: true },
+  { name: 'Bipolar', depth: 4, isGroup: false },
+  { name: 'IGBTs', depth: 4, isGroup: false },
+  { name: 'JFETs', depth: 4, isGroup: false },
+  { name: 'MOSFETs', depth: 4, isGroup: false },
+  { name: 'ECAD Electromechanical', depth: 2, isGroup: true },
+  { name: 'Antennas', depth: 3, isGroup: false },
+  { name: 'Electromagnetic Interfaces', depth: 3, isGroup: false },
+  { name: 'Encoders', depth: 3, isGroup: false },
+  { name: 'Heatsink', depth: 3, isGroup: false },
+  { name: 'IC & Component Sockets', depth: 3, isGroup: false },
+  { name: 'Relays', depth: 3, isGroup: false },
+  { name: 'Shielding', depth: 3, isGroup: false },
+  { name: 'Spacers', depth: 3, isGroup: false },
+  { name: 'Speakers', depth: 3, isGroup: false },
+  { name: 'Wire Management', depth: 3, isGroup: false },
+  { name: 'Switches', depth: 3, isGroup: true },
+  { name: 'DIP', depth: 4, isGroup: false },
+  { name: 'Jumper', depth: 4, isGroup: false },
+  { name: 'Rocker', depth: 4, isGroup: false },
+  { name: 'Rotary', depth: 4, isGroup: false },
+  { name: 'Slide', depth: 4, isGroup: false },
+  { name: 'Snap Action', depth: 4, isGroup: false },
+  { name: 'Tactile', depth: 4, isGroup: false },
+  { name: 'Integrated Circuits (ICs)', depth: 2, isGroup: true },
+  { name: 'Analog Switches & Multiplexers', depth: 3, isGroup: false },
+  { name: 'ASICs', depth: 3, isGroup: false },
+  { name: 'Audio_Video ICs', depth: 3, isGroup: false },
+  { name: 'Clock & Timing', depth: 3, isGroup: false },
+  { name: 'Codemeter', depth: 3, isGroup: false },
+  { name: 'Solid State Relays', depth: 3, isGroup: false },
+  { name: 'Data Converter ICs', depth: 3, isGroup: true },
+  { name: 'Analog to Digital', depth: 4, isGroup: false },
+  { name: 'Digital Potentiometers', depth: 4, isGroup: false },
+  { name: 'Digital to Analog', depth: 4, isGroup: false },
+  { name: 'Time to Digital', depth: 4, isGroup: false },
+  { name: 'Embedded Processors & Controllers', depth: 3, isGroup: true },
+  { name: 'CPLDs', depth: 4, isGroup: false },
+  { name: 'Digital Signal Controllers & Processors', depth: 4, isGroup: false },
+  { name: 'FPGAs', depth: 4, isGroup: false },
+  { name: 'Microcontrollers', depth: 4, isGroup: false },
+  { name: 'Microprocessors', depth: 4, isGroup: false },
+  { name: 'Programmable System On a Chip', depth: 4, isGroup: false },
+  { name: 'System On a Modul', depth: 4, isGroup: false },
+  { name: 'Interface ICs', depth: 3, isGroup: true },
+  { name: 'Anybus', depth: 4, isGroup: false },
+  { name: 'CAN Bus', depth: 4, isGroup: false },
+  { name: 'CC-Link', depth: 4, isGroup: false },
+  { name: 'CLIQ', depth: 4, isGroup: false },
+  { name: 'Current Limiters', depth: 4, isGroup: false },
+  { name: 'Digital Isolators', depth: 4, isGroup: false },
+  { name: 'Ethernet', depth: 4, isGroup: false },
+  { name: 'IEEE-1394', depth: 4, isGroup: false },
+  { name: 'Interbus', depth: 4, isGroup: false },
+  { name: 'IO-Expander', depth: 4, isGroup: false },
+  { name: 'IO-Link', depth: 4, isGroup: false },
+  { name: 'LIN Bus', depth: 4, isGroup: false },
+  { name: 'LVDS', depth: 4, isGroup: false },
 ]
 
 /* ── Form State ───────────────────────────────────────────── */
@@ -39,6 +183,7 @@ interface FormState {
   GatheringPart: string
   ConfigurableModule: string
   ProductFamily: string
+  Classification: string
   ContainerBinding: string
 }
 
@@ -53,6 +198,7 @@ const INITIAL: FormState = {
   GatheringPart: 'no',
   ConfigurableModule: 'no',
   ProductFamily: 'PIU',
+  Classification: '',
   ContainerBinding: '',
 }
 
@@ -62,31 +208,10 @@ export default function CreatePartPage() {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
-
-  // Dynamic option lists (from backend)
-  const [views, setViews] = useState<PartFormOption[]>(FB_VIEWS)
-  const [sources, setSources] = useState<PartFormOption[]>(FB_SOURCES)
-  const [assemblyModes, setAssemblyModes] = useState<PartFormOption[]>(FB_ASSEMBLY)
-  const [units, setUnits] = useState<PartFormOption[]>(FB_UNITS)
-  const [productFamilies, setProductFamilies] = useState<string[]>([])
-
   const [containers, setContainers] = useState<ContainerItem[]>([])
   const [containersLoaded, setContainersLoaded] = useState(false)
-  const [configLoaded, setConfigLoaded] = useState(false)
 
-  // Load form config + containers in parallel
   useEffect(() => {
-    fetchPartFormConfig()
-      .then((cfg) => {
-        if (cfg.views?.length) setViews(cfg.views)
-        if (cfg.sources?.length) setSources(cfg.sources)
-        if (cfg.assemblyModes?.length) setAssemblyModes(cfg.assemblyModes)
-        if (cfg.units?.length) setUnits(cfg.units)
-        if (cfg.productFamilies?.length) setProductFamilies(cfg.productFamilies)
-        setConfigLoaded(true)
-      })
-      .catch(() => { setConfigLoaded(true) })
-
     fetchContainers()
       .then((resp) => {
         setContainers(resp.containers)
@@ -139,7 +264,6 @@ export default function CreatePartPage() {
   )
 
   const canSubmit = !busy && !!form.Name.trim() && !!form.ContainerBinding
-  const loading = !containersLoaded || !configLoaded
 
   return (
     <div className="max-w-2xl mx-auto">
@@ -153,11 +277,6 @@ export default function CreatePartPage() {
         </button>
       </div>
 
-      {loading ? (
-        <div className="bg-white rounded shadow-sm border border-slate-200 p-8 text-center text-slate-400 text-sm">
-          Lade Formularkonfiguration…
-        </div>
-      ) : (
       <form onSubmit={handleSubmit} className="bg-white rounded shadow-sm border border-slate-200 p-5 space-y-5">
 
         {/* ── Identity ─────────────────────────────────────── */}
@@ -178,10 +297,16 @@ export default function CreatePartPage() {
                 ))}
               </select>
             </Field>
-          ) : (
+          ) : containersLoaded ? (
             <div className="bg-amber-50 border border-amber-200 text-amber-700 text-sm rounded p-3">
               Keine Container gefunden. Bitte Windchill-Verbindung prüfen.
             </div>
+          ) : (
+            <Field label="Product / Container" required>
+              <select disabled className="input opacity-50">
+                <option>Lade…</option>
+              </select>
+            </Field>
           )}
 
           {/* Number */}
@@ -216,26 +341,24 @@ export default function CreatePartPage() {
           {/* Source */}
           <Field label="Source" required>
             <ToggleGroup
-              options={sources}
+              options={SOURCES}
               value={form.Source}
               onChange={(v) => set('Source', v)}
             />
           </Field>
 
           {/* Associated Product Family */}
-          {productFamilies.length > 0 && (
-            <Field label="Associated Product Family">
-              <select
-                value={form.ProductFamily}
-                onChange={(e) => set('ProductFamily', e.target.value)}
-                className="input"
-              >
-                {productFamilies.map((pf) => (
-                  <option key={pf} value={pf}>{pf || '—'}</option>
-                ))}
-              </select>
-            </Field>
-          )}
+          <Field label="Associated Product Family">
+            <select
+              value={form.ProductFamily}
+              onChange={(e) => set('ProductFamily', e.target.value)}
+              className="input"
+            >
+              {PRODUCT_FAMILIES.map((pf) => (
+                <option key={pf} value={pf}>{pf || '—'}</option>
+              ))}
+            </select>
+          </Field>
 
           {/* View */}
           <Field label="View" required>
@@ -244,7 +367,7 @@ export default function CreatePartPage() {
               onChange={(e) => set('View', e.target.value)}
               className="input"
             >
-              {views.map((v) => (
+              {VIEWS.map((v) => (
                 <option key={v.value} value={v.value}>{v.label}</option>
               ))}
             </select>
@@ -253,7 +376,7 @@ export default function CreatePartPage() {
           {/* Assembly Mode */}
           <Field label="Assembly Mode" required>
             <ToggleGroup
-              options={assemblyModes}
+              options={ASSEMBLY_MODES}
               value={form.AssemblyMode}
               onChange={(v) => set('AssemblyMode', v)}
             />
@@ -275,7 +398,7 @@ export default function CreatePartPage() {
               onChange={(e) => set('DefaultUnit', e.target.value)}
               className="input"
             >
-              {units.map((u) => (
+              {UNITS.map((u) => (
                 <option key={u.value} value={u.value}>{u.label}</option>
               ))}
             </select>
@@ -287,6 +410,14 @@ export default function CreatePartPage() {
               options={[{ value: 'no', label: 'No' }, { value: 'yes', label: 'Yes' }]}
               value={form.ConfigurableModule}
               onChange={(v) => set('ConfigurableModule', v)}
+            />
+          </Field>
+
+          {/* Classification */}
+          <Field label="Classification">
+            <ClassificationPicker
+              value={form.Classification}
+              onChange={(v) => set('Classification', v)}
             />
           </Field>
         </Section>
@@ -314,7 +445,6 @@ export default function CreatePartPage() {
           </div>
         )}
       </form>
-      )}
     </div>
   )
 }
@@ -364,6 +494,146 @@ function ToggleGroup({ options, value, onChange }: {
           {opt.label}
         </button>
       ))}
+    </div>
+  )
+}
+
+function ClassificationPicker({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const [open, setOpen] = useState(false)
+  const [search, setSearch] = useState('')
+  const wrapperRef = useRef<HTMLDivElement>(null)
+  const searchRef = useRef<HTMLInputElement>(null)
+
+  // Close on outside click
+  useEffect(() => {
+    if (!open) return
+    const handler = (e: MouseEvent) => {
+      if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) setOpen(false)
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [open])
+
+  // Focus search when opened
+  useEffect(() => {
+    if (open) searchRef.current?.focus()
+  }, [open])
+
+  const lowerSearch = search.toLowerCase()
+
+  // When searching: show matching leaves + their ancestor groups for context
+  const filtered = useMemo(() => {
+    if (!lowerSearch) return CLASSIFICATIONS
+
+    // Find leaves that match the search
+    const matchingIndices = new Set<number>()
+    CLASSIFICATIONS.forEach((entry, i) => {
+      if (!entry.isGroup && entry.name.toLowerCase().includes(lowerSearch)) {
+        matchingIndices.add(i)
+        // Include ancestor groups: walk backwards to find parents at each shallower depth
+        let currentDepth = entry.depth
+        for (let j = i - 1; j >= 0; j--) {
+          if (CLASSIFICATIONS[j].depth < currentDepth && CLASSIFICATIONS[j].isGroup) {
+            matchingIndices.add(j)
+            currentDepth = CLASSIFICATIONS[j].depth
+            if (currentDepth === 0) break
+          }
+        }
+      }
+    })
+
+    return CLASSIFICATIONS.filter((_, i) => matchingIndices.has(i))
+  }, [lowerSearch])
+
+  const handleSelect = (name: string) => {
+    onChange(name)
+    setOpen(false)
+    setSearch('')
+  }
+
+  const handleClear = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    onChange('')
+    setSearch('')
+  }
+
+  return (
+    <div ref={wrapperRef} className="relative">
+      {/* Trigger button */}
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        className={`input w-full text-left flex items-center justify-between ${
+          !value ? 'text-slate-400' : 'text-slate-800'
+        }`}
+      >
+        <span className="truncate">{value || 'Classification wählen…'}</span>
+        <span className="flex items-center gap-1 ml-2 shrink-0">
+          {value && (
+            <span
+              onClick={handleClear}
+              className="text-slate-400 hover:text-red-500 cursor-pointer text-base leading-none"
+              title="Zurücksetzen"
+            >×</span>
+          )}
+          <svg className={`w-4 h-4 text-slate-400 transition-transform ${open ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          </svg>
+        </span>
+      </button>
+
+      {/* Dropdown panel */}
+      {open && (
+        <div className="absolute z-50 mt-1 w-full bg-white border border-slate-200 rounded shadow-lg">
+          {/* Search */}
+          <div className="p-2 border-b border-slate-100">
+            <input
+              ref={searchRef}
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Suchen…"
+              className="w-full text-sm px-2.5 py-1.5 border border-slate-200 rounded focus:outline-none focus:ring-1 focus:ring-indigo-400"
+            />
+          </div>
+
+          {/* Tree list */}
+          <div className="max-h-64 overflow-y-auto py-1">
+            {filtered.length === 0 ? (
+              <div className="px-3 py-2 text-sm text-slate-400">Keine Treffer</div>
+            ) : (
+              filtered.map((entry) => {
+                if (entry.isGroup) {
+                  return (
+                    <div
+                      key={`g-${entry.name}`}
+                      className="px-3 py-1 text-xs font-semibold text-slate-400 uppercase tracking-wide select-none"
+                      style={{ paddingLeft: `${12 + entry.depth * 16}px` }}
+                    >
+                      {entry.name}
+                    </div>
+                  )
+                }
+                const selected = value === entry.name
+                return (
+                  <button
+                    key={entry.name}
+                    type="button"
+                    onClick={() => handleSelect(entry.name)}
+                    className={`w-full text-left px-3 py-1.5 text-sm transition-colors ${
+                      selected
+                        ? 'bg-indigo-50 text-indigo-700 font-medium'
+                        : 'text-slate-700 hover:bg-slate-50'
+                    }`}
+                    style={{ paddingLeft: `${12 + entry.depth * 16}px` }}
+                  >
+                    {entry.name}
+                  </button>
+                )
+              })
+            )}
+          </div>
+        </div>
+      )}
     </div>
   )
 }

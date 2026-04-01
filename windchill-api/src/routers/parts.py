@@ -180,20 +180,3 @@ def list_containers(
 ):
     client = get_client(request)
     return parts_service.get_containers(client)
-
-
-# ── Part Creation Form Config ────────────────────────────────
-
-
-@router.get(
-    "/part-form-config",
-    summary="Konfiguration fuer Part-Erstellformular (Optionslisten)",
-)
-def get_part_form_config(
-    _: None = Depends(require_auth),
-):
-    """Gibt die Optionslisten zurueck, die das Frontend fuer die
-    Part-Erstellung braucht. Firmenspezifische Werte (Product Families)
-    kommen aus der Backend-Config, Windchill-Systemkonstanten sind fest.
-    """
-    return parts_service.get_part_form_config()

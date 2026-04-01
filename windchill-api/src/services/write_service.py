@@ -109,12 +109,17 @@ def _build_part_body(attrs: dict[str, Any]) -> dict[str, Any]:
     if product_family:
         body["BAL_CP_ORDER_PREFIX"] = product_family
 
+    # Classification (IBA): z.B. "Fuses", "MOSFETs", etc.
+    classification = attrs.get("Classification", "")
+    if classification:
+        body["BAL_CLASSIFICATION_BINDING_WTPART"] = classification
+
     # Falls weitere OData-Properties direkt mitgegeben werden (Power-User),
     # uebernehmen, ohne die obigen zu ueberschreiben.
     _handled = {
         "Source", "DefaultUnit", "View", "Number", "Name", "Description",
         "AssemblyMode", "GatheringPart", "ConfigurableModule",
-        "ProductFamily",
+        "ProductFamily", "Classification",
     }
     for key, val in attrs.items():
         if key not in body and key not in _handled:

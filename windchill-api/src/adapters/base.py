@@ -82,7 +82,14 @@ class WRSClientBase:
             verify=verify_tls,
             timeout=timeout,
             follow_redirects=True,
-            headers={"Accept": "application/json"},
+            headers={
+                "Accept": "application/json",
+                # Windchill CSRF-Schutz: Viele Windchill-Instanzen pruefen
+                # nur die EXISTENZ eines Custom-Headers (nicht den Wert).
+                # Browser senden diesen Header bei Cross-Site-Requests nicht
+                # automatisch → Windchill akzeptiert den Request als "sicher".
+                "X-Requested-With": "XMLHttpRequest",
+            },
             limits=httpx.Limits(
                 max_connections=100,
                 max_keepalive_connections=40,
@@ -157,14 +164,19 @@ class WRSClientBase:
             # CSRF_NONCE aus der Antwort extrahieren (Windchill sendet ihn
             # auch bei Basic Auth, wird fuer Write-Operationen benoetigt)
             nonce = resp.headers.get("CSRF_NONCE")
+            # Auch in Redirect-History suchen (307 → 200)
+            if not nonce:
+                for hist_resp in getattr(resp, "history", []):
+                    nonce = hist_resp.headers.get("CSRF_NONCE")
+                    if nonce:
+                        break
             if nonce:
                 self._http.headers["CSRF_NONCE"] = nonce
                 logger.info("Basic Auth: CSRF_NONCE gespeichert (%s…)", nonce[:12])
             else:
-                logger.warning(
-                    "Basic Auth: KEIN CSRF_NONCE in Antwort. "
-                    "Response-Headers: %s",
-                    {k: v for k, v in resp.headers.items() if "csrf" in k.lower() or "nonce" in k.lower()},
+                logger.info(
+                    "Basic Auth: Kein CSRF_NONCE in Antwort — "
+                    "Windchill nutzt vermutlich Custom-Header-Check (X-Requested-With)"
                 )
             return
 

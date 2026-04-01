@@ -47,6 +47,9 @@ class Settings(BaseSettings):
     # Windchill system registry — override via env var (JSON string)
     WINDCHILL_SYSTEMS_JSON: str = _DEFAULT_SYSTEMS_JSON
 
+    # Product Families — override via env var (JSON array string)
+    WINDCHILL_PRODUCT_FAMILIES_JSON: Optional[str] = None
+
     @field_validator("WRS_BASE_URL")
     @classmethod
     def strip_trailing_slash(cls, v: str) -> str:

@@ -325,3 +325,89 @@ def diagnose_service_doc(
             results[label] = {"url": url, "error": str(e)}
 
     return {"domain": domain, "results": results}
+
+
+@router.get(
+    "/diagnose/classifications",
+    summary="Classification-Werte fuer Part-Erstellung entdecken",
+)
+def diagnose_classifications(
+    request: Request,
+    _: None = Depends(require_auth),
+    type_path: str = Query(
+        "ProdMgmt/Parts",
+        description="OData Type-Pfad",
+    ),
+):
+    """Versucht, die verfuegbaren Classifications zu ermitteln.
+
+    Testet mehrere Ansaetze:
+    1. OData $metadata fuer den Type (Enum-Definitionen)
+    2. Bekannte Entity Sets: ClassificationNodes, Classifications
+    3. Distinct-Werte aus existierenden Parts
+    """
+    client = get_client(request)
+    results: dict = {}
+
+    # 1) $metadata pruefen
+    for label, base in [("versioned", client.odata_base), ("unversioned", f"{client.base_url}/servlet/odata")]:
+        meta_url = f"{base}/{type_path.split('/')[0]}/$metadata"
+        try:
+            resp = client._raw_get(meta_url, timeout=15)
+            results[f"metadata_{label}"] = {
+                "url": meta_url,
+                "status": resp.status_code,
+                "contentType": resp.headers.get("content-type", ""),
+                "snippet": resp.text[:2000] if resp.status_code == 200 else None,
+            }
+        except Exception as e:
+            results[f"metadata_{label}"] = {"url": meta_url, "error": str(e)}
+
+    # 2) Bekannte Classification Entity Sets testen
+    for domain_entity in [
+        "ProdMgmt/ClassificationNodes",
+        "ProdMgmt/Classifications",
+        "DataAdmin/ClassificationNodes",
+        "DataAdmin/Classifications",
+        "Classification/Nodes",
+        "Classification/ClassificationNodes",
+    ]:
+        url = f"{client.odata_base}/{domain_entity}"
+        try:
+            resp = client._raw_get(url, timeout=10)
+            entry: dict = {"url": url, "status": resp.status_code}
+            if resp.status_code == 200:
+                data = resp.json()
+                items = data.get("value", [])
+                entry["count"] = len(items)
+                if items:
+                    entry["sampleFields"] = sorted(items[0].keys())
+                    entry["sample"] = items[0]
+            results[domain_entity] = entry
+        except Exception as e:
+            results[domain_entity] = {"url": url, "error": str(e)}
+
+    # 3) Distinct Classification-Werte aus echten Parts (Top 50)
+    try:
+        url = f"{client.odata_base}/ProdMgmt/Parts"
+        params = {
+            "$select": "Number,Name,BAL_CLASSIFICATION_BINDING_WTPART",
+            "$top": "50",
+        }
+        items = client.get_all_pages(url, params, return_none_on_error=True)
+        if items:
+            values = set()
+            for it in items:
+                val = it.get("BAL_CLASSIFICATION_BINDING_WTPART", "")
+                if val:
+                    values.add(str(val) if not isinstance(val, dict) else str(val.get("Value", val)))
+            results["distinctFromParts"] = {
+                "sampleSize": len(items),
+                "distinctValues": sorted(values),
+            }
+        else:
+            results["distinctFromParts"] = {"error": "Keine Parts geladen"}
+    except Exception as e:
+        results["distinctFromParts"] = {"error": str(e)}
+
+    return {"typePath": type_path, "results": results}

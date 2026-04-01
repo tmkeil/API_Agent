@@ -1,61 +1,29 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { createObject, fetchContainers } from '../api/client'
+import { createObject, fetchContainers, fetchPartFormConfig } from '../api/client'
+import type { PartFormOption } from '../api/client'
 import type { ContainerItem } from '../api/types'
 
-/* ── Option-Listen (aus Windchill Part-Erstellung) ────────── */
+/* ── Fallback-Optionen (falls Config-API nicht erreichbar) ── */
 
-const VIEWS = [
+const FB_VIEWS: PartFormOption[] = [
   { value: 'Design', label: 'Design' },
   { value: 'Manufacturing', label: 'Manufacturing' },
-  { value: '0002', label: '0002' },
-  { value: 'CN01', label: 'CN01' },
-  { value: 'MX02', label: 'MX02' },
 ]
-
-const SOURCES = [
+const FB_SOURCES: PartFormOption[] = [
   { value: 'notapplicable', label: 'Not Applicable' },
   { value: 'make', label: 'Make' },
   { value: 'buy', label: 'Buy' },
 ]
-
-const ASSEMBLY_MODES = [
+const FB_ASSEMBLY: PartFormOption[] = [
   { value: 'separable', label: 'Separable' },
   { value: 'inseparable', label: 'Inseparable' },
   { value: 'component', label: 'Component' },
 ]
-
-const UNITS = [
+const FB_UNITS: PartFormOption[] = [
   { value: 'ea', label: 'each' },
-  { value: 'as_needed', label: 'as needed' },
   { value: 'kg', label: 'kilograms' },
   { value: 'm', label: 'meters' },
-  { value: 'l', label: 'liters' },
-  { value: 'sq_m', label: 'square meters' },
-  { value: 'cu_m', label: 'cubic meters' },
-  { value: 'g', label: 'gram' },
-  { value: 'mm', label: 'millimeter' },
-  { value: 'fraction', label: 'partial each' },
-  { value: 'ml', label: 'milliliter' },
-  { value: 'KAN', label: 'can' },
-  { value: 'FLA', label: 'bottle' },
-  { value: 'mg', label: 'milligram' },
-  { value: 'sq_mm', label: 'square millimeter' },
-  { value: 'cm', label: 'centimeters' },
-  { value: 'km', label: 'kilometer' },
-  { value: 'sq_cm', label: 'square centimeters' },
-  { value: 'FT', label: 'feed' },
-  { value: 'IN', label: 'inch' },
-]
-
-const PRODUCT_FAMILIES = [
-  '', 'BAE', 'BAI', 'BAM', 'BAV', 'BAW', 'BCC', 'BCM', 'BCS', 'BCW',
-  'BDG', 'BEN', 'BES', 'BFB', 'BFD', 'BFF', 'BFO', 'BFS', 'BFT',
-  'BGL', 'BHS', 'BIC', 'BID', 'BIL', 'BIP', 'BIR', 'BIS', 'BIU', 'BIW',
-  'BKT', 'BLA', 'BLG', 'BLT', 'BMD', 'BMF', 'BML', 'BMP', 'BNI', 'BNL',
-  'BNN', 'BNP', 'BNS', 'BOD', 'BOH', 'BOL', 'BOS', 'BOW', 'BPI',
-  'BSE', 'BSG', 'BSI', 'BSP', 'BSS', 'BSW', 'BTL', 'BTM', 'BTS',
-  'BUS', 'BVS', 'BWL', 'EQU', 'FHW', 'PIU', 'PLP', 'SET',
 ]
 
 /* ── Form State ───────────────────────────────────────────── */
@@ -70,7 +38,6 @@ interface FormState {
   AssemblyMode: string
   GatheringPart: string
   ConfigurableModule: string
-  Location: string
   ProductFamily: string
   ContainerBinding: string
 }
@@ -85,7 +52,6 @@ const INITIAL: FormState = {
   AssemblyMode: 'separable',
   GatheringPart: 'no',
   ConfigurableModule: 'no',
-  Location: '/Default/Article',
   ProductFamily: 'PIU',
   ContainerBinding: '',
 }
@@ -96,20 +62,41 @@ export default function CreatePartPage() {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
+
+  // Dynamic option lists (from backend)
+  const [views, setViews] = useState<PartFormOption[]>(FB_VIEWS)
+  const [sources, setSources] = useState<PartFormOption[]>(FB_SOURCES)
+  const [assemblyModes, setAssemblyModes] = useState<PartFormOption[]>(FB_ASSEMBLY)
+  const [units, setUnits] = useState<PartFormOption[]>(FB_UNITS)
+  const [productFamilies, setProductFamilies] = useState<string[]>([])
+
   const [containers, setContainers] = useState<ContainerItem[]>([])
   const [containersLoaded, setContainersLoaded] = useState(false)
+  const [configLoaded, setConfigLoaded] = useState(false)
 
+  // Load form config + containers in parallel
   useEffect(() => {
+    fetchPartFormConfig()
+      .then((cfg) => {
+        if (cfg.views?.length) setViews(cfg.views)
+        if (cfg.sources?.length) setSources(cfg.sources)
+        if (cfg.assemblyModes?.length) setAssemblyModes(cfg.assemblyModes)
+        if (cfg.units?.length) setUnits(cfg.units)
+        if (cfg.productFamilies?.length) setProductFamilies(cfg.productFamilies)
+        setConfigLoaded(true)
+      })
+      .catch(() => { setConfigLoaded(true) })
+
     fetchContainers()
       .then((resp) => {
         setContainers(resp.containers)
         setContainersLoaded(true)
-        if (resp.containers.length > 0 && !form.ContainerBinding) {
-          setForm((prev) => ({ ...prev, ContainerBinding: resp.containers[0].odataBinding }))
+        if (resp.containers.length > 0) {
+          setForm((prev) => prev.ContainerBinding ? prev : { ...prev, ContainerBinding: resp.containers[0].odataBinding })
         }
       })
       .catch(() => { setContainersLoaded(true) })
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [])
 
   const set = useCallback(
     (key: keyof FormState, val: string) =>
@@ -152,6 +139,7 @@ export default function CreatePartPage() {
   )
 
   const canSubmit = !busy && !!form.Name.trim() && !!form.ContainerBinding
+  const loading = !containersLoaded || !configLoaded
 
   return (
     <div className="max-w-2xl mx-auto">
@@ -165,6 +153,11 @@ export default function CreatePartPage() {
         </button>
       </div>
 
+      {loading ? (
+        <div className="bg-white rounded shadow-sm border border-slate-200 p-8 text-center text-slate-400 text-sm">
+          Lade Formularkonfiguration…
+        </div>
+      ) : (
       <form onSubmit={handleSubmit} className="bg-white rounded shadow-sm border border-slate-200 p-5 space-y-5">
 
         {/* ── Identity ─────────────────────────────────────── */}
@@ -185,16 +178,10 @@ export default function CreatePartPage() {
                 ))}
               </select>
             </Field>
-          ) : containersLoaded ? (
+          ) : (
             <div className="bg-amber-50 border border-amber-200 text-amber-700 text-sm rounded p-3">
               Keine Container gefunden. Bitte Windchill-Verbindung prüfen.
             </div>
-          ) : (
-            <Field label="Product / Container" required>
-              <select disabled className="input opacity-50">
-                <option>Lade…</option>
-              </select>
-            </Field>
           )}
 
           {/* Number */}
@@ -228,36 +215,27 @@ export default function CreatePartPage() {
 
           {/* Source */}
           <Field label="Source" required>
-            <div className="flex gap-2">
-              {SOURCES.map((s) => (
-                <button
-                  key={s.value}
-                  type="button"
-                  onClick={() => set('Source', s.value)}
-                  className={`flex-1 px-3 py-2 text-sm rounded border transition-colors ${
-                    form.Source === s.value
-                      ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm'
-                      : 'bg-white text-slate-600 border-slate-300 hover:border-indigo-400'
-                  }`}
-                >
-                  {s.label}
-                </button>
-              ))}
-            </div>
+            <ToggleGroup
+              options={sources}
+              value={form.Source}
+              onChange={(v) => set('Source', v)}
+            />
           </Field>
 
           {/* Associated Product Family */}
-          <Field label="Associated Product Family">
-            <select
-              value={form.ProductFamily}
-              onChange={(e) => set('ProductFamily', e.target.value)}
-              className="input"
-            >
-              {PRODUCT_FAMILIES.map((pf) => (
-                <option key={pf} value={pf}>{pf || '—'}</option>
-              ))}
-            </select>
-          </Field>
+          {productFamilies.length > 0 && (
+            <Field label="Associated Product Family">
+              <select
+                value={form.ProductFamily}
+                onChange={(e) => set('ProductFamily', e.target.value)}
+                className="input"
+              >
+                {productFamilies.map((pf) => (
+                  <option key={pf} value={pf}>{pf || '—'}</option>
+                ))}
+              </select>
+            </Field>
+          )}
 
           {/* View */}
           <Field label="View" required>
@@ -266,7 +244,7 @@ export default function CreatePartPage() {
               onChange={(e) => set('View', e.target.value)}
               className="input"
             >
-              {VIEWS.map((v) => (
+              {views.map((v) => (
                 <option key={v.value} value={v.value}>{v.label}</option>
               ))}
             </select>
@@ -274,42 +252,20 @@ export default function CreatePartPage() {
 
           {/* Assembly Mode */}
           <Field label="Assembly Mode" required>
-            <div className="flex gap-2">
-              {ASSEMBLY_MODES.map((am) => (
-                <button
-                  key={am.value}
-                  type="button"
-                  onClick={() => set('AssemblyMode', am.value)}
-                  className={`flex-1 px-3 py-2 text-sm rounded border transition-colors ${
-                    form.AssemblyMode === am.value
-                      ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm'
-                      : 'bg-white text-slate-600 border-slate-300 hover:border-indigo-400'
-                  }`}
-                >
-                  {am.label}
-                </button>
-              ))}
-            </div>
+            <ToggleGroup
+              options={assemblyModes}
+              value={form.AssemblyMode}
+              onChange={(v) => set('AssemblyMode', v)}
+            />
           </Field>
 
           {/* Gathering Part */}
           <Field label="Gathering Part" required>
-            <div className="flex gap-2">
-              {[{ value: 'no', label: 'No' }, { value: 'yes', label: 'Yes' }].map((opt) => (
-                <button
-                  key={opt.value}
-                  type="button"
-                  onClick={() => set('GatheringPart', opt.value)}
-                  className={`flex-1 px-3 py-2 text-sm rounded border transition-colors ${
-                    form.GatheringPart === opt.value
-                      ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm'
-                      : 'bg-white text-slate-600 border-slate-300 hover:border-indigo-400'
-                  }`}
-                >
-                  {opt.label}
-                </button>
-              ))}
-            </div>
+            <ToggleGroup
+              options={[{ value: 'no', label: 'No' }, { value: 'yes', label: 'Yes' }]}
+              value={form.GatheringPart}
+              onChange={(v) => set('GatheringPart', v)}
+            />
           </Field>
 
           {/* Default Unit */}
@@ -319,39 +275,19 @@ export default function CreatePartPage() {
               onChange={(e) => set('DefaultUnit', e.target.value)}
               className="input"
             >
-              {UNITS.map((u) => (
+              {units.map((u) => (
                 <option key={u.value} value={u.value}>{u.label}</option>
               ))}
             </select>
           </Field>
 
-          {/* Location */}
-          <Field label="Location" required>
-            <input
-              value={form.Location}
-              onChange={(e) => set('Location', e.target.value)}
-              className="input"
-            />
-          </Field>
-
           {/* Configurable Module */}
           <Field label="Configurable Module" required>
-            <div className="flex gap-2">
-              {[{ value: 'no', label: 'No' }, { value: 'yes', label: 'Yes' }].map((opt) => (
-                <button
-                  key={opt.value}
-                  type="button"
-                  onClick={() => set('ConfigurableModule', opt.value)}
-                  className={`flex-1 px-3 py-2 text-sm rounded border transition-colors ${
-                    form.ConfigurableModule === opt.value
-                      ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm'
-                      : 'bg-white text-slate-600 border-slate-300 hover:border-indigo-400'
-                  }`}
-                >
-                  {opt.label}
-                </button>
-              ))}
-            </div>
+            <ToggleGroup
+              options={[{ value: 'no', label: 'No' }, { value: 'yes', label: 'Yes' }]}
+              value={form.ConfigurableModule}
+              onChange={(v) => set('ConfigurableModule', v)}
+            />
           </Field>
         </Section>
 
@@ -378,6 +314,7 @@ export default function CreatePartPage() {
           </div>
         )}
       </form>
+      )}
     </div>
   )
 }
@@ -402,6 +339,31 @@ function Field({ label, required, children }: { label: string; required?: boolea
         {label}{required && <span className="text-red-500 ml-0.5">*</span>}
       </label>
       {children}
+    </div>
+  )
+}
+
+function ToggleGroup({ options, value, onChange }: {
+  options: { value: string; label: string }[]
+  value: string
+  onChange: (v: string) => void
+}) {
+  return (
+    <div className="flex gap-2">
+      {options.map((opt) => (
+        <button
+          key={opt.value}
+          type="button"
+          onClick={() => onChange(opt.value)}
+          className={`flex-1 px-3 py-2 text-sm rounded border transition-colors ${
+            value === opt.value
+              ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm'
+              : 'bg-white text-slate-600 border-slate-300 hover:border-indigo-400'
+          }`}
+        >
+          {opt.label}
+        </button>
+      ))}
     </div>
   )
 }

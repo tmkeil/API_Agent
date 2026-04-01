@@ -532,3 +532,77 @@ def get_containers(client: WRSClient) -> "ContainerListResponse":
         containers=containers,
         timing=TimingInfo(totalMs=ms, wrsMs=ms),
     )
+
+
+# ── Part Form Config ────────────────────────────────────────
+
+
+def get_part_form_config() -> dict:
+    """Optionslisten fuer das Part-Erstellformular.
+
+    Windchill-Systemkonstanten (Source, AssemblyMode, etc.) sind fest.
+    Firmenspezifische Werte (Product Families, Views) koennen per
+    Env-Var ueberschrieben werden.
+    """
+    return {
+        "views": [
+            {"value": "Design", "label": "Design"},
+            {"value": "Manufacturing", "label": "Manufacturing"},
+            {"value": "0002", "label": "0002"},
+            {"value": "CN01", "label": "CN01"},
+            {"value": "MX02", "label": "MX02"},
+        ],
+        "sources": [
+            {"value": "notapplicable", "label": "Not Applicable"},
+            {"value": "make", "label": "Make"},
+            {"value": "buy", "label": "Buy"},
+        ],
+        "assemblyModes": [
+            {"value": "separable", "label": "Separable"},
+            {"value": "inseparable", "label": "Inseparable"},
+            {"value": "component", "label": "Component"},
+        ],
+        "units": [
+            {"value": "ea", "label": "each"},
+            {"value": "as_needed", "label": "as needed"},
+            {"value": "kg", "label": "kilograms"},
+            {"value": "m", "label": "meters"},
+            {"value": "l", "label": "liters"},
+            {"value": "sq_m", "label": "square meters"},
+            {"value": "cu_m", "label": "cubic meters"},
+            {"value": "g", "label": "gram"},
+            {"value": "mm", "label": "millimeter"},
+            {"value": "fraction", "label": "partial each"},
+            {"value": "ml", "label": "milliliter"},
+            {"value": "KAN", "label": "can"},
+            {"value": "FLA", "label": "bottle"},
+            {"value": "mg", "label": "milligram"},
+            {"value": "sq_mm", "label": "square millimeter"},
+            {"value": "cm", "label": "centimeters"},
+            {"value": "km", "label": "kilometer"},
+            {"value": "sq_cm", "label": "square centimeters"},
+            {"value": "FT", "label": "feed"},
+            {"value": "IN", "label": "inch"},
+        ],
+        "productFamilies": _get_product_families(),
+    }
+
+
+def _get_product_families() -> list[str]:
+    """Product Families (BAL_CP_ORDER_PREFIX) — aus Env-Var oder Default."""
+    import json as _json
+    env_val = getattr(settings, "WINDCHILL_PRODUCT_FAMILIES_JSON", None)
+    if env_val:
+        try:
+            return _json.loads(env_val)
+        except Exception:
+            pass
+    return [
+        "", "BAE", "BAI", "BAM", "BAV", "BAW", "BCC", "BCM", "BCS", "BCW",
+        "BDG", "BEN", "BES", "BFB", "BFD", "BFF", "BFO", "BFS", "BFT",
+        "BGL", "BHS", "BIC", "BID", "BIL", "BIP", "BIR", "BIS", "BIU", "BIW",
+        "BKT", "BLA", "BLG", "BLT", "BMD", "BMF", "BML", "BMP", "BNI", "BNL",
+        "BNN", "BNP", "BNS", "BOD", "BOH", "BOL", "BOS", "BOW", "BPI",
+        "BSE", "BSG", "BSI", "BSP", "BSS", "BSW", "BTL", "BTM", "BTS",
+        "BUS", "BVS", "BWL", "EQU", "FHW", "PIU", "PLP", "SET",
+    ]

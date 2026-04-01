@@ -200,6 +200,22 @@ export async function fetchContainers(): Promise<ContainerListResponse> {
   return request<ContainerListResponse>(`${BASE}/containers`)
 }
 
+// Part creation form config (option lists)
+export interface PartFormOption {
+  value: string
+  label: string
+}
+export interface PartFormConfig {
+  views: PartFormOption[]
+  sources: PartFormOption[]
+  assemblyModes: PartFormOption[]
+  units: PartFormOption[]
+  productFamilies: string[]
+}
+export async function fetchPartFormConfig(): Promise<PartFormConfig> {
+  return request<PartFormConfig>(`${BASE}/part-form-config`)
+}
+
 // Occurrences (Use Case: "Wo kommt Code XABC vor?")
 export async function getOccurrences(code: string): Promise<OccurrencesResponse> {
   return request<OccurrencesResponse>(`${BASE}/parts/${encodeURIComponent(code)}/occurrences`)

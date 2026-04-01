@@ -104,12 +104,6 @@ def _build_part_body(attrs: dict[str, Any]) -> dict[str, Any]:
     if context:
         body["Context@odata.bind"] = context
 
-    # --- Folder / Location ---
-    # Windchill OData unterstuetzt FolderPath oder Folder@odata.bind
-    location = attrs.get("Location", "")
-    if location:
-        body["FolderPath"] = location
-
     # --- IBA / Soft Attributes ---
     product_family = attrs.get("ProductFamily", "")
     if product_family:
@@ -120,7 +114,7 @@ def _build_part_body(attrs: dict[str, Any]) -> dict[str, Any]:
     _handled = {
         "Source", "DefaultUnit", "View", "Number", "Name", "Description",
         "AssemblyMode", "GatheringPart", "ConfigurableModule",
-        "Location", "ProductFamily",
+        "ProductFamily",
     }
     for key, val in attrs.items():
         if key not in body and key not in _handled:

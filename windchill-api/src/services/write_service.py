@@ -48,62 +48,82 @@ def create_object(
 def _build_part_body(attrs: dict[str, Any]) -> dict[str, Any]:
     """Frontend-Part-Attribute in OData-konformes Format konvertieren.
 
-    Frontend schickt einfache Strings:
-        {"Number": "...", "Name": "...", "View": "Design", "Source": "Make", ...}
+    Frontend schickt einfache Strings (z.B. Source='make', View='Design').
+    OData erwartet komplexe Typen (z.B. Source={"Value":"make"}).
 
-    OData erwartet (PTC WRS Doku):
-        {"Number": "...", "Name": "...",
-         "Source": {"Value": "make"},
-         "DefaultUnit": {"Value": "ea"},
-         "AssemblyMode": {"Value": "separable"},
-         "Context@odata.bind": "Containers('OR:...')"}
-
-    Referenz: https://support.ptc.com/help/windchill_rest_services/r1.6/en/
-              windchill_rest_services/WCCG_RESTAccessExamplesCreatePart.html
+    Felder basierend auf Windchill Part-Erstellformular (wpe.md):
+        Number, Name, Description,
+        Source, View, AssemblyMode, DefaultUnit,
+        GatheringPart, ConfigurableModule,
+        Location (FolderPath), ProductFamily (IBA),
+        Context@odata.bind (Container)
     """
     body: dict[str, Any] = {}
 
-    # Direkte String-Properties
-    for key in ("Number", "Name"):
-        if key in attrs:
+    # --- Direkte String-Properties ---
+    for key in ("Number", "Name", "Description"):
+        if key in attrs and attrs[key]:
             body[key] = attrs[key]
 
-    # Source: "Make" → {"Value": "make"}
+    # --- Enum-Properties (OData: {"Value": "..."}  ) ---
+
+    # Source: "make" | "buy" | "notapplicable"
     source = attrs.get("Source", "")
     if source:
         body["Source"] = {"Value": source.lower()}
 
-    # DefaultUnit: "each" → {"Value": "ea"}
+    # DefaultUnit: z.B. "ea", "kg", "m", "l", ...
     unit = attrs.get("DefaultUnit", "")
     if unit:
-        # Windchill erwartet Kurzform
-        unit_map = {"each": "ea", "piece": "ea"}
-        body["DefaultUnit"] = {"Value": unit_map.get(unit.lower(), unit.lower())}
+        body["DefaultUnit"] = {"Value": unit}
 
-    # View: "Design" → {"Value": "Design"}
+    # View: "Design" | "Manufacturing" | "0002" | "CN01" | "MX02"
     view = attrs.get("View", "")
     if view:
         body["View"] = {"Value": view}
 
-    # AssemblyMode (Default: separable)
-    body["AssemblyMode"] = {"Value": "separable"}
+    # AssemblyMode: "separable" | "inseparable" | "component"
+    assembly = attrs.get("AssemblyMode", "separable")
+    body["AssemblyMode"] = {"Value": assembly.lower()}
+
+    # --- Boolean-Properties ---
+
+    # GatheringPart: "yes"/"no" → boolean
+    gathering = attrs.get("GatheringPart", "no")
+    body["GatheringPart"] = gathering.lower() == "yes"
 
     # PhantomManufacturingPart: Standard false
     body["PhantomManufacturingPart"] = False
 
-    # Context@odata.bind: Pflichtfeld — Container-Referenz
-    # Wenn das Frontend eine Container-ID mitschickt, verwenden.
-    # Sonst: muss der Aufrufer das Feld direkt setzen.
+    # ConfigurableModule: "yes"/"no" → boolean
+    configurable = attrs.get("ConfigurableModule", "no")
+    body["ConfigurableModule"] = configurable.lower() == "yes"
+
+    # --- Container-Referenz (Pflicht) ---
     context = attrs.get("Context@odata.bind", "")
     if context:
         body["Context@odata.bind"] = context
 
+    # --- Folder / Location ---
+    # Windchill OData unterstuetzt FolderPath oder Folder@odata.bind
+    location = attrs.get("Location", "")
+    if location:
+        body["FolderPath"] = location
+
+    # --- IBA / Soft Attributes ---
+    product_family = attrs.get("ProductFamily", "")
+    if product_family:
+        body["BAL_CP_ORDER_PREFIX"] = product_family
+
     # Falls weitere OData-Properties direkt mitgegeben werden (Power-User),
     # uebernehmen, ohne die obigen zu ueberschreiben.
+    _handled = {
+        "Source", "DefaultUnit", "View", "Number", "Name", "Description",
+        "AssemblyMode", "GatheringPart", "ConfigurableModule",
+        "Location", "ProductFamily",
+    }
     for key, val in attrs.items():
-        if key not in body and key not in (
-            "Source", "DefaultUnit", "View", "Number", "Name",
-        ):
+        if key not in body and key not in _handled:
             body[key] = val
 
     return body

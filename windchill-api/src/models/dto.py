@@ -416,3 +416,20 @@ class AdvancedSearchRequest(BaseModel):
     dateField: str = "modified"  # "modified" or "created"
     attributes: dict[str, str] = {}
     limit: int = 200
+
+
+# ── Containers ───────────────────────────────────────────────
+
+
+class ContainerItem(BaseModel):
+    """A Windchill Container (Product / Library)."""
+    containerId: str = ""
+    name: str = ""
+    containerType: str = ""
+    odataBinding: str = ""
+
+
+class ContainerListResponse(BaseModel):
+    """Response for container listing."""
+    containers: list[ContainerItem] = []
+    timing: TimingInfo = TimingInfo()

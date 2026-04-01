@@ -333,7 +333,7 @@ class WriteMixin:
         body: dict = {
             "Uses@odata.bind": f"Parts('{child_part_id}')",
             "Quantity": quantity,
-            "Unit": unit,
+            "Unit": {"Value": unit},
         }
 
         self._refresh_csrf()

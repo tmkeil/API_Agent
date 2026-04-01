@@ -491,3 +491,39 @@ def get_cache_stats() -> CacheStats:
         ttl_seconds=settings.CACHE_TTL_SECONDS,
         max_size=settings.CACHE_MAX_SIZE,
     )
+
+
+# ── Containers ───────────────────────────────────────────────
+
+
+def get_containers(client: WRSClient) -> "ContainerListResponse":
+    """Windchill Container (Products / Libraries) abrufen."""
+    from src.models.dto import ContainerItem, ContainerListResponse
+
+    t0 = time.monotonic()
+    raw_items = client.get_containers()
+
+    containers = []
+    for raw in raw_items:
+        cid = raw.get("ID", "")
+        name = raw.get("Name", "")
+        ctype_raw = raw.get("ContainerType", "")
+        ctype = ctype_raw
+        if isinstance(ctype_raw, dict):
+            ctype = ctype_raw.get("Display") or ctype_raw.get("Value") or str(ctype_raw)
+
+        # Build the OData binding string for Context@odata.bind
+        binding = f"Containers('{cid}')" if cid else ""
+
+        containers.append(ContainerItem(
+            containerId=cid,
+            name=name,
+            containerType=str(ctype),
+            odataBinding=binding,
+        ))
+
+    ms = round((time.monotonic() - t0) * 1000, 1)
+    return ContainerListResponse(
+        containers=containers,
+        timing=TimingInfo(totalMs=ms, wrsMs=ms),
+    )

@@ -73,11 +73,9 @@ class WRSClientBase:
         self._username = username
         self._password = password
 
-        # httpx-Session OHNE globalen auth-Header.
-        # Grund: Bei Form-Auth schickt Windchill eine Session-Cookie.
-        # Wenn gleichzeitig ein Basic-Auth-Header mitkommt, verwirft
-        # Windchill die Cookie und versucht Basic Auth → 401.
-        # Basic Auth wird nur im Verbindungstest einmalig explizit gesetzt.
+        # httpx-Session — Auth wird in _connect() konfiguriert.
+        # Bei Basic Auth: self._http.auth wird dauerhaft gesetzt.
+        # Bei Form Auth: Session-Cookie wird automatisch verwaltet.
         self._http = httpx.Client(
             verify=verify_tls,
             timeout=timeout,
@@ -184,6 +182,7 @@ class WRSClientBase:
         if "j_security_check" in str(resp.url) or "text/html" in content_type:
             self._authenticate_form()
             self._verify_authenticated()
+            self._fetch_csrf_token()
             return
 
         # Schritt 2e: Unerwartete Antwort (z.B. Proxy-Fehlerseite, SSO)
@@ -201,8 +200,8 @@ class WRSClientBase:
           - j_password: Passwort    (Java EE Standard-Feldname)
 
         Das 'j_' Praefix ist Teil der Java Servlet Specification.
-        Nach erfolgreichem Login setzt Windchill eine Session-Cookie
-        und optional einen CSRF_NONCE Header fuer Write-Operationen.
+        Nach erfolgreichem Login setzt Windchill eine Session-Cookie.
+        CSRF-Token wird anschliessend via GetCSRFToken() geholt.
         """
         logger.info("Form Login erforderlich — sende j_security_check")
         try:
@@ -214,22 +213,6 @@ class WRSClientBase:
                 },
                 follow_redirects=True,
             )
-
-            # CSRF-Token suchen: erst in der finalen Antwort, dann in
-            # der Redirect-History (httpx verschluckt Zwischen-Response-Header)
-            nonce = resp.headers.get("CSRF_NONCE")
-            if not nonce:
-                for hist_resp in getattr(resp, "history", []):
-                    nonce = hist_resp.headers.get("CSRF_NONCE")
-                    if nonce:
-                        break
-
-            if nonce:
-                self._http.headers["CSRF_NONCE"] = nonce
-                logger.info("Form Login: CSRF_NONCE gespeichert (%s…)", nonce[:12])
-            else:
-                logger.warning("Form Login: KEIN CSRF_NONCE in Antwort oder Redirect-History!")
-
             logger.info("Form Login: status=%d url=%s", resp.status_code, resp.url)
         except Exception as e:
             raise WRSError(f"Form Login fehlgeschlagen: {e}")

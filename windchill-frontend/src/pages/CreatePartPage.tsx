@@ -1,6 +1,7 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { createObject } from '../api/client'
+import { createObject, fetchContainers } from '../api/client'
+import type { ContainerItem } from '../api/types'
 
 // Windchill Views (Part-Kontext)
 const VIEWS = ['Design', 'Manufacturing'] as const
@@ -26,6 +27,7 @@ interface FormState {
   FolderLocation: string
   Source: string
   DefaultUnit: string
+  ContainerBinding: string
 }
 
 const INITIAL: FormState = {
@@ -35,6 +37,7 @@ const INITIAL: FormState = {
   FolderLocation: '/P - Design',
   Source: 'Make',
   DefaultUnit: 'each',
+  ContainerBinding: '',
 }
 
 export default function CreatePartPage() {
@@ -43,6 +46,19 @@ export default function CreatePartPage() {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
+  const [containers, setContainers] = useState<ContainerItem[]>([])
+
+  useEffect(() => {
+    fetchContainers()
+      .then((resp) => {
+        setContainers(resp.containers)
+        // Auto-select first container
+        if (resp.containers.length > 0 && !form.ContainerBinding) {
+          setForm((prev) => ({ ...prev, ContainerBinding: resp.containers[0].odataBinding }))
+        }
+      })
+      .catch(() => { /* ignore — dropdown stays empty */ })
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const set = useCallback(
     (key: keyof FormState, val: string) =>
@@ -71,8 +87,13 @@ export default function CreatePartPage() {
       // Build attributes — only send non-empty values
       const attrs: Record<string, string> = {}
       for (const [k, v] of Object.entries(form)) {
+        if (k === 'ContainerBinding') continue  // handled separately
         const trimmed = v.trim()
         if (trimmed) attrs[k] = trimmed
+      }
+      // Map ContainerBinding → Context@odata.bind
+      if (form.ContainerBinding) {
+        attrs['Context@odata.bind'] = form.ContainerBinding
       }
 
       try {
@@ -155,6 +176,22 @@ export default function CreatePartPage() {
           >
             {FOLDER_LOCATIONS.map((f) => (
               <option key={f} value={f}>{f}</option>
+            ))}
+          </select>
+        </Field>
+
+        {/* Container (Context) */}
+        <Field label="Container" hint="Windchill Product / Library">
+          <select
+            value={form.ContainerBinding}
+            onChange={(e) => set('ContainerBinding', e.target.value)}
+            className="input"
+          >
+            {containers.length === 0 && <option value="">Lade…</option>}
+            {containers.map((c) => (
+              <option key={c.containerId} value={c.odataBinding}>
+                {c.name} ({c.containerType})
+              </option>
             ))}
           </select>
         </Field>

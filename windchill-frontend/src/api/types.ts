@@ -342,6 +342,19 @@ export interface BulkResponse {
   timing: TimingInfo
 }
 
+// ── Containers ──────────────────────────────────────────────
+
+export interface ContainerItem {
+  containerId: string
+  name: string
+  containerType: string
+  odataBinding: string
+}
+
+export interface ContainerListResponse {
+  containers: ContainerItem[]
+}
+
 // ── Advanced Search ─────────────────────────────────────────
 
 export interface AdvancedSearchRequest {

@@ -22,8 +22,17 @@ def create_object(
     type_key: str,
     attributes: dict[str, Any],
 ) -> WriteResponse:
-    """Neues Windchill-Objekt erstellen."""
+    """Neues Windchill-Objekt erstellen.
+
+    Fuer Parts werden Frontend-Felder (View, Source, FolderLocation, etc.)
+    in OData-konformes Format konvertiert.
+    """
     t0 = time.monotonic()
+
+    # Part-spezifische Attribut-Konvertierung
+    if type_key == "part":
+        attributes = _build_part_body(attributes)
+
     raw = client.create_object(type_key, attributes)
     n = normalize_item(raw)
     ms = round((time.monotonic() - t0) * 1000, 1)
@@ -34,6 +43,71 @@ def create_object(
         message=f"{type_key} '{n['number']}' erstellt",
         timing=TimingInfo(totalMs=ms, wrsMs=ms),
     )
+
+
+def _build_part_body(attrs: dict[str, Any]) -> dict[str, Any]:
+    """Frontend-Part-Attribute in OData-konformes Format konvertieren.
+
+    Frontend schickt einfache Strings:
+        {"Number": "...", "Name": "...", "View": "Design", "Source": "Make", ...}
+
+    OData erwartet (PTC WRS Doku):
+        {"Number": "...", "Name": "...",
+         "Source": {"Value": "make"},
+         "DefaultUnit": {"Value": "ea"},
+         "AssemblyMode": {"Value": "separable"},
+         "Context@odata.bind": "Containers('OR:...')"}
+
+    Referenz: https://support.ptc.com/help/windchill_rest_services/r1.6/en/
+              windchill_rest_services/WCCG_RESTAccessExamplesCreatePart.html
+    """
+    body: dict[str, Any] = {}
+
+    # Direkte String-Properties
+    for key in ("Number", "Name"):
+        if key in attrs:
+            body[key] = attrs[key]
+
+    # Source: "Make" → {"Value": "make"}
+    source = attrs.get("Source", "")
+    if source:
+        body["Source"] = {"Value": source.lower()}
+
+    # DefaultUnit: "each" → {"Value": "ea"}
+    unit = attrs.get("DefaultUnit", "")
+    if unit:
+        # Windchill erwartet Kurzform
+        unit_map = {"each": "ea", "piece": "ea"}
+        body["DefaultUnit"] = {"Value": unit_map.get(unit.lower(), unit.lower())}
+
+    # AssemblyMode (Default: separable)
+    body["AssemblyMode"] = {"Value": "separable"}
+
+    # View und FolderLocation werden derzeit nicht als OData-Properties
+    # unterstuetzt — Windchill ordnet das Part automatisch anhand des
+    # Containers (Product/Library) und dessen Konfiguration ein.
+    # "View" im Frontend dient nur der Ordner-Vorauswahl.
+
+    # PhantomManufacturingPart: Standard false
+    body["PhantomManufacturingPart"] = False
+
+    # Context@odata.bind: Pflichtfeld — Container-Referenz
+    # Wenn das Frontend eine Container-ID mitschickt, verwenden.
+    # Sonst: muss der Aufrufer das Feld direkt setzen.
+    context = attrs.get("Context@odata.bind", "")
+    if context:
+        body["Context@odata.bind"] = context
+
+    # Falls weitere OData-Properties direkt mitgegeben werden (Power-User),
+    # uebernehmen, ohne die obigen zu ueberschreiben.
+    for key, val in attrs.items():
+        if key not in body and key not in (
+            "Source", "DefaultUnit", "View", "FolderLocation",
+            "Number", "Name",
+        ):
+            body[key] = val
+
+    return body
 
 
 def _resolve_object_id(

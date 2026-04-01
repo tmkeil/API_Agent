@@ -7,6 +7,7 @@ import type {
   BulkItem,
   BulkResponse,
   ChangeItemsResponse,
+  ContainerListResponse,
   DocumentListResponse,
   FileInfoResponse,
   LifecycleResponse,
@@ -192,6 +193,11 @@ export function searchPartsStream(
 export async function getContexts(): Promise<string[]> {
   const data = await request<{ contexts: string[] }>(`${BASE}/contexts`)
   return data.contexts
+}
+
+// Containers (Products / Libraries — for Context@odata.bind)
+export async function fetchContainers(): Promise<ContainerListResponse> {
+  return request<ContainerListResponse>(`${BASE}/containers`)
 }
 
 // Occurrences (Use Case: "Wo kommt Code XABC vor?")

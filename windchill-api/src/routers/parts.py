@@ -19,6 +19,7 @@ from src.core.session import log_session_event
 from src.models.dto import (
     BomNodeResponse,
     BomViewConfig,
+    ContainerListResponse,
     DocumentListResponse,
     OccurrencesResponse,
     PartDetailResponse,
@@ -163,3 +164,19 @@ def bom_views() -> list[BomViewConfig]:
     No authentication required — view configs are static metadata.
     """
     return BOM_VIEWS
+
+
+# ── Windchill Containers ─────────────────────────────────────
+
+
+@router.get(
+    "/containers",
+    response_model=ContainerListResponse,
+    summary="Windchill Container (Products / Libraries)",
+)
+def list_containers(
+    request: Request,
+    _: None = Depends(require_auth),
+):
+    client = get_client(request)
+    return parts_service.get_containers(client)

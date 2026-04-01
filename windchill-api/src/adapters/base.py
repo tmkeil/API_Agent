@@ -204,10 +204,22 @@ class WRSClientBase:
                 },
                 follow_redirects=True,
             )
-            # CSRF-Token fuer spaetere Write-Requests merken
+
+            # CSRF-Token suchen: erst in der finalen Antwort, dann in
+            # der Redirect-History (httpx verschluckt Zwischen-Response-Header)
             nonce = resp.headers.get("CSRF_NONCE")
+            if not nonce:
+                for hist_resp in getattr(resp, "history", []):
+                    nonce = hist_resp.headers.get("CSRF_NONCE")
+                    if nonce:
+                        break
+
             if nonce:
                 self._http.headers["CSRF_NONCE"] = nonce
+                logger.info("Form Login: CSRF_NONCE gespeichert (%s…)", nonce[:12])
+            else:
+                logger.warning("Form Login: KEIN CSRF_NONCE in Antwort oder Redirect-History!")
+
             logger.info("Form Login: status=%d url=%s", resp.status_code, resp.url)
         except Exception as e:
             raise WRSError(f"Form Login fehlgeschlagen: {e}")
@@ -480,30 +492,56 @@ class WRSClientBase:
     def _refresh_csrf(self) -> None:
         """Frischen CSRF_NONCE von Windchill holen.
 
-        Windchill rotiert den CSRF_NONCE serverseitig.  PTC-Dokumentation:
-        GET mit Header ``CSRF_NONCE: fetch`` → Antwort enthaelt frischen Nonce.
+        Strategie:
+        1. GET an OData-Endpoint mit ``CSRF_NONCE: fetch`` Header.
+        2. Falls kein Nonce: GET an Windchill-Basis-URL.
+        3. Falls immer noch kein Nonce: erneuter Form-Login.
         """
         old = self._http.headers.get("CSRF_NONCE", "")
+
+        # Strategie 1: OData GET mit fetch-Header
+        nonce = self._try_csrf_fetch(
+            f"{self.odata_base}/ProdMgmt/Parts",
+            params={"$top": "0", "$select": "ID"},
+        )
+
+        # Strategie 2: Windchill Basis-URL (nicht OData)
+        if not nonce:
+            nonce = self._try_csrf_fetch(f"{self.base_url}/app/")
+
+        # Strategie 3: Erneuter Form-Login
+        if not nonce:
+            logger.info("CSRF refresh: Fallback auf erneuten Form-Login")
+            self._authenticate_form()
+            nonce = self._http.headers.get("CSRF_NONCE", "")
+
+        if nonce and nonce != old:
+            with self._lock:
+                self._http.headers["CSRF_NONCE"] = nonce
+            logger.info("CSRF_NONCE refreshed: %s… → %s…", old[:12] or "(leer)", nonce[:12])
+        elif not nonce:
+            logger.warning("CSRF refresh: konnte keinen Nonce erhalten")
+
+    def _try_csrf_fetch(self, url: str, params: dict | None = None) -> str:
+        """Versucht, einen CSRF_NONCE per GET mit 'fetch' Header zu holen."""
         try:
             resp = self._http.get(
-                f"{self.odata_base}/ProdMgmt/Parts",
-                params={"$top": "0", "$select": "ID"},
+                url,
+                params=params,
                 headers={"CSRF_NONCE": "fetch"},
                 timeout=self._timeout,
             )
             nonce = resp.headers.get("CSRF_NONCE")
-            if nonce:
-                with self._lock:
-                    self._http.headers["CSRF_NONCE"] = nonce
-                logger.info("CSRF_NONCE refreshed: %s… → %s…", old[:12], nonce[:12])
-            else:
-                logger.warning(
-                    "CSRF_NONCE refresh: kein Nonce in Antwort (status=%d, headers=%s)",
-                    resp.status_code,
-                    dict(resp.headers),
-                )
+            if nonce and nonce != "fetch":
+                return nonce
+            # Auch in Redirect-History suchen
+            for hist_resp in getattr(resp, "history", []):
+                nonce = hist_resp.headers.get("CSRF_NONCE")
+                if nonce and nonce != "fetch":
+                    return nonce
         except Exception:
-            logger.warning("_refresh_csrf fehlgeschlagen", exc_info=True)
+            logger.debug("_try_csrf_fetch(%s) fehlgeschlagen", url, exc_info=True)
+        return ""
 
     @staticmethod
     def _is_csrf_error(resp: httpx.Response) -> bool:

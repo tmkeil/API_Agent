@@ -147,16 +147,14 @@ class PartsMixin:
     def get_containers(self: "WRSClientBase") -> list[dict]:
         """Windchill Container (Products/Libraries) auflisten.
 
-        Das offizielle Create-Part-Beispiel der PTC Doku nutzt
-        ``/servlet/odata/ProdMgmt/`` ohne Versions-Prefix.
-        Der Versuch mit ``/odata/v6/ProdMgmt/Containers`` liefert 404,
-        deshalb wird hier der unversionierte Pfad verwendet.
+        ``Containers`` ist ein Entity Set der **DataAdmin**-Domain,
+        nicht der ProdMgmt-Domain. Ermittelt via:
+        ``GET /servlet/odata/v6/DataAdmin/Containers``
 
         Returns:
             Liste von Container-Dicts mit ID, Name, ContainerType etc.
         """
-        # Unversionierter Pfad — wie im offiziellen PTC Create-Part-Beispiel
-        url = f"{self.base_url}/servlet/odata/ProdMgmt/Containers"
+        url = f"{self.odata_base}/DataAdmin/Containers"
         params = {"$select": "ID,Name,ContainerType"}
         items = self._get_all_pages(url, params)
         if items is None:

@@ -478,21 +478,39 @@ class WRSClientBase:
     # ── Write-Operations (POST / PATCH / DELETE) ────────────
 
     def _refresh_csrf(self) -> None:
-        """Frischen CSRF_NONCE holen, bevor ein Write ausgefuehrt wird.
+        """Frischen CSRF_NONCE von Windchill holen.
 
-        Windchill rotiert den CSRF_NONCE serverseitig.  Wenn zwischen dem
-        letzten GET und dem Write zu viel Zeit vergangen ist, ist der
-        gespeicherte Nonce veraltet → 400 "A potential security problem".
-
-        Loesung: Leichtgewichtiger GET ($top=0) direkt vor dem Write.
+        Windchill rotiert den CSRF_NONCE serverseitig.  PTC-Dokumentation:
+        GET mit Header ``CSRF_NONCE: fetch`` → Antwort enthaelt frischen Nonce.
         """
+        old = self._http.headers.get("CSRF_NONCE", "")
         try:
-            self._raw_get(
+            resp = self._http.get(
                 f"{self.odata_base}/ProdMgmt/Parts",
                 params={"$top": "0", "$select": "ID"},
+                headers={"CSRF_NONCE": "fetch"},
+                timeout=self._timeout,
             )
+            nonce = resp.headers.get("CSRF_NONCE")
+            if nonce:
+                with self._lock:
+                    self._http.headers["CSRF_NONCE"] = nonce
+                logger.debug("CSRF_NONCE refreshed: %s → %s", old[:8], nonce[:8])
+            else:
+                logger.warning("CSRF_NONCE refresh: kein Nonce in Antwort (status=%d)", resp.status_code)
         except Exception:
             logger.debug("_refresh_csrf fehlgeschlagen", exc_info=True)
+
+    @staticmethod
+    def _is_csrf_error(resp: httpx.Response) -> bool:
+        """Erkennt Windchill CSRF-Fehler (400 mit 'security' in der Antwort)."""
+        if resp.status_code != 400:
+            return False
+        try:
+            text = resp.text.lower()
+            return "security" in text or "csrf" in text
+        except Exception:
+            return False
 
     def _post(
         self,
@@ -501,13 +519,14 @@ class WRSClientBase:
         *,
         suppress_errors: bool = False,
     ) -> Optional[httpx.Response]:
-        """POST mit Retry und CSRF_NONCE Handling.
+        """POST mit Retry, CSRF_NONCE Handling und CSRF-Retry.
 
-        Windchill WRS benötigt CSRF_NONCE Header für alle Schreiboperationen.
-        Der Nonce wird bei jedem Response automatisch aktualisiert (siehe _raw_get).
+        Bei CSRF-Fehler (400 + 'security') wird einmal automatisch
+        ein frischer Nonce geholt und der Request wiederholt.
         """
         delay = 1.0
         last_exc: Optional[Exception] = None
+        csrf_retried = False
 
         for attempt in range(self._max_retries):
             try:
@@ -520,6 +539,14 @@ class WRSClientBase:
                 if nonce:
                     with self._lock:
                         self._http.headers["CSRF_NONCE"] = nonce
+
+                # CSRF-Fehler: einmal refresh + retry
+                if self._is_csrf_error(resp) and not csrf_retried:
+                    logger.info("CSRF-Fehler bei POST %s — refreshe Nonce und wiederhole", url)
+                    csrf_retried = True
+                    self._refresh_csrf()
+                    continue
+
                 if resp.status_code < 500:
                     return resp
                 last_exc = WRSError(f"Server error {resp.status_code}", resp.status_code)
@@ -541,9 +568,10 @@ class WRSClientBase:
         *,
         suppress_errors: bool = False,
     ) -> Optional[httpx.Response]:
-        """PATCH mit Retry und CSRF_NONCE Handling."""
+        """PATCH mit Retry und CSRF_NONCE Handling + CSRF-Retry."""
         delay = 1.0
         last_exc: Optional[Exception] = None
+        csrf_retried = False
 
         for attempt in range(self._max_retries):
             try:
@@ -556,6 +584,13 @@ class WRSClientBase:
                 if nonce:
                     with self._lock:
                         self._http.headers["CSRF_NONCE"] = nonce
+
+                if self._is_csrf_error(resp) and not csrf_retried:
+                    logger.info("CSRF-Fehler bei PATCH %s — refreshe Nonce und wiederhole", url)
+                    csrf_retried = True
+                    self._refresh_csrf()
+                    continue
+
                 if resp.status_code < 500:
                     return resp
                 last_exc = WRSError(f"Server error {resp.status_code}", resp.status_code)
@@ -576,9 +611,10 @@ class WRSClientBase:
         *,
         suppress_errors: bool = False,
     ) -> Optional[httpx.Response]:
-        """DELETE mit Retry und CSRF_NONCE Handling."""
+        """DELETE mit Retry und CSRF_NONCE Handling + CSRF-Retry."""
         delay = 1.0
         last_exc: Optional[Exception] = None
+        csrf_retried = False
 
         for attempt in range(self._max_retries):
             try:
@@ -590,6 +626,13 @@ class WRSClientBase:
                 if nonce:
                     with self._lock:
                         self._http.headers["CSRF_NONCE"] = nonce
+
+                if self._is_csrf_error(resp) and not csrf_retried:
+                    logger.info("CSRF-Fehler bei DELETE %s — refreshe Nonce und wiederhole", url)
+                    csrf_retried = True
+                    self._refresh_csrf()
+                    continue
+
                 if resp.status_code < 500:
                     return resp
                 last_exc = WRSError(f"Server error {resp.status_code}", resp.status_code)

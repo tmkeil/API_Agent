@@ -155,8 +155,7 @@ class PartsMixin:
             Liste von Container-Dicts mit ID, Name, ContainerType etc.
         """
         url = f"{self.odata_base}/DataAdmin/Containers"
-        params = {"$select": "ID,Name,ContainerType"}
-        items = self._get_all_pages(url, params)
+        items = self._get_all_pages(url)
         if items is None:
             return []
         return items

@@ -503,19 +503,26 @@ def get_containers(client: WRSClient) -> "ContainerListResponse":
     t0 = time.monotonic()
     raw_items = client.get_containers()
 
+    # Debug: erstes Record loggen, damit wir die Feldnamen sehen
+    if raw_items:
+        logger.info("Container-Record Felder: %s", list(raw_items[0].keys()))
+
     containers = []
     for raw in raw_items:
-        cid = raw.get("ID", "")
-        name = raw.get("Name", "")
-        ctype_raw = raw.get("ContainerType", "")
+        # Versuche verschiedene Feldnamen — DataAdmin kann andere haben als ProdMgmt
+        cid = raw.get("ID") or raw.get("id") or raw.get("ContainerID") or ""
+        name = (raw.get("Name") or raw.get("name") or raw.get("DisplayName")
+                or raw.get("ContainerName") or "")
+        ctype_raw = (raw.get("ContainerType") or raw.get("Type")
+                     or raw.get("type") or "")
         ctype = ctype_raw
         if isinstance(ctype_raw, dict):
             ctype = ctype_raw.get("Display") or ctype_raw.get("Value") or str(ctype_raw)
 
         binding = f"Containers('{cid}')" if cid else ""
         containers.append(ContainerItem(
-            containerId=cid,
-            name=name,
+            containerId=str(cid),
+            name=str(name),
             containerType=str(ctype),
             odataBinding=binding,
         ))

@@ -175,6 +175,8 @@ def bom_views() -> list[BomViewConfig]:
     summary="Windchill Container (Products / Libraries)",
 )
 def list_containers(
+    request: Request,
     _: None = Depends(require_auth),
 ):
-    return parts_service.get_containers()
+    client = get_client(request)
+    return parts_service.get_containers(client)

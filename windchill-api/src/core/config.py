@@ -11,11 +11,6 @@ _DEFAULT_SYSTEMS_JSON = json.dumps({
     "dev": "https://plm-dev.neuhausen.balluff.net/Windchill",
 })
 
-# Default Containers — override via WINDCHILL_CONTAINERS_JSON env var
-# Format: [{"id": "OR:wt.pdmlink.PDMLinkProduct:48507000", "name": "MyProduct", "type": "Product"}]
-# Die Container-IDs findet man in Windchill unter: Produkt/Library → Eigenschaften → ObjektID
-_DEFAULT_CONTAINERS_JSON = "[]"
-
 
 class Settings(BaseSettings):
     # Windchill connection (service account for API-key endpoints)
@@ -51,10 +46,6 @@ class Settings(BaseSettings):
 
     # Windchill system registry — override via env var (JSON string)
     WINDCHILL_SYSTEMS_JSON: str = _DEFAULT_SYSTEMS_JSON
-
-    # Windchill Containers (Products/Libraries) for part creation
-    # JSON array: [{"id": "OR:wt.pdmlink.PDMLinkProduct:48507000", "name": "...", "type": "Product"}]
-    WINDCHILL_CONTAINERS_JSON: str = _DEFAULT_CONTAINERS_JSON
 
     @field_validator("WRS_BASE_URL")
     @classmethod

@@ -80,6 +80,11 @@ def _build_part_body(attrs: dict[str, Any]) -> dict[str, Any]:
         unit_map = {"each": "ea", "piece": "ea"}
         body["DefaultUnit"] = {"Value": unit_map.get(unit.lower(), unit.lower())}
 
+    # View: "Design" → {"Value": "Design"}
+    view = attrs.get("View", "")
+    if view:
+        body["View"] = {"Value": view}
+
     # AssemblyMode (Default: separable)
     body["AssemblyMode"] = {"Value": "separable"}
 
@@ -97,7 +102,7 @@ def _build_part_body(attrs: dict[str, Any]) -> dict[str, Any]:
     # uebernehmen, ohne die obigen zu ueberschreiben.
     for key, val in attrs.items():
         if key not in body and key not in (
-            "Source", "DefaultUnit", "Number", "Name",
+            "Source", "DefaultUnit", "View", "Number", "Name",
         ):
             body[key] = val
 

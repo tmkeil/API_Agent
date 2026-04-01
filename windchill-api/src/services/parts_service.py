@@ -10,7 +10,6 @@ singleton or a per-session client from the frontend.
 Session-level caching is used when a UserSession is provided.
 """
 
-import json
 import logging
 import time
 from concurrent.futures import ThreadPoolExecutor
@@ -497,33 +496,27 @@ def get_cache_stats() -> CacheStats:
 # ── Containers ───────────────────────────────────────────────
 
 
-def get_containers() -> "ContainerListResponse":
-    """Windchill Container (Products / Libraries) aus Konfiguration laden.
-
-    Container werden als WINDCHILL_CONTAINERS_JSON in der Env konfiguriert,
-    da ``GET /ProdMgmt/Containers`` in vielen Windchill-Versionen nicht
-    als abfragbares Entity-Set existiert.
-    """
+def get_containers(client: WRSClient) -> "ContainerListResponse":
+    """Windchill Container (Products / Libraries) vom Server abfragen."""
     from src.models.dto import ContainerItem, ContainerListResponse
-    from src.core.config import settings
 
     t0 = time.monotonic()
+    raw_items = client.get_containers()
+
     containers = []
+    for raw in raw_items:
+        cid = raw.get("ID", "")
+        name = raw.get("Name", "")
+        ctype_raw = raw.get("ContainerType", "")
+        ctype = ctype_raw
+        if isinstance(ctype_raw, dict):
+            ctype = ctype_raw.get("Display") or ctype_raw.get("Value") or str(ctype_raw)
 
-    try:
-        raw_list = json.loads(settings.WINDCHILL_CONTAINERS_JSON)
-    except (json.JSONDecodeError, TypeError):
-        raw_list = []
-
-    for raw in raw_list:
-        cid = raw.get("id", "")
-        name = raw.get("name", "")
-        ctype = raw.get("type", "Product")
         binding = f"Containers('{cid}')" if cid else ""
         containers.append(ContainerItem(
             containerId=cid,
             name=name,
-            containerType=ctype,
+            containerType=str(ctype),
             odataBinding=binding,
         ))
 

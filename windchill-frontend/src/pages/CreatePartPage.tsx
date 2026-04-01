@@ -3,12 +3,14 @@ import { useNavigate } from 'react-router-dom'
 import { createObject, fetchContainers } from '../api/client'
 import type { ContainerItem } from '../api/types'
 
+const VIEWS = ['Design', 'Manufacturing'] as const
 const SOURCES = ['Make', 'Buy'] as const
 const UNITS = ['each', 'kg', 'm', 'l', 'piece'] as const
 
 interface FormState {
   Number: string
   Name: string
+  View: string
   Source: string
   DefaultUnit: string
   ContainerBinding: string
@@ -17,6 +19,7 @@ interface FormState {
 const INITIAL: FormState = {
   Number: '',
   Name: '',
+  View: 'Design',
   Source: 'Make',
   DefaultUnit: 'each',
   ContainerBinding: '',
@@ -52,7 +55,7 @@ export default function CreatePartPage() {
   const handleSubmit = useCallback(
     async (e: React.FormEvent) => {
       e.preventDefault()
-      if (!form.Number.trim() || !form.Name.trim()) return
+      if (!form.ContainerBinding) return
 
       setBusy(true)
       setError('')
@@ -97,25 +100,43 @@ export default function CreatePartPage() {
 
       <form onSubmit={handleSubmit} className="bg-white rounded shadow-sm border border-slate-200 p-5 space-y-4">
         {/* Number */}
-        <Field label="Nummer *">
+        <Field label="Nummer">
           <input
             value={form.Number}
             onChange={(e) => set('Number', e.target.value)}
-            placeholder="z.B. S2200287364"
-            required
+            placeholder="leer = automatische Vergabe"
             className="input"
           />
         </Field>
 
         {/* Name */}
-        <Field label="Name *">
+        <Field label="Name">
           <input
             value={form.Name}
             onChange={(e) => set('Name', e.target.value)}
-            placeholder="z.B. BES M18ZI-PSC80B-S04G"
-            required
+            placeholder="optional"
             className="input"
           />
+        </Field>
+
+        {/* View */}
+        <Field label="View">
+          <div className="flex gap-2">
+            {VIEWS.map((v) => (
+              <button
+                key={v}
+                type="button"
+                onClick={() => set('View', v)}
+                className={`flex-1 px-3 py-2 text-sm rounded border transition-colors ${
+                  form.View === v
+                    ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm'
+                    : 'bg-white text-slate-600 border-slate-300 hover:border-indigo-400'
+                }`}
+              >
+                {v}
+              </button>
+            ))}
+          </div>
         </Field>
 
         {/* Container */}
@@ -134,14 +155,9 @@ export default function CreatePartPage() {
             </select>
           </Field>
         ) : containersLoaded ? (
-          <Field label="Container">
-            <input
-              value={form.ContainerBinding}
-              onChange={(e) => set('ContainerBinding', e.target.value)}
-              placeholder="z.B. Containers('OR:wt.pdmlink.PDMLinkProduct:12345')"
-              className="input"
-            />
-          </Field>
+          <div className="bg-amber-50 border border-amber-200 text-amber-700 text-sm rounded p-3">
+            Keine Container gefunden. Bitte Windchill-Verbindung prüfen.
+          </div>
         ) : (
           <Field label="Container">
             <select disabled className="input opacity-50">
@@ -187,7 +203,7 @@ export default function CreatePartPage() {
         <div className="pt-2">
           <button
             type="submit"
-            disabled={busy || !form.Number.trim() || !form.Name.trim()}
+            disabled={busy || !form.ContainerBinding}
             className="w-full px-4 py-2.5 text-sm font-medium rounded bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50 transition-colors"
           >
             {busy ? 'Wird erstellt…' : 'Part erstellen'}

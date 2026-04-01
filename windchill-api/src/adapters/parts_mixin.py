@@ -141,3 +141,24 @@ class PartsMixin:
             logger.debug("get_soft_attributes full-load failed for %s", part_id, exc_info=True)
 
         return result
+
+    # ── Container-Liste ──────────────────────────────────────
+
+    def get_containers(self: "WRSClientBase") -> list[dict]:
+        """Windchill Container (Products/Libraries) auflisten.
+
+        Das offizielle Create-Part-Beispiel der PTC Doku nutzt
+        ``/servlet/odata/ProdMgmt/`` ohne Versions-Prefix.
+        Der Versuch mit ``/odata/v6/ProdMgmt/Containers`` liefert 404,
+        deshalb wird hier der unversionierte Pfad verwendet.
+
+        Returns:
+            Liste von Container-Dicts mit ID, Name, ContainerType etc.
+        """
+        # Unversionierter Pfad — wie im offiziellen PTC Create-Part-Beispiel
+        url = f"{self.base_url}/servlet/odata/ProdMgmt/Containers"
+        params = {"$select": "ID,Name,ContainerType"}
+        items = self._get_all_pages(url, params)
+        if items is None:
+            return []
+        return items

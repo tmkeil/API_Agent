@@ -475,7 +475,24 @@ class WRSClientBase:
         """httpx-Session schliessen und Ressourcen freigeben."""
         self._http.close()
 
-    # ── Write-Operations (POST / PATCH) ──────────────────────
+    # ── Write-Operations (POST / PATCH / DELETE) ────────────
+
+    def _refresh_csrf(self) -> None:
+        """Frischen CSRF_NONCE holen, bevor ein Write ausgefuehrt wird.
+
+        Windchill rotiert den CSRF_NONCE serverseitig.  Wenn zwischen dem
+        letzten GET und dem Write zu viel Zeit vergangen ist, ist der
+        gespeicherte Nonce veraltet → 400 "A potential security problem".
+
+        Loesung: Leichtgewichtiger GET ($top=0) direkt vor dem Write.
+        """
+        try:
+            self._raw_get(
+                f"{self.odata_base}/ProdMgmt/Parts",
+                params={"$top": "0", "$select": "ID"},
+            )
+        except Exception:
+            logger.debug("_refresh_csrf fehlgeschlagen", exc_info=True)
 
     def _post(
         self,

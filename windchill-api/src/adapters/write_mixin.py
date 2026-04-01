@@ -67,6 +67,7 @@ class WriteMixin:
         odata_base = f"{self.base_url}/servlet/odata/v4" if type_key == "cad_document" else self.odata_base
         url = f"{odata_base}/{service}/{entity_set}"
 
+        self._refresh_csrf()
         resp = self._post(url, json_body=attributes)
         if resp is None:
             raise WRSError(f"Erstellen von {entity_set} fehlgeschlagen", status_code=502)
@@ -107,6 +108,7 @@ class WriteMixin:
         odata_base = f"{self.base_url}/servlet/odata/v4" if type_key == "cad_document" else self.odata_base
         url = f"{odata_base}/{service}/{entity_set}('{obj_id}')"
 
+        self._refresh_csrf()
         resp = self._patch(url, json_body=attributes)
         if resp is None:
             raise WRSError(f"Update von {entity_set}('{obj_id}') fehlgeschlagen", status_code=502)
@@ -160,6 +162,7 @@ class WriteMixin:
         if comment:
             body["Comment"] = comment
 
+        self._refresh_csrf()
         resp = self._post(action_url, json_body=body, suppress_errors=True)
         if resp and resp.status_code in (200, 204):
             if resp.status_code == 200:
@@ -209,6 +212,7 @@ class WriteMixin:
         odata_base = f"{self.base_url}/servlet/odata/v4" if type_key == "cad_document" else self.odata_base
         url = f"{odata_base}/{service}/{entity_set}('{obj_id}')/PTC.{service}.CheckOut"
 
+        self._refresh_csrf()
         resp = self._post(url, json_body={})
         if resp is None:
             raise WRSError("Checkout fehlgeschlagen", status_code=502)
@@ -246,6 +250,7 @@ class WriteMixin:
         if comment:
             body["Comment"] = comment
 
+        self._refresh_csrf()
         resp = self._post(url, json_body=body)
         if resp is None:
             raise WRSError("Checkin fehlgeschlagen", status_code=502)
@@ -288,6 +293,7 @@ class WriteMixin:
             f"/PTC.{service}.Revise"
         )
 
+        self._refresh_csrf()
         resp = self._post(url, json_body={})
         if resp is None:
             raise WRSError("Revise fehlgeschlagen", status_code=502)
@@ -330,6 +336,7 @@ class WriteMixin:
             "Unit": unit,
         }
 
+        self._refresh_csrf()
         resp = self._post(url, json_body=body)
         if resp is None:
             raise WRSError("BOM Kind hinzufuegen fehlgeschlagen", status_code=502)
@@ -356,6 +363,7 @@ class WriteMixin:
 
         url = f"{self.odata_base}/ProdMgmt/UsageLinks('{usage_link_id}')"
 
+        self._refresh_csrf()
         resp = self._delete(url)
         if resp is None:
             raise WRSError("BOM Kind entfernen fehlgeschlagen", status_code=502)

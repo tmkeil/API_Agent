@@ -84,10 +84,6 @@ class WRSClientBase:
             follow_redirects=True,
             headers={
                 "Accept": "application/json",
-                # Windchill CSRF-Schutz: Viele Windchill-Instanzen pruefen
-                # nur die EXISTENZ eines Custom-Headers (nicht den Wert).
-                # Browser senden diesen Header bei Cross-Site-Requests nicht
-                # automatisch → Windchill akzeptiert den Request als "sicher".
                 "X-Requested-With": "XMLHttpRequest",
             },
             limits=httpx.Limits(
@@ -160,6 +156,14 @@ class WRSClientBase:
             logger.info("Basic Auth akzeptiert (status=%d)", resp.status_code)
             self._http.auth = (self._username, self._password)
             self._uses_basic_auth = True
+
+            # Origin/Referer setzen — Windchill CSRF prueft ggf. ob der
+            # Request von der eigenen Domain stammt
+            from urllib.parse import urlparse
+            parsed = urlparse(self.base_url)
+            origin = f"{parsed.scheme}://{parsed.netloc}"
+            self._http.headers["Origin"] = origin
+            self._http.headers["Referer"] = f"{self.base_url}/"
 
             # CSRF_NONCE aus der Antwort extrahieren (Windchill sendet ihn
             # auch bei Basic Auth, wird fuer Write-Operationen benoetigt)
@@ -611,8 +615,9 @@ class WRSClientBase:
             try:
                 current_nonce = self._http.headers.get("CSRF_NONCE", "(none)")
                 logger.info(
-                    "POST attempt %d: %s — CSRF_NONCE=%s…",
+                    "POST attempt %d: %s — CSRF_NONCE=%s… Origin=%s",
                     attempt + 1, url, current_nonce[:12],
+                    self._http.headers.get("Origin", "(none)"),
                 )
                 resp = self._http.post(
                     url,
@@ -620,18 +625,21 @@ class WRSClientBase:
                     timeout=self._timeout,
                 )
                 resp_nonce = resp.headers.get("CSRF_NONCE")
-                logger.info(
-                    "POST response: status=%d, resp_CSRF_NONCE=%s",
-                    resp.status_code,
-                    (resp_nonce[:12] + "…") if resp_nonce else "(none)",
-                )
                 if resp_nonce:
                     with self._lock:
                         self._http.headers["CSRF_NONCE"] = resp_nonce
 
+                # Bei 400: vollstaendigen Response-Body loggen fuer Diagnose
+                if resp.status_code == 400:
+                    logger.warning(
+                        "POST 400 response body: %s\nResponse headers: %s",
+                        resp.text[:2000],
+                        dict(resp.headers),
+                    )
+
                 # CSRF-Fehler: einmal refresh + retry
                 if self._is_csrf_error(resp) and not csrf_retried:
-                    logger.info("CSRF-Fehler bei POST %s — refreshe Nonce und wiederhole", url)
+                    logger.info("CSRF-Fehler erkannt — refreshe Nonce und wiederhole")
                     csrf_retried = True
                     self._refresh_csrf()
                     continue

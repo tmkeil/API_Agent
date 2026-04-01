@@ -495,11 +495,15 @@ class WRSClientBase:
             if nonce:
                 with self._lock:
                     self._http.headers["CSRF_NONCE"] = nonce
-                logger.debug("CSRF_NONCE refreshed: %s → %s", old[:8], nonce[:8])
+                logger.info("CSRF_NONCE refreshed: %s… → %s…", old[:12], nonce[:12])
             else:
-                logger.warning("CSRF_NONCE refresh: kein Nonce in Antwort (status=%d)", resp.status_code)
+                logger.warning(
+                    "CSRF_NONCE refresh: kein Nonce in Antwort (status=%d, headers=%s)",
+                    resp.status_code,
+                    dict(resp.headers),
+                )
         except Exception:
-            logger.debug("_refresh_csrf fehlgeschlagen", exc_info=True)
+            logger.warning("_refresh_csrf fehlgeschlagen", exc_info=True)
 
     @staticmethod
     def _is_csrf_error(resp: httpx.Response) -> bool:
@@ -530,15 +534,25 @@ class WRSClientBase:
 
         for attempt in range(self._max_retries):
             try:
+                current_nonce = self._http.headers.get("CSRF_NONCE", "(none)")
+                logger.info(
+                    "POST attempt %d: %s — CSRF_NONCE=%s…",
+                    attempt + 1, url, current_nonce[:12],
+                )
                 resp = self._http.post(
                     url,
                     json=json_body,
                     timeout=self._timeout,
                 )
-                nonce = resp.headers.get("CSRF_NONCE")
-                if nonce:
+                resp_nonce = resp.headers.get("CSRF_NONCE")
+                logger.info(
+                    "POST response: status=%d, resp_CSRF_NONCE=%s",
+                    resp.status_code,
+                    (resp_nonce[:12] + "…") if resp_nonce else "(none)",
+                )
+                if resp_nonce:
                     with self._lock:
-                        self._http.headers["CSRF_NONCE"] = nonce
+                        self._http.headers["CSRF_NONCE"] = resp_nonce
 
                 # CSRF-Fehler: einmal refresh + retry
                 if self._is_csrf_error(resp) and not csrf_retried:

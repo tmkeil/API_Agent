@@ -90,6 +90,9 @@ class WRSClientBase:
         )
         self._lock = threading.Lock()
 
+        # Auth-Modus: wird in _connect() gesetzt
+        self._uses_basic_auth = False
+
         # OData-Discovery (werden pro Client-Instanz gefuellt)
         self._bom_nav_strategy: Optional[tuple[str, bool]] = None
         self._usage_link_nav: Optional[str] = None
@@ -149,6 +152,20 @@ class WRSClientBase:
         if resp.status_code < 400 and "text/html" not in content_type:
             logger.info("Basic Auth akzeptiert (status=%d)", resp.status_code)
             self._http.auth = (self._username, self._password)
+            self._uses_basic_auth = True
+
+            # CSRF_NONCE aus der Antwort extrahieren (Windchill sendet ihn
+            # auch bei Basic Auth, wird fuer Write-Operationen benoetigt)
+            nonce = resp.headers.get("CSRF_NONCE")
+            if nonce:
+                self._http.headers["CSRF_NONCE"] = nonce
+                logger.info("Basic Auth: CSRF_NONCE gespeichert (%s…)", nonce[:12])
+            else:
+                logger.warning(
+                    "Basic Auth: KEIN CSRF_NONCE in Antwort. "
+                    "Response-Headers: %s",
+                    {k: v for k, v in resp.headers.items() if "csrf" in k.lower() or "nonce" in k.lower()},
+                )
             return
 
         # Schritt 2b: Server-Fehler (5xx) → System ist nicht verfuegbar
@@ -509,8 +526,8 @@ class WRSClientBase:
         if not nonce:
             nonce = self._try_csrf_fetch(f"{self.base_url}/app/")
 
-        # Strategie 3: Erneuter Form-Login
-        if not nonce:
+        # Strategie 3: Erneuter Form-Login (nur bei Form Auth)
+        if not nonce and not self._uses_basic_auth:
             logger.info("CSRF refresh: Fallback auf erneuten Form-Login")
             self._authenticate_form()
             nonce = self._http.headers.get("CSRF_NONCE", "")
@@ -525,6 +542,7 @@ class WRSClientBase:
     def _try_csrf_fetch(self, url: str, params: dict | None = None) -> str:
         """Versucht, einen CSRF_NONCE per GET mit 'fetch' Header zu holen."""
         try:
+            # Explizit auth mitgeben, falls httpx.Client.auth gesetzt ist
             resp = self._http.get(
                 url,
                 params=params,
@@ -532,6 +550,13 @@ class WRSClientBase:
                 timeout=self._timeout,
             )
             nonce = resp.headers.get("CSRF_NONCE")
+            logger.info(
+                "_try_csrf_fetch(%s): status=%d, CSRF_NONCE=%s, all_csrf_headers=%s",
+                url, resp.status_code,
+                (nonce[:12] + "…") if nonce else "(none)",
+                {k: v for k, v in resp.headers.items()
+                 if "csrf" in k.lower() or "nonce" in k.lower()},
+            )
             if nonce and nonce != "fetch":
                 return nonce
             # Auch in Redirect-History suchen

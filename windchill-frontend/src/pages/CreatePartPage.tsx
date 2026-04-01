@@ -3,28 +3,12 @@ import { useNavigate } from 'react-router-dom'
 import { createObject, fetchContainers } from '../api/client'
 import type { ContainerItem } from '../api/types'
 
-// Windchill Views (Part-Kontext)
-const VIEWS = ['Design', 'Manufacturing'] as const
-
-// Folder-Kontexte (Toplevel)
-const FOLDER_LOCATIONS = [
-  '/P - Design',
-  '/P - Manufacturing',
-  '/P - Electronical Components - Design',
-  '/P - Electronical Components - Manufacturing',
-  '/P - Mechanical Components',
-  '/P - Compliance and Conformity',
-  '/P - Enclosed Documentation',
-] as const
-
 const SOURCES = ['Make', 'Buy'] as const
 const UNITS = ['each', 'kg', 'm', 'l', 'piece'] as const
 
 interface FormState {
   Number: string
   Name: string
-  View: string
-  FolderLocation: string
   Source: string
   DefaultUnit: string
   ContainerBinding: string
@@ -33,8 +17,6 @@ interface FormState {
 const INITIAL: FormState = {
   Number: '',
   Name: '',
-  View: 'Design',
-  FolderLocation: '/P - Design',
   Source: 'Make',
   DefaultUnit: 'each',
   ContainerBinding: '',
@@ -47,17 +29,18 @@ export default function CreatePartPage() {
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
   const [containers, setContainers] = useState<ContainerItem[]>([])
+  const [containersLoaded, setContainersLoaded] = useState(false)
 
   useEffect(() => {
     fetchContainers()
       .then((resp) => {
         setContainers(resp.containers)
-        // Auto-select first container
+        setContainersLoaded(true)
         if (resp.containers.length > 0 && !form.ContainerBinding) {
           setForm((prev) => ({ ...prev, ContainerBinding: resp.containers[0].odataBinding }))
         }
       })
-      .catch(() => { /* ignore — dropdown stays empty */ })
+      .catch(() => { setContainersLoaded(true) })
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const set = useCallback(
@@ -65,15 +48,6 @@ export default function CreatePartPage() {
       setForm((prev) => ({ ...prev, [key]: val })),
     [],
   )
-
-  // Auto-sync View ↔ FolderLocation
-  const setView = useCallback((view: string) => {
-    setForm((prev) => ({
-      ...prev,
-      View: view,
-      FolderLocation: view === 'Manufacturing' ? '/P - Manufacturing' : '/P - Design',
-    }))
-  }, [])
 
   const handleSubmit = useCallback(
     async (e: React.FormEvent) => {
@@ -84,14 +58,12 @@ export default function CreatePartPage() {
       setError('')
       setSuccess('')
 
-      // Build attributes — only send non-empty values
       const attrs: Record<string, string> = {}
       for (const [k, v] of Object.entries(form)) {
-        if (k === 'ContainerBinding') continue  // handled separately
+        if (k === 'ContainerBinding') continue
         const trimmed = v.trim()
         if (trimmed) attrs[k] = trimmed
       }
-      // Map ContainerBinding → Context@odata.bind
       if (form.ContainerBinding) {
         attrs['Context@odata.bind'] = form.ContainerBinding
       }
@@ -99,7 +71,6 @@ export default function CreatePartPage() {
       try {
         const resp = await createObject('part', attrs)
         setSuccess(resp.message || `Part '${resp.number}' erstellt`)
-        // Navigate to detail page after short delay
         setTimeout(() => {
           navigate(`/detail/part/${encodeURIComponent(resp.number)}`)
         }, 1200)
@@ -126,7 +97,7 @@ export default function CreatePartPage() {
 
       <form onSubmit={handleSubmit} className="bg-white rounded shadow-sm border border-slate-200 p-5 space-y-4">
         {/* Number */}
-        <Field label="Nummer *" hint="Windchill Part Number">
+        <Field label="Nummer *">
           <input
             value={form.Number}
             onChange={(e) => set('Number', e.target.value)}
@@ -137,7 +108,7 @@ export default function CreatePartPage() {
         </Field>
 
         {/* Name */}
-        <Field label="Name *" hint="Bezeichnung / Beschreibung">
+        <Field label="Name *">
           <input
             value={form.Name}
             onChange={(e) => set('Name', e.target.value)}
@@ -147,57 +118,40 @@ export default function CreatePartPage() {
           />
         </Field>
 
-        {/* View (Design / Manufacturing) */}
-        <Field label="View" hint="Design oder Manufacturing Part?">
-          <div className="flex gap-2">
-            {VIEWS.map((v) => (
-              <button
-                key={v}
-                type="button"
-                onClick={() => setView(v)}
-                className={`flex-1 px-3 py-2 text-sm rounded border transition-colors ${
-                  form.View === v
-                    ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm'
-                    : 'bg-white text-slate-600 border-slate-300 hover:border-indigo-400'
-                }`}
-              >
-                {v}
-              </button>
-            ))}
-          </div>
-        </Field>
-
-        {/* Folder Location */}
-        <Field label="Ablageort" hint="Windchill Folder / Kontext">
-          <select
-            value={form.FolderLocation}
-            onChange={(e) => set('FolderLocation', e.target.value)}
-            className="input"
-          >
-            {FOLDER_LOCATIONS.map((f) => (
-              <option key={f} value={f}>{f}</option>
-            ))}
-          </select>
-        </Field>
-
-        {/* Container (Context) */}
-        <Field label="Container" hint="Windchill Product / Library">
-          <select
-            value={form.ContainerBinding}
-            onChange={(e) => set('ContainerBinding', e.target.value)}
-            className="input"
-          >
-            {containers.length === 0 && <option value="">Lade…</option>}
-            {containers.map((c) => (
-              <option key={c.containerId} value={c.odataBinding}>
-                {c.name} ({c.containerType})
-              </option>
-            ))}
-          </select>
-        </Field>
+        {/* Container */}
+        {containers.length > 0 ? (
+          <Field label="Container">
+            <select
+              value={form.ContainerBinding}
+              onChange={(e) => set('ContainerBinding', e.target.value)}
+              className="input"
+            >
+              {containers.map((c) => (
+                <option key={c.containerId} value={c.odataBinding}>
+                  {c.name} ({c.containerType})
+                </option>
+              ))}
+            </select>
+          </Field>
+        ) : containersLoaded ? (
+          <Field label="Container">
+            <input
+              value={form.ContainerBinding}
+              onChange={(e) => set('ContainerBinding', e.target.value)}
+              placeholder="z.B. Containers('OR:wt.pdmlink.PDMLinkProduct:12345')"
+              className="input"
+            />
+          </Field>
+        ) : (
+          <Field label="Container">
+            <select disabled className="input opacity-50">
+              <option>Lade…</option>
+            </select>
+          </Field>
+        )}
 
         {/* Source */}
-        <Field label="Source" hint="Make = Eigenproduktion, Buy = Zukauf">
+        <Field label="Source">
           <div className="flex gap-2">
             {SOURCES.map((s) => (
               <button
@@ -217,7 +171,7 @@ export default function CreatePartPage() {
         </Field>
 
         {/* Default Unit */}
-        <Field label="Einheit" hint="Mengeneinheit">
+        <Field label="Einheit">
           <select
             value={form.DefaultUnit}
             onChange={(e) => set('DefaultUnit', e.target.value)}
@@ -252,24 +206,16 @@ export default function CreatePartPage() {
           </div>
         )}
       </form>
-
-      {/* Info box */}
-      <div className="mt-4 bg-slate-50 border border-slate-200 rounded p-4 text-xs text-slate-500 space-y-1">
-        <p><strong>Hinweis:</strong> Windchill vergibt Revision, Version und Lifecycle automatisch anhand des konfigurierten Templates.</p>
-        <p>Die <strong>View</strong> bestimmt, ob das Part unter "P - Design" oder "P - Manufacturing" angelegt wird.</p>
-        <p>Weitere Attribute können nach dem Erstellen über den Aktionen-Tab bearbeitet werden.</p>
-      </div>
     </div>
   )
 }
 
 /** Reusable form field wrapper */
-function Field({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
       <label className="block text-sm font-medium text-slate-700 mb-1">
         {label}
-        {hint && <span className="ml-2 text-xs font-normal text-slate-400">{hint}</span>}
       </label>
       {children}
     </div>

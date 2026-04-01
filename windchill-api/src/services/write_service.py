@@ -83,11 +83,6 @@ def _build_part_body(attrs: dict[str, Any]) -> dict[str, Any]:
     # AssemblyMode (Default: separable)
     body["AssemblyMode"] = {"Value": "separable"}
 
-    # View und FolderLocation werden derzeit nicht als OData-Properties
-    # unterstuetzt — Windchill ordnet das Part automatisch anhand des
-    # Containers (Product/Library) und dessen Konfiguration ein.
-    # "View" im Frontend dient nur der Ordner-Vorauswahl.
-
     # PhantomManufacturingPart: Standard false
     body["PhantomManufacturingPart"] = False
 
@@ -102,8 +97,7 @@ def _build_part_body(attrs: dict[str, Any]) -> dict[str, Any]:
     # uebernehmen, ohne die obigen zu ueberschreiben.
     for key, val in attrs.items():
         if key not in body and key not in (
-            "Source", "DefaultUnit", "View", "FolderLocation",
-            "Number", "Name",
+            "Source", "DefaultUnit", "Number", "Name",
         ):
             body[key] = val
 

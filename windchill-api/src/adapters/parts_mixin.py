@@ -141,20 +141,3 @@ class PartsMixin:
             logger.debug("get_soft_attributes full-load failed for %s", part_id, exc_info=True)
 
         return result
-
-    # ── Container-Liste ──────────────────────────────────────
-
-    def get_containers(self: "WRSClientBase") -> list[dict]:
-        """Windchill Container (Products/Libraries) auflisten.
-
-        Ruft ``GET /servlet/odata/ProdMgmt/Containers`` ab.
-        Wird benoetigt fuer ``Context@odata.bind`` beim Erstellen von Parts.
-
-        Returns:
-            Liste von Container-Dicts mit ID, Name, ContainerType etc.
-        """
-        url = f"{self.odata_base}/ProdMgmt/Containers"
-        items = self._get_all_pages(url, {"$select": "ID,Name,ContainerType"})
-        if items is None:
-            return []
-        return items

@@ -207,7 +207,6 @@ export default function CreatePartPage() {
   const [success, setSuccess] = useState('')
   const [containers, setContainers] = useState<ContainerItem[]>([])
   const [containersLoaded, setContainersLoaded] = useState(false)
-  const [containerSearch, setContainerSearch] = useState('')
 
   useEffect(() => {
     fetchContainers()
@@ -220,15 +219,6 @@ export default function CreatePartPage() {
       })
       .catch(() => { setContainersLoaded(true) })
   }, [])
-
-  // Container-Liste filtern (Suchfeld)
-  const filteredContainers = useMemo(() => {
-    if (!containerSearch.trim()) return containers
-    const q = containerSearch.toLowerCase()
-    return containers.filter((c) =>
-      c.name.toLowerCase().includes(q) || c.containerType.toLowerCase().includes(q)
-    )
-  }, [containers, containerSearch])
 
   const set = useCallback(
     (key: keyof FormState, val: string) =>
@@ -292,29 +282,11 @@ export default function CreatePartPage() {
           {/* Container / Product */}
           {containers.length > 0 ? (
             <Field label="Product / Container" required>
-              {containers.length > 20 && (
-                <input
-                  type="text"
-                  value={containerSearch}
-                  onChange={(e) => setContainerSearch(e.target.value)}
-                  placeholder="Container suchen…"
-                  className="input mb-1 text-xs"
-                />
-              )}
-              <select
+              <ContainerPicker
+                containers={containers}
                 value={form.ContainerBinding}
-                onChange={(e) => set('ContainerBinding', e.target.value)}
-                className="input"
-              >
-                {filteredContainers.map((c) => (
-                  <option key={c.containerId} value={c.odataBinding}>
-                    {c.name} ({c.containerType})
-                  </option>
-                ))}
-              </select>
-              {containers.length > 20 && (
-                <span className="text-xs text-slate-400">{filteredContainers.length} von {containers.length}</span>
-              )}
+                onChange={(v) => set('ContainerBinding', v)}
+              />
             </Field>
           ) : containersLoaded ? (
             <div className="bg-amber-50 border border-amber-200 text-amber-700 text-sm rounded p-3">
@@ -650,6 +622,97 @@ function ClassificationPicker({ value, onChange }: { value: string; onChange: (v
                 )
               })
             )}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+function ContainerPicker({ containers, value, onChange }: {
+  containers: ContainerItem[]
+  value: string
+  onChange: (v: string) => void
+}) {
+  const [open, setOpen] = useState(false)
+  const [search, setSearch] = useState('')
+  const wrapperRef = useRef<HTMLDivElement>(null)
+  const searchRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    if (!open) return
+    const handler = (e: MouseEvent) => {
+      if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) setOpen(false)
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [open])
+
+  useEffect(() => {
+    if (open) searchRef.current?.focus()
+  }, [open])
+
+  const filtered = useMemo(() => {
+    if (!search.trim()) return containers
+    const q = search.toLowerCase()
+    return containers.filter((c) =>
+      c.name.toLowerCase().includes(q) || c.containerType.toLowerCase().includes(q)
+    )
+  }, [containers, search])
+
+  const selectedName = containers.find((c) => c.odataBinding === value)?.name || ''
+
+  return (
+    <div ref={wrapperRef} className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        className={`input w-full text-left flex items-center justify-between ${
+          !value ? 'text-slate-400' : 'text-slate-800'
+        }`}
+      >
+        <span className="truncate">{selectedName || 'Container wählen…'}</span>
+        <svg className={`w-4 h-4 text-slate-400 transition-transform shrink-0 ${open ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+
+      {open && (
+        <div className="absolute z-50 mt-1 w-full bg-white border border-slate-200 rounded shadow-lg">
+          <div className="p-2 border-b border-slate-100">
+            <input
+              ref={searchRef}
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Container suchen…"
+              className="w-full text-sm px-2.5 py-1.5 border border-slate-200 rounded focus:outline-none focus:ring-1 focus:ring-indigo-400"
+            />
+          </div>
+          <div className="max-h-64 overflow-y-auto py-1">
+            {filtered.length === 0 ? (
+              <div className="px-3 py-2 text-sm text-slate-400">Keine Treffer</div>
+            ) : (
+              filtered.map((c) => {
+                const selected = value === c.odataBinding
+                return (
+                  <button
+                    key={c.containerId}
+                    type="button"
+                    onClick={() => { onChange(c.odataBinding); setOpen(false); setSearch('') }}
+                    className={`w-full text-left px-3 py-1.5 text-sm transition-colors ${
+                      selected
+                        ? 'bg-indigo-50 text-indigo-700 font-medium'
+                        : 'text-slate-700 hover:bg-slate-50'
+                    }`}
+                  >
+                    {c.name} <span className="text-xs text-slate-400">({c.containerType})</span>
+                  </button>
+                )
+              })
+            )}
+          </div>
+          <div className="px-3 py-1.5 border-t border-slate-100 text-xs text-slate-400">
+            {filtered.length} von {containers.length}
           </div>
         </div>
       )}

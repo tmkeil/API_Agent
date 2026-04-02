@@ -24,112 +24,121 @@ def create_object(
 ) -> WriteResponse:
     """Neues Windchill-Objekt erstellen.
 
-    Fuer Parts werden Frontend-Felder (View, Source, FolderLocation, etc.)
-    in OData-konformes Format konvertiert.
+    Fuer Parts zweistufig:
+      1. POST /ProdMgmt/Parts mit Standard-OData-Feldern
+      2. PATCH /ProdMgmt/Parts('<id>') mit IBAs / Soft-Attributes
+    Windchill erlaubt IBAs (z.B. BAL_CP_ORDER_PREFIX) nicht im Create-Body.
     """
     t0 = time.monotonic()
 
+    post_create_attrs: dict[str, Any] = {}
+
     # Part-spezifische Attribut-Konvertierung
     if type_key == "part":
-        attributes = _build_part_body(attributes)
+        attributes, post_create_attrs = _build_part_body(attributes)
 
     raw = client.create_object(type_key, attributes)
     n = normalize_item(raw)
+    obj_id = n["id"]
+
+    # Schritt 2: IBAs / Soft-Attributes per PATCH nachsetzen
+    if post_create_attrs and obj_id:
+        try:
+            client.update_object_attributes(type_key, obj_id, post_create_attrs)
+            logger.info("Post-create PATCH fuer %s '%s': %s",
+                        type_key, n["number"], list(post_create_attrs.keys()))
+        except Exception:
+            logger.warning("Post-create PATCH fehlgeschlagen fuer %s '%s': %s",
+                           type_key, n["number"], list(post_create_attrs.keys()),
+                           exc_info=True)
+
     ms = round((time.monotonic() - t0) * 1000, 1)
     return WriteResponse(
         ok=True,
-        objectId=n["id"],
+        objectId=obj_id,
         number=n["number"],
         message=f"{type_key} '{n['number']}' erstellt",
         timing=TimingInfo(totalMs=ms, wrsMs=ms),
     )
 
 
-def _build_part_body(attrs: dict[str, Any]) -> dict[str, Any]:
+def _build_part_body(attrs: dict[str, Any]) -> tuple[dict[str, Any], dict[str, Any]]:
     """Frontend-Part-Attribute in OData-konformes Format konvertieren.
 
-    Frontend schickt einfache Strings (z.B. Source='make', View='Design').
-    OData erwartet komplexe Typen (z.B. Source={"Value":"make"}).
+    Gibt zwei Dicts zurueck:
+      1. create_body — Felder fuer POST /ProdMgmt/Parts (Standard-OData-Properties)
+      2. patch_body  — IBAs/Soft-Attributes, die per PATCH nach Create gesetzt werden
 
-    Felder basierend auf Windchill Part-Erstellformular (wpe.md):
-        Number, Name, Description,
-        Source, View, AssemblyMode, DefaultUnit,
-        GatheringPart, ConfigurableModule,
-        Location (FolderPath), ProductFamily (IBA),
-        Context@odata.bind (Container)
+    Windchill akzeptiert beim Create nur Standard-Properties.
+    IBAs (BAL_*, Custom Attributes) muessen per PATCH nachgesetzt werden.
     """
-    body: dict[str, Any] = {}
+    create_body: dict[str, Any] = {}
+    patch_body: dict[str, Any] = {}
 
-    # --- Direkte String-Properties ---
+    # --- Direkte String-Properties (Create) ---
     for key in ("Number", "Name", "Description"):
         if key in attrs and attrs[key]:
-            body[key] = attrs[key]
+            create_body[key] = attrs[key]
 
-    # --- Enum-Properties (OData: {"Value": "..."}  ) ---
+    # --- Enum-Properties (Create, OData: {"Value": "..."}) ---
 
     # Source: "make" | "buy" | "notapplicable"
     source = attrs.get("Source", "")
     if source:
-        body["Source"] = {"Value": source.lower()}
+        create_body["Source"] = {"Value": source.lower()}
 
     # DefaultUnit: z.B. "ea", "kg", "m", "l", ...
     unit = attrs.get("DefaultUnit", "")
     if unit:
-        body["DefaultUnit"] = {"Value": unit}
+        create_body["DefaultUnit"] = {"Value": unit}
 
     # View: "Design" | "Manufacturing"
-    # Hinweis: {"Value": "Design"} gibt HTTP 400 "Invalid JSON type for property 'View'".
-    # Deshalb als einfachen String senden. Falls das auch scheitert, muss View
-    # über einen anderen Mechanismus gesetzt werden (z.B. Container-Kontext).
+    # {"Value": "Design"} gibt HTTP 400, deshalb als String versuchen
     view = attrs.get("View", "")
     if view:
-        body["View"] = view
+        create_body["View"] = view
 
     # AssemblyMode: "separable" | "inseparable" | "component"
     assembly = attrs.get("AssemblyMode", "separable")
-    body["AssemblyMode"] = {"Value": assembly.lower()}
+    create_body["AssemblyMode"] = {"Value": assembly.lower()}
 
-    # --- Boolean-Properties (nur senden wenn true, false ist Windchill-Default) ---
+    # --- Boolean-Properties (Create, nur senden wenn true) ---
 
-    # GatheringPart: "yes"/"no" → boolean
     if attrs.get("GatheringPart", "no").lower() == "yes":
-        body["GatheringPart"] = True
+        create_body["GatheringPart"] = True
 
-    # PhantomManufacturingPart: nur wenn explizit true
     if attrs.get("PhantomManufacturingPart", "no").lower() in ("yes", "true"):
-        body["PhantomManufacturingPart"] = True
+        create_body["PhantomManufacturingPart"] = True
 
-    # ConfigurableModule: "yes"/"no" → boolean
     if attrs.get("ConfigurableModule", "no").lower() == "yes":
-        body["ConfigurableModule"] = True
+        create_body["ConfigurableModule"] = True
 
-    # --- Container-Referenz (Pflicht) ---
+    # --- Container-Referenz (Create, Pflicht) ---
     context = attrs.get("Context@odata.bind", "")
     if context:
-        body["Context@odata.bind"] = context
+        create_body["Context@odata.bind"] = context
 
-    # --- IBA / Soft Attributes ---
+    # --- IBAs / Soft Attributes (PATCH nach Create) ---
     product_family = attrs.get("ProductFamily", "")
     if product_family:
-        body["BAL_CP_ORDER_PREFIX"] = product_family
+        patch_body["BAL_CP_ORDER_PREFIX"] = product_family
 
-    # Classification (IBA): z.B. "Fuses", "MOSFETs", etc.
     classification = attrs.get("Classification", "")
     if classification:
-        body["BAL_CLASSIFICATION_BINDING_WTPART"] = classification
+        patch_body["BAL_CLASSIFICATION_BINDING_WTPART"] = classification
 
     # Falls weitere OData-Properties direkt mitgegeben werden (Power-User),
-    # uebernehmen, ohne die obigen zu ueberschreiben.
+    # uebernehmen in create_body, ohne die obigen zu ueberschreiben.
     _handled = {
         "Source", "DefaultUnit", "View", "Number", "Name", "Description",
         "AssemblyMode", "GatheringPart", "ConfigurableModule",
         "PhantomManufacturingPart", "ProductFamily", "Classification",
     }
     for key, val in attrs.items():
-        if key not in body and key not in _handled:
-            body[key] = val
+        if key not in create_body and key not in patch_body and key not in _handled:
+            create_body[key] = val
 
-    return body
+    return create_body, patch_body
 
 
 def _resolve_object_id(

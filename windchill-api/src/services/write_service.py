@@ -126,9 +126,11 @@ def _build_part_body(attrs: dict[str, Any]) -> tuple[dict[str, Any], dict[str, A
     if configurable:
         patch_body["ConfigurableModule"] = True
 
-    # EndItem: Pflichtfeld, Default false
-    end_item = attrs.get("EndItem", "no").lower() in ("yes", "true")
-    create_body["EndItem"] = end_item
+    # EndItem: Nicht bei allen Subtypes erlaubt ("cannot be changed").
+    # Nur senden wenn explizit gesetzt.
+    end_item_raw = attrs.get("EndItem", "no").lower()
+    if end_item_raw in ("yes", "true"):
+        create_body["EndItem"] = True
 
     # DefaultTraceCode: Pflichtfeld, Enum {"Value": "..."}
     # Werte: "0" (Untraced), "L" (Lot Traced), "S" (Serial Traced), "X" (By Trace Code)
@@ -140,14 +142,15 @@ def _build_part_body(attrs: dict[str, Any]) -> tuple[dict[str, Any], dict[str, A
     if context:
         create_body["Context@odata.bind"] = context
 
-    # --- IBAs / Soft Attributes (PATCH nach Create) ---
+    # --- IBAs / Soft Attributes ---
     product_family = attrs.get("ProductFamily", "")
     if product_family:
         patch_body["BAL_CP_ORDER_PREFIX"] = product_family
 
+    # Classification: Windchill verlangt dieses Feld beim Create (Pflicht).
     classification = attrs.get("Classification", "")
     if classification:
-        patch_body["BAL_CLASSIFICATION_BINDING_WTPART"] = classification
+        create_body["BAL_CLASSIFICATION_BINDING_WTPART"] = classification
 
     # Falls weitere OData-Properties direkt mitgegeben werden (Power-User),
     # uebernehmen in create_body, ohne die obigen zu ueberschreiben.

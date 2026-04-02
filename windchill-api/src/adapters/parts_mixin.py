@@ -188,57 +188,67 @@ class PartsMixin:
 
     # ── Classification Nodes ─────────────────────────────────
 
+    # Bekannte Classifications aus vorherigen Full-Scans (200 Parts).
+    # Werden immer zurueckgegeben, auch wenn die API-Stichprobe (erste Seite)
+    # nicht alle enthaelt. InternalName → DisplayName.
+    _KNOWN_CLASSIFICATIONS: list[tuple[str, str]] = [
+        ("BAL_CL_ADDITIVE", "Additive"),
+        ("BAL_CL_ELECTROMAGNETIC_INTERFACES", "Electromagnetic Interfaces"),
+        ("BAL_CL_HOUSING_ROUND", "Housing round"),
+        ("BAL_CL_NATURAL_MATERIALS", "Natural Materials"),
+        ("BAL_CL_STENCIL", "STENCIL"),
+        ("WTPartAuxiliaryTBD", "TBD (Auxiliary)"),
+        ("WTPartComponentTBD", "TBD (Component)"),
+        ("WTPartEncDocTBD", "TBD (EncDoc)"),
+        ("WTPartEquipmentTBD", "TBD (Equipment)"),
+        ("WTPartPackingTBD", "TBD (Packing)"),
+    ]
+
     def get_classification_nodes(self: "WRSClientBase") -> list[dict]:
         """Verfuegbare Classifications aus bestehenden Parts ermitteln.
 
-        $select=BALCLASSIFICATIONBINDINGWTPART gibt HTTP 400, daher
-        laden wir Parts OHNE $select (voller Payload) und extrahieren
-        die Classification-Daten aus den Responses.
-
-        Nur erste Seite laden (keine Paginierung) um die Ladezeit
-        auf ~2s statt ~22s zu begrenzen.
+        Laedt die erste Seite Parts (voller Payload, ~2s) und extrahiert
+        BALCLASSIFICATIONBINDINGWTPART. Merged mit _KNOWN_CLASSIFICATIONS
+        damit alle bekannten TBD-Knoten immer verfuegbar sind.
 
         Returns:
             Liste von Dicts mit InternalName + DisplayName.
         """
         url = f"{self.odata_base}/ProdMgmt/Parts"
-        # Ohne $select — voller Payload, damit BALCLASSIFICATIONBINDINGWTPART enthalten ist
-        # Nur erste Seite: $top=50 reicht fuer Classification-Diversitaet
         params = {"$top": "50"}
+
+        # Start mit bekannten Classifications
+        clf_map: dict[str, str] = {
+            internal: display
+            for internal, display in self._KNOWN_CLASSIFICATIONS
+        }
 
         try:
             data = self._get_json(url, params=params)
             items = data.get("value", []) if data else []
-            if not items:
-                logger.warning("get_classification_nodes: Keine Parts geladen")
-                return []
         except Exception:
             logger.warning("get_classification_nodes request failed", exc_info=True)
-            return []
+            items = []
 
-        # Distinct ClfNodeInternalName sammeln
-        clf_set: set[str] = set()
+        # API-Ergebnisse mergen (nur neue InternalNames hinzufuegen,
+        # bekannte DisplayNames nicht ueberschreiben)
         for item in items:
             clf = item.get("BALCLASSIFICATIONBINDINGWTPART")
             if isinstance(clf, dict):
                 internal = clf.get("ClfNodeInternalName") or clf.get("InternalName") or ""
                 display = clf.get("ClfNodeDisplayName") or clf.get("DisplayName") or ""
                 if internal:
-                    clf_set.add(f"{internal}||{display}")
+                    clf_map.setdefault(internal, display or internal)
             elif isinstance(clf, str) and clf:
-                clf_set.add(f"{clf}||{clf}")
+                clf_map.setdefault(clf, clf)
 
-        nodes: list[dict] = []
-        for entry in sorted(clf_set):
-            internal, display = entry.split("||", 1)
-            nodes.append({
-                "InternalName": internal,
-                "DisplayName": display or internal,
-            })
+        nodes: list[dict] = [
+            {"InternalName": internal, "DisplayName": display}
+            for internal, display in sorted(clf_map.items())
+        ]
 
-        logger.info("Found %d distinct classifications from %d parts: %s",
-                    len(nodes), len(items),
-                    [n["InternalName"] for n in nodes[:20]])
+        logger.info("Classification nodes: %d (known=%d, from %d parts)",
+                    len(nodes), len(self._KNOWN_CLASSIFICATIONS), len(items))
         return nodes
 
     # ── Container-Liste ──────────────────────────────────────

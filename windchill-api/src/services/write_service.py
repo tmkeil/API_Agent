@@ -102,16 +102,25 @@ def _build_part_body(attrs: dict[str, Any]) -> tuple[dict[str, Any], dict[str, A
     assembly = attrs.get("AssemblyMode", "separable")
     create_body["AssemblyMode"] = {"Value": assembly.lower()}
 
-    # --- Boolean-Properties (Create, nur senden wenn true) ---
+    # --- Boolean-Properties (Windchill verlangt diese explizit, auch wenn false) ---
 
-    if attrs.get("GatheringPart", "no").lower() == "yes":
-        create_body["GatheringPart"] = True
+    gathering = attrs.get("GatheringPart", "no").lower() == "yes"
+    create_body["GatheringPart"] = gathering
 
-    if attrs.get("PhantomManufacturingPart", "no").lower() in ("yes", "true"):
-        create_body["PhantomManufacturingPart"] = True
+    phantom = attrs.get("PhantomManufacturingPart", "no").lower() in ("yes", "true")
+    create_body["PhantomManufacturingPart"] = phantom
 
-    if attrs.get("ConfigurableModule", "no").lower() == "yes":
-        create_body["ConfigurableModule"] = True
+    configurable = attrs.get("ConfigurableModule", "no").lower() == "yes"
+    create_body["ConfigurableModule"] = configurable
+
+    # EndItem: Pflichtfeld, Default false
+    end_item = attrs.get("EndItem", "no").lower() in ("yes", "true")
+    create_body["EndItem"] = end_item
+
+    # DefaultTraceCode: Pflichtfeld, Enum {"Value": "..."}
+    # Werte: "0" (Untraced), "L" (Lot Traced), "S" (Serial Traced), "X" (By Trace Code)
+    trace_code = attrs.get("DefaultTraceCode", "0")
+    create_body["DefaultTraceCode"] = {"Value": trace_code}
 
     # --- Container-Referenz (Create, Pflicht) ---
     context = attrs.get("Context@odata.bind", "")
@@ -133,6 +142,7 @@ def _build_part_body(attrs: dict[str, Any]) -> tuple[dict[str, Any], dict[str, A
         "Source", "DefaultUnit", "View", "Number", "Name", "Description",
         "AssemblyMode", "GatheringPart", "ConfigurableModule",
         "PhantomManufacturingPart", "ProductFamily", "Classification",
+        "EndItem", "DefaultTraceCode",
     }
     for key, val in attrs.items():
         if key not in create_body and key not in patch_body and key not in _handled:

@@ -191,24 +191,41 @@ class PartsMixin:
     def get_classification_nodes(self: "WRSClientBase") -> list[dict]:
         """Classification-Knoten aus ClfStructure/ClfNodes laden.
 
-        Liefert alle ClfNodes mit internem Namen, Display-Name, Parent etc.
-        ``GET /servlet/odata/v6/ClfStructure/ClfNodes``
+        Versucht mehrere URL-Varianten (versioniert + unversioniert),
+        da ClfStructure bei manchen Windchill-Konfigurationen nur
+        ohne OData-Version erreichbar ist.
 
         Returns:
             Liste von ClfNode-Dicts (OData raw).
         """
-        url = f"{self.odata_base}/ClfStructure/ClfNodes"
-        items = self._get_all_pages(url, {}, return_none_on_error=True)
-        if items is None:
-            logger.warning("ClfStructure/ClfNodes request failed")
-            return []
-        logger.info("Loaded %d ClfNodes", len(items))
-        if items:
-            logger.info("ClfNode sample keys: %s", list(items[0].keys()))
-            for i, node in enumerate(items[:3]):
-                logger.info("ClfNode[%d]: %s", i, {k: v for k, v in node.items()
-                            if k not in ("@odata.type", "@odata.id", "@odata.editLink")})
-        return items
+        # Verschiedene URL-Varianten versuchen
+        urls = [
+            f"{self.odata_base}/ClfStructure/ClfNodes",
+            f"{self.base_url}/servlet/odata/ClfStructure/ClfNodes",
+            f"{self.base_url}/servlet/odata/v4/ClfStructure/ClfNodes",
+        ]
+
+        for url in urls:
+            logger.info("Trying ClfNodes at: %s", url)
+            try:
+                resp = self._raw_get(url, timeout=15)
+                logger.info("ClfNodes %s → HTTP %d", url, resp.status_code)
+                if resp.status_code == 200:
+                    data = resp.json()
+                    items = data.get("value", [])
+                    logger.info("ClfNodes loaded %d items from %s", len(items), url)
+                    if items:
+                        logger.info("ClfNode sample keys: %s", list(items[0].keys()))
+                        for i, node in enumerate(items[:3]):
+                            logger.info("ClfNode[%d]: %s", i, {k: v for k, v in node.items()
+                                        if k not in ("@odata.type", "@odata.id", "@odata.editLink")})
+                    return items
+            except Exception:
+                logger.info("ClfNodes failed at %s", url, exc_info=True)
+                continue
+
+        logger.warning("ClfStructure/ClfNodes: Keine der URLs war erfolgreich")
+        return []
 
     # ── Container-Liste ──────────────────────────────────────
 

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { createObject, fetchContainers } from '../api/client'
-import type { ContainerItem } from '../api/types'
+import { createObject, fetchContainers, fetchPartSubtypes } from '../api/client'
+import type { ContainerItem, PartSubtype } from '../api/types'
 
 /* ── Windchill-Systemkonstanten (aus Part-Erstellformular) ── */
 
@@ -170,6 +170,7 @@ const CLASSIFICATIONS: ClassificationEntry[] = [
 /* ── Form State ───────────────────────────────────────────── */
 
 interface FormState {
+  TypeId: string
   Number: string
   Name: string
   Description: string
@@ -185,6 +186,7 @@ interface FormState {
 }
 
 const INITIAL: FormState = {
+  TypeId: '',
   Number: '',
   Name: '',
   Description: '',
@@ -207,17 +209,33 @@ export default function CreatePartPage() {
   const [success, setSuccess] = useState('')
   const [containers, setContainers] = useState<ContainerItem[]>([])
   const [containersLoaded, setContainersLoaded] = useState(false)
+  const [subtypes, setSubtypes] = useState<PartSubtype[]>([])
+  const [subtypesLoaded, setSubtypesLoaded] = useState(false)
 
   useEffect(() => {
     fetchContainers()
       .then((resp) => {
-        setContainers(resp.containers)
+        // Nur Product-Container anzeigen (PDMLinkProduct)
+        const products = resp.containers.filter(
+          (c) => c.containerType === 'Product' || c.containerType === 'PDMLinkProduct'
+        )
+        setContainers(products)
         setContainersLoaded(true)
-        if (resp.containers.length > 0) {
-          setForm((prev) => prev.ContainerBinding ? prev : { ...prev, ContainerBinding: resp.containers[0].odataBinding })
+        if (products.length > 0) {
+          setForm((prev) => prev.ContainerBinding ? prev : { ...prev, ContainerBinding: products[0].odataBinding })
         }
       })
       .catch(() => { setContainersLoaded(true) })
+
+    fetchPartSubtypes()
+      .then((resp) => {
+        setSubtypes(resp.subtypes)
+        setSubtypesLoaded(true)
+        if (resp.subtypes.length > 0) {
+          setForm((prev) => prev.TypeId ? prev : { ...prev, TypeId: resp.subtypes[0].odataType })
+        }
+      })
+      .catch(() => { setSubtypesLoaded(true) })
   }, [])
 
   const set = useCallback(
@@ -260,7 +278,7 @@ export default function CreatePartPage() {
     [form, navigate],
   )
 
-  const canSubmit = !busy && !!form.Name.trim() && !!form.ContainerBinding
+  const canSubmit = !busy && !!form.Name.trim() && !!form.ContainerBinding && !!form.TypeId
 
   return (
     <div className="max-w-2xl mx-auto">
@@ -294,6 +312,31 @@ export default function CreatePartPage() {
             </div>
           ) : (
             <Field label="Product / Container" required>
+              <select disabled className="input opacity-50">
+                <option>Lade…</option>
+              </select>
+            </Field>
+          )}
+
+          {/* Part Type (Soft Type) */}
+          {subtypes.length > 0 ? (
+            <Field label="Type" required>
+              <select
+                value={form.TypeId}
+                onChange={(e) => set('TypeId', e.target.value)}
+                className="input"
+              >
+                {subtypes.map((st) => (
+                  <option key={st.odataType} value={st.odataType}>{st.name}</option>
+                ))}
+              </select>
+            </Field>
+          ) : subtypesLoaded ? (
+            <div className="bg-amber-50 border border-amber-200 text-amber-700 text-sm rounded p-3">
+              Keine Part-Subtypes gefunden.
+            </div>
+          ) : (
+            <Field label="Type" required>
               <select disabled className="input opacity-50">
                 <option>Lade…</option>
               </select>

@@ -15,6 +15,7 @@ import type {
   OccurrencesResponse,
   PartDetailResponse,
   PartSearchResult,
+  PartSubtypeListResponse,
   ReferencingPartsResponse,
   SetStateRequest,
   SystemInfo,
@@ -198,6 +199,11 @@ export async function getContexts(): Promise<string[]> {
 // Containers (Products / Libraries — for Context@odata.bind)
 export async function fetchContainers(): Promise<ContainerListResponse> {
   return request<ContainerListResponse>(`${BASE}/containers`)
+}
+
+// Part Subtypes (Soft Types — for @odata.type)
+export async function fetchPartSubtypes(): Promise<PartSubtypeListResponse> {
+  return request<PartSubtypeListResponse>(`${BASE}/part-subtypes`)
 }
 
 // Occurrences (Use Case: "Wo kommt Code XABC vor?")

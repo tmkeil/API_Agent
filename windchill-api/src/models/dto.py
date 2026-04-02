@@ -433,3 +433,14 @@ class ContainerListResponse(BaseModel):
     """Response for container listing."""
     containers: list[ContainerItem] = []
     timing: TimingInfo = TimingInfo()
+
+
+class PartSubtype(BaseModel):
+    """Ein verfuegbarer Part-Subtype (Soft Type) in Windchill."""
+    name: str = ""
+    odataType: str = ""
+
+
+class PartSubtypeListResponse(BaseModel):
+    """Response fuer Part-Subtype-Listing."""
+    subtypes: list[PartSubtype] = []

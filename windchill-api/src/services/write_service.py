@@ -36,6 +36,9 @@ def create_object(
     # Part-spezifische Attribut-Konvertierung
     if type_key == "part":
         attributes, post_create_attrs = _build_part_body(attributes)
+        logger.info("Create Part body: %s", attributes)
+        if post_create_attrs:
+            logger.info("Post-create PATCH body: %s", post_create_attrs)
 
     raw = client.create_object(type_key, attributes)
     n = normalize_item(raw)
@@ -74,6 +77,13 @@ def _build_part_body(attrs: dict[str, Any]) -> tuple[dict[str, Any], dict[str, A
     """
     create_body: dict[str, Any] = {}
     patch_body: dict[str, Any] = {}
+
+    # --- @odata.type (Soft Type / Subtype) ---
+    # Windchill verlangt einen konkreten Subtype, Base WTPart ist nicht instantiierbar.
+    # Format: "PTC.ProdMgmt.BALMECHATRONICPART" (ohne #-Prefix)
+    odata_type = attrs.get("TypeId", "")
+    if odata_type:
+        create_body["@odata.type"] = odata_type
 
     # --- Direkte String-Properties (Create) ---
     for key in ("Number", "Name", "Description"):
@@ -145,7 +155,7 @@ def _build_part_body(attrs: dict[str, Any]) -> tuple[dict[str, Any], dict[str, A
         "Source", "DefaultUnit", "View", "Number", "Name", "Description",
         "AssemblyMode", "GatheringPart", "ConfigurableModule",
         "PhantomManufacturingPart", "ProductFamily", "Classification",
-        "EndItem", "DefaultTraceCode",
+        "EndItem", "DefaultTraceCode", "TypeId",
     }
     for key, val in attrs.items():
         if key not in create_body and key not in patch_body and key not in _handled:

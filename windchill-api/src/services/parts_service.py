@@ -493,6 +493,18 @@ def get_cache_stats() -> CacheStats:
     )
 
 
+# ── Part Subtypes ────────────────────────────────────────────
+
+
+def get_part_subtypes(client: WRSClient) -> "PartSubtypeListResponse":
+    """Verfuegbare Part-Subtypes (Soft Types) aus OData $metadata abfragen."""
+    from src.models.dto import PartSubtype, PartSubtypeListResponse
+
+    raw = client.get_part_subtypes()
+    subtypes = [PartSubtype(name=s["name"], odataType=s["odataType"]) for s in raw]
+    return PartSubtypeListResponse(subtypes=subtypes)
+
+
 # ── Containers ───────────────────────────────────────────────
 
 

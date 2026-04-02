@@ -142,6 +142,57 @@ class PartsMixin:
 
         return result
 
+    # ── Part Subtypes (Soft Types) ──────────────────────────
+
+    def get_part_subtypes(self: "WRSClientBase") -> list[dict]:
+        """Verfuegbare Part-Subtypes aus OData $metadata ermitteln.
+
+        Parst das EDMX-XML und sucht EntityTypes deren BaseType auf
+        'Part' endet (z.B. PTC.ProdMgmt.Part → BALMECHATRONICPART).
+
+        Returns:
+            Liste von Dicts: [{"name": "BALMECHATRONICPART",
+                               "odataType": "PTC.ProdMgmt.BALMECHATRONICPART"}, ...]
+        """
+        import xml.etree.ElementTree as ET
+
+        url = f"{self.odata_base}/ProdMgmt/$metadata"
+        try:
+            resp = self._raw_get(url, timeout=15)
+            if resp.status_code != 200:
+                logger.warning("$metadata returned %d", resp.status_code)
+                return []
+        except Exception:
+            logger.warning("$metadata request failed", exc_info=True)
+            return []
+
+        subtypes: list[dict] = []
+        try:
+            root = ET.fromstring(resp.text)
+            # EDMX namespace handling — find all EntityType elements
+            for elem in root.iter():
+                tag = elem.tag
+                # Strip namespace: {http://...}EntityType → EntityType
+                local = tag.rsplit("}", 1)[-1] if "}" in tag else tag
+                if local != "EntityType":
+                    continue
+                base_type = elem.get("BaseType", "")
+                name = elem.get("Name", "")
+                # Part-Subtypes haben BaseType endend auf ".Part"
+                if name and base_type.endswith(".Part"):
+                    ns = base_type.rsplit(".", 1)[0]  # z.B. "PTC.ProdMgmt"
+                    subtypes.append({
+                        "name": name,
+                        "odataType": f"{ns}.{name}",
+                    })
+        except ET.ParseError:
+            logger.warning("$metadata XML parse failed", exc_info=True)
+
+        subtypes.sort(key=lambda s: s["name"])
+        logger.info("Found %d Part subtypes: %s", len(subtypes),
+                    [s["name"] for s in subtypes[:10]])
+        return subtypes
+
     # ── Container-Liste ──────────────────────────────────────
 
     def get_containers(self: "WRSClientBase") -> list[dict]:

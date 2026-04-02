@@ -23,6 +23,7 @@ from src.models.dto import (
     DocumentListResponse,
     OccurrencesResponse,
     PartDetailResponse,
+    PartSubtypeListResponse,
     WhereUsedResponse,
 )
 from src.services import parts_service
@@ -180,3 +181,19 @@ def list_containers(
 ):
     client = get_client(request)
     return parts_service.get_containers(client)
+
+
+# ── Part Subtypes (Soft Types) ───────────────────────────────
+
+
+@router.get(
+    "/part-subtypes",
+    response_model=PartSubtypeListResponse,
+    summary="Verfuegbare Part-Subtypes (Soft Types) aus OData Metadata",
+)
+def list_part_subtypes(
+    request: Request,
+    _: None = Depends(require_auth),
+):
+    client = get_client(request)
+    return parts_service.get_part_subtypes(client)

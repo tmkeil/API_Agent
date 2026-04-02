@@ -355,6 +355,17 @@ export interface ContainerListResponse {
   containers: ContainerItem[]
 }
 
+// ── Part Subtypes ───────────────────────────────────────────
+
+export interface PartSubtype {
+  name: string
+  odataType: string
+}
+
+export interface PartSubtypeListResponse {
+  subtypes: PartSubtype[]
+}
+
 // ── Advanced Search ─────────────────────────────────────────
 
 export interface AdvancedSearchRequest {

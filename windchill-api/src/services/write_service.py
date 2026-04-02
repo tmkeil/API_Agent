@@ -86,18 +86,19 @@ def _build_part_body(attrs: dict[str, Any]) -> dict[str, Any]:
     assembly = attrs.get("AssemblyMode", "separable")
     body["AssemblyMode"] = {"Value": assembly.lower()}
 
-    # --- Boolean-Properties ---
+    # --- Boolean-Properties (nur senden wenn true, false ist Windchill-Default) ---
 
     # GatheringPart: "yes"/"no" → boolean
-    gathering = attrs.get("GatheringPart", "no")
-    body["GatheringPart"] = gathering.lower() == "yes"
+    if attrs.get("GatheringPart", "no").lower() == "yes":
+        body["GatheringPart"] = True
 
-    # PhantomManufacturingPart: Standard false
-    body["PhantomManufacturingPart"] = False
+    # PhantomManufacturingPart: nur wenn explizit true
+    if attrs.get("PhantomManufacturingPart", "no").lower() in ("yes", "true"):
+        body["PhantomManufacturingPart"] = True
 
     # ConfigurableModule: "yes"/"no" → boolean
-    configurable = attrs.get("ConfigurableModule", "no")
-    body["ConfigurableModule"] = configurable.lower() == "yes"
+    if attrs.get("ConfigurableModule", "no").lower() == "yes":
+        body["ConfigurableModule"] = True
 
     # --- Container-Referenz (Pflicht) ---
     context = attrs.get("Context@odata.bind", "")

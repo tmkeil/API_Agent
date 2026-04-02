@@ -96,6 +96,7 @@ class WRSClientBase:
 
         # OData-Discovery (werden pro Client-Instanz gefuellt)
         self._bom_nav_strategy: Optional[tuple[str, bool]] = None
+        self._bom_use_legacy: bool = False
         self._usage_link_nav: Optional[str] = None
         self._doc_service_available: bool = True
 

@@ -155,7 +155,8 @@ class PartsMixin:
             Liste von Container-Dicts mit ID, Name, ContainerType etc.
         """
         url = f"{self.odata_base}/DataAdmin/Containers"
-        items = self._get_all_pages(url)
+        params = {"$filter": "ContainerType eq 'Product'"}
+        items = self._get_all_pages(url, params)
         if items is None:
             return []
         return items

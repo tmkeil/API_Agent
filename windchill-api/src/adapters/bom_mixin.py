@@ -4,12 +4,20 @@ WRS Client — BOM-Operationen (Mixin).
 
 Stuecklistenstruktur laden: Usage-Links, Kind-Parts aufloesen.
 Wird in ``WRSClient`` per Mehrfachvererbung eingebunden.
+
+Offizieller Weg (WRS 1.6 Doku):
+  POST Parts('<id>')/PTC.ProdMgmt.GetPartStructure
+      ?$expand=Components($expand=Part,PartUse)
+  → liefert Components[] mit Part (Kind) und PartUse (Usage-Link-Infos)
+
+Fallback (aeltere WRS-Versionen):
+  GET Parts('<id>')/Uses?$expand=Uses
 """
 
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Any, Optional
 
 if TYPE_CHECKING:
     from src.adapters.base import WRSClientBase
@@ -20,19 +28,117 @@ logger = logging.getLogger(__name__)
 class BomMixin:
     """BOM / Stuecklisten-Operationen (Mixin fuer WRSClientBase)."""
 
+    # ── Offizielle Methode: GetPartStructure (POST Action) ──
+
+    def get_part_structure(
+        self: "WRSClientBase",
+        part_id: str,
+    ) -> Optional[list[dict[str, Any]]]:
+        """BOM-Kinder via offiziellem GetPartStructure-Action laden.
+
+        Offizieller Weg laut WRS 1.6 Doku:
+          POST /ProdMgmt/Parts('<id>')/PTC.ProdMgmt.GetPartStructure
+              ?$expand=Components($expand=Part,PartUse)
+
+        Returns:
+            Liste von Component-Dicts mit 'Part' und 'PartUse' Unter-Objekten,
+            oder None falls die Action nicht verfuegbar ist (Fallback noetig).
+        """
+        url = (
+            f"{self.odata_base}/ProdMgmt/Parts('{part_id}')"
+            f"/PTC.ProdMgmt.GetPartStructure"
+            f"?$expand=Components($expand=Part,PartUse)"
+        )
+        self._refresh_csrf()
+        resp = self._post(url, json_body={}, suppress_errors=True)
+
+        if resp is None or resp.status_code not in (200, 201):
+            status = resp.status_code if resp else "no response"
+            logger.info("GetPartStructure nicht verfuegbar (HTTP %s) — verwende Fallback", status)
+            return None
+
+        data = resp.json()
+
+        # Response kann direkt Components enthalten oder in 'value'
+        components = data.get("Components") or data.get("value") or []
+
+        # Wenn die Response ein einzelnes Part-Objekt ist (mit Components darin)
+        if not components and isinstance(data, dict):
+            # GetPartStructure liefert manchmal {... , "Components": [...]}
+            for key in ("Components", "BOMComponents", "PartStructure"):
+                if key in data and isinstance(data[key], list):
+                    components = data[key]
+                    break
+
+        if not isinstance(components, list):
+            logger.warning("GetPartStructure: unerwartetes Format — components=%s", type(components))
+            return None
+
+        logger.debug("GetPartStructure lieferte %d Components fuer %s", len(components), part_id)
+        return components
+
+    # ── Fallback: alte Methode (GET /Uses) ───────────────────
+
     def get_bom_children(self: "WRSClientBase", part_id: str) -> list:
         """BOM-Kinder (Usage Links) eines Parts laden.
 
-        Windchill bietet mehrere OData-Navigations-Properties fuer die
-        Stuecklistenstruktur. Welche verfuegbar ist, haengt von der
-        WRS/OData-Version ab:
+        Versucht zuerst den offiziellen GetPartStructure-Weg (POST Action).
+        Falls das fehlschlaegt, Fallback auf GET /Uses mit Strategie-Discovery.
+        """
+        # 1. Offizieller Weg: GetPartStructure
+        if not getattr(self, "_bom_use_legacy", False):
+            components = self.get_part_structure(part_id)
+            if components is not None:
+                # Erfolg → in usage-link-kompatibles Format transformieren
+                return self._components_to_usage_links(components)
+            # GetPartStructure nicht verfuegbar → dauerhaft auf Legacy wechseln
+            self._bom_use_legacy = True
+            logger.info("Wechsle dauerhaft auf Legacy-BOM-Methode (GET /Uses)")
+
+        # 2. Fallback: alte Methode
+        return self._get_bom_children_legacy(part_id)
+
+    def _components_to_usage_links(
+        self: "WRSClientBase", components: list[dict]
+    ) -> list[dict]:
+        """GetPartStructure-Components in das alte usage-link-Format konvertieren.
+
+        Jedes Component hat 'Part' (Kind-Part) und 'PartUse' (Link-Infos).
+        Wir fuegen das Kind-Part direkt unter dem Key 'Uses' ein,
+        sodass resolve_usage_link_child() es sofort findet.
+        """
+        result = []
+        for comp in components:
+            part_use = comp.get("PartUse") or {}
+            child_part = comp.get("Part") or {}
+
+            if not child_part and not part_use:
+                continue
+
+            # Baue ein usage-link-aehnliches Dict:
+            # part_use enthält Quantity, Unit, LineNumber, FindNumber, etc.
+            # Wir haengen das Kind-Part unter 'Uses' an (gleicher Key wie $expand=Uses)
+            link = dict(part_use)
+            if child_part:
+                link["Uses"] = child_part
+
+            # Uebernehme auch Component-Level Attribute (z.B. Occurrence)
+            for k, v in comp.items():
+                if k not in ("Part", "PartUse", "@odata.type") and k not in link:
+                    link[k] = v
+
+            result.append(link)
+
+        return result
+
+    def _get_bom_children_legacy(self: "WRSClientBase", part_id: str) -> list:
+        """Legacy-Fallback: BOM-Kinder via GET /Uses laden.
+
+        Probiert verschiedene OData-Navigations-Properties:
           - Uses           (Standard, v5+)
           - UsesInterface  (alternative Struktur)
           - BOMComponents  (aeltere Versionen)
           - PartStructure  (Fallback)
-
-        Die erste funktionierende Strategie wird gecacht und fuer
-        alle weiteren Abfragen dieser Session wiederverwendet.
         """
         nav_options = ["Uses", "UsesInterface", "BOMComponents", "PartStructure"]
 
@@ -44,7 +150,6 @@ class BomMixin:
             result = self._get_all_pages(url, params, return_none_on_error=True)
             if result is not None:
                 return result
-            # Strategie hat nicht funktioniert → neu discovern
             self._bom_nav_strategy = None
 
         # Alle Strategien durchprobieren
@@ -70,7 +175,7 @@ class BomMixin:
 
         Ein Usage-Link beschreibt die Beziehung Parent→Child in der Stueckliste.
         Das Kind-Part-Objekt kann entweder:
-          a) Bereits inline im Link enthalten sein ($expand hat funktioniert)
+          a) Bereits inline im Link enthalten sein ($expand oder GetPartStructure)
           b) Per Navigation-Property nachgeladen werden muessen
 
         Probiert die Keys: Uses, RoleBObject, Child, Part.
@@ -96,7 +201,7 @@ class BomMixin:
             child = self._resolve_link_via_nav(link_id, self._usage_link_nav)
             if child:
                 return child
-            self._usage_link_nav = None  # Funktioniert nicht mehr → neu discovern
+            self._usage_link_nav = None
 
         # Alle Navigation-Properties durchprobieren
         for nav in ["Uses", "RoleBObject", "Child"]:

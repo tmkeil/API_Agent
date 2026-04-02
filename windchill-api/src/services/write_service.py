@@ -69,108 +69,102 @@ def _build_part_body(attrs: dict[str, Any]) -> tuple[dict[str, Any], dict[str, A
     """Frontend-Part-Attribute in OData-konformes Format konvertieren.
 
     Gibt zwei Dicts zurueck:
-      1. create_body — Felder fuer POST /ProdMgmt/Parts (Standard-OData-Properties)
-      2. patch_body  — IBAs/Soft-Attributes, die per PATCH nach Create gesetzt werden
+      1. create_body — Minimale Felder fuer POST /ProdMgmt/Parts
+         (nur die von der offiziellen WRS-Doku erlaubten Standard-Properties)
+      2. patch_body  — Alles andere per PATCH nach Create setzen
 
-    Windchill akzeptiert beim Create nur Standard-Properties.
-    IBAs (BAL_*, Custom Attributes) muessen per PATCH nachgesetzt werden.
+    Windchill akzeptiert beim Create nur wenige Standard-Properties.
+    IBAs, Enums und Custom-Felder muessen per PATCH nachgesetzt werden.
+    Referenz: PTC WRS Doku "Creating a Part".
     """
     create_body: dict[str, Any] = {}
     patch_body: dict[str, Any] = {}
 
-    # --- @odata.type (Soft Type / Subtype) ---
-    # Windchill verlangt einen konkreten Subtype, Base WTPart ist nicht instantiierbar.
-    # Format: "#PTC.ProdMgmt.BALMECHATRONICPART" (mit #-Prefix, OData Standard)
+    # ── CREATE-Body: Nur das Minimum (wie offizielle WRS-Doku) ──
+
+    # @odata.type (Soft Type / Subtype) — noetig damit Windchill den
+    # richtigen Subtype instantiiert (z.B. BALMECHATRONICPART).
+    # HINWEIS: 403 "Secured Action" bedeutet fehlende Berechtigung
+    # fuer den Subtype im gewaehlten Container, NICHT falscher Payload.
     odata_type = attrs.get("TypeId", "")
     if odata_type:
-        # OData JSON Payload erwartet '#'-Prefix fuer @odata.type
         if not odata_type.startswith("#"):
             odata_type = f"#{odata_type}"
         create_body["@odata.type"] = odata_type
 
-    # --- Direkte String-Properties (Create) ---
-    for key in ("Number", "Name", "Description"):
-        if key in attrs and attrs[key]:
-            create_body[key] = attrs[key]
+    # Name (Pflicht)
+    if attrs.get("Name"):
+        create_body["Name"] = attrs["Name"]
 
-    # --- Enum-Properties (Create, OData: {"Value": "..."}) ---
+    # Number (optional — Windchill generiert sonst automatisch)
+    if attrs.get("Number"):
+        create_body["Number"] = attrs["Number"]
 
-    # Source: "make" | "buy" | "notapplicable"
-    source = attrs.get("Source", "")
-    if source:
-        create_body["Source"] = {"Value": source.lower()}
-
-    # DefaultUnit: z.B. "ea", "kg", "m", "l", ...
-    unit = attrs.get("DefaultUnit", "")
-    if unit:
-        create_body["DefaultUnit"] = {"Value": unit}
-
-    # View: Wird beim Create nicht akzeptiert (HTTP 400 egal welches Format).
-    # Muss per PATCH nach Create gesetzt werden.
-    view = attrs.get("View", "")
-    if view:
-        patch_body["View"] = view
-
-    # AssemblyMode: "separable" | "inseparable" | "component"
-    assembly = attrs.get("AssemblyMode", "separable")
-    create_body["AssemblyMode"] = {"Value": assembly.lower()}
-
-    # --- Boolean-Properties (Windchill verlangt diese explizit, auch wenn false) ---
-
-    gathering = attrs.get("GatheringPart", "no").lower() == "yes"
-    create_body["GatheringPart"] = gathering
-
-    phantom = attrs.get("PhantomManufacturingPart", "no").lower() in ("yes", "true")
-    create_body["PhantomManufacturingPart"] = phantom
-
-    # ConfigurableModule: Wird beim Create nicht akzeptiert ("Invalid JSON type").
-    # Muss per PATCH nach Create gesetzt werden.
-    configurable = attrs.get("ConfigurableModule", "no").lower() == "yes"
-    if configurable:
-        patch_body["ConfigurableModule"] = True
-
-    # EndItem: Nicht bei allen Subtypes erlaubt ("cannot be changed").
-    # Nur senden wenn explizit gesetzt.
-    end_item_raw = attrs.get("EndItem", "no").lower()
-    if end_item_raw in ("yes", "true"):
-        create_body["EndItem"] = True
-
-    # DefaultTraceCode: Pflichtfeld, Enum {"Value": "..."}
-    # Werte: "0" (Untraced), "L" (Lot Traced), "S" (Serial Traced), "X" (By Trace Code)
-    trace_code = attrs.get("DefaultTraceCode", "0")
-    create_body["DefaultTraceCode"] = {"Value": trace_code}
-
-    # --- Container-Referenz (Create, Pflicht) ---
+    # Context@odata.bind (Pflicht — Container-Referenz)
     context = attrs.get("Context@odata.bind", "")
     if context:
         create_body["Context@odata.bind"] = context
 
-    # --- IBAs / Soft Attributes ---
-    # OData-Feldnamen sind OHNE Unterstriche (z.B. BALCPORDERPREFIX statt BAL_CP_ORDER_PREFIX)
+    # PhantomManufacturingPart (in offizieller Doku enthalten)
+    phantom = attrs.get("PhantomManufacturingPart", "no").lower() in ("yes", "true")
+    create_body["PhantomManufacturingPart"] = phantom
+
+    # AssemblyMode (in offizieller Doku enthalten)
+    assembly = attrs.get("AssemblyMode", "separable")
+    create_body["AssemblyMode"] = {
+        "Value": assembly.lower(),
+        "Display": assembly.capitalize(),
+    }
+
+    # ── PATCH-Body: Alles andere nach Create setzen ──
+
+    # Source
+    source = attrs.get("Source", "")
+    if source:
+        patch_body["Source"] = {"Value": source.lower()}
+
+    # DefaultUnit
+    unit = attrs.get("DefaultUnit", "")
+    if unit:
+        patch_body["DefaultUnit"] = {"Value": unit}
+
+    # View
+    view = attrs.get("View", "")
+    if view:
+        patch_body["View"] = view
+
+    # GatheringPart
+    gathering = attrs.get("GatheringPart", "no").lower() == "yes"
+    if gathering:
+        patch_body["GatheringPart"] = True
+
+    # ConfigurableModule
+    configurable = attrs.get("ConfigurableModule", "no").lower() == "yes"
+    if configurable:
+        patch_body["ConfigurableModule"] = True
+
+    # EndItem
+    end_item_raw = attrs.get("EndItem", "no").lower()
+    if end_item_raw in ("yes", "true"):
+        patch_body["EndItem"] = True
+
+    # DefaultTraceCode
+    trace_code = attrs.get("DefaultTraceCode", "")
+    if trace_code:
+        patch_body["DefaultTraceCode"] = {"Value": trace_code}
+
+    # ProductFamily (IBA: BALCPORDERPREFIX)
     product_family = attrs.get("ProductFamily", "")
     if product_family:
         patch_body["BALCPORDERPREFIX"] = product_family
 
-    # Classification: Pflicht beim Create.
-    # Balluff-spezifischer Feldname: BALCLASSIFICATIONBINDINGWTPART
-    # Format: Objekt mit ClfNodeInternalName (wie bei PTC Classification).
+    # Classification (IBA: BALCLASSIFICATIONBINDINGWTPART)
+    # Balluff-Pflichtfeld beim Create (nicht in Standard-PTC-Doku, aber vom System verlangt)
     classification = attrs.get("Classification", "")
     if classification:
         create_body["BALCLASSIFICATIONBINDINGWTPART"] = {
             "ClfNodeInternalName": classification,
         }
-
-    # Falls weitere OData-Properties direkt mitgegeben werden (Power-User),
-    # uebernehmen in create_body, ohne die obigen zu ueberschreiben.
-    _handled = {
-        "Source", "DefaultUnit", "View", "Number", "Name", "Description",
-        "AssemblyMode", "GatheringPart", "ConfigurableModule",
-        "PhantomManufacturingPart", "ProductFamily", "Classification",
-        "EndItem", "DefaultTraceCode", "TypeId",
-    }
-    for key, val in attrs.items():
-        if key not in create_body and key not in patch_body and key not in _handled:
-            create_body[key] = val
 
     return create_body, patch_body
 
@@ -314,8 +308,12 @@ def add_bom_child(
     child_code: str,
     quantity: float = 1.0,
     unit: str = "each",
+    find_number: str | None = None,
+    line_number: int | None = None,
+    trace_code: str | None = None,
+    occurrences: list[str] | None = None,
 ) -> WriteResponse:
-    """Kind-Part zur BOM hinzufuegen."""
+    """Kind-Part zur BOM hinzufuegen (mit optionalen BOM-Feldern)."""
     t0 = time.monotonic()
 
     parent_raw = client.find_object("part", parent_code)
@@ -330,7 +328,13 @@ def add_bom_child(
         from src.adapters.base import WRSError
         raise WRSError(f"Kind Part '{child_code}' nicht gefunden", status_code=404)
 
-    client.add_bom_child(parent_id, child_id, quantity, unit)
+    client.add_bom_child(
+        parent_id, child_id, quantity, unit,
+        find_number=find_number,
+        line_number=line_number,
+        trace_code=trace_code,
+        occurrences=occurrences,
+    )
     child_n = normalize_item(child_raw)
     ms = round((time.monotonic() - t0) * 1000, 1)
     return WriteResponse(
@@ -354,5 +358,250 @@ def remove_bom_child(
     return WriteResponse(
         ok=True,
         message=f"UsageLink '{usage_link_id}' entfernt",
+        timing=TimingInfo(totalMs=ms, wrsMs=ms),
+    )
+
+
+# ── Dokument-Verknuepfung ───────────────────────────────────
+
+
+def link_document_to_part(
+    client: WRSClient,
+    part_code: str,
+    doc_code: str,
+    link_type: str = "DescribedBy",
+) -> WriteResponse:
+    """Dokument mit einem Part verknuepfen.
+
+    Args:
+        part_code: Teilenummer des Parts.
+        doc_code:  Dokumentnummer.
+        link_type: 'DescribedBy' (beschreibend) oder 'References' (Referenz).
+    """
+    t0 = time.monotonic()
+
+    part_raw = client.find_object("part", part_code)
+    part_id = extract_id(part_raw)
+    if not part_id:
+        from src.adapters.base import WRSError
+        raise WRSError(f"Part '{part_code}' nicht gefunden", status_code=404)
+
+    doc_raw = client.find_object("document", doc_code)
+    doc_id = extract_id(doc_raw)
+    if not doc_id:
+        from src.adapters.base import WRSError
+        raise WRSError(f"Dokument '{doc_code}' nicht gefunden", status_code=404)
+
+    client.link_document_to_part(part_id, doc_id, link_type)
+    ms = round((time.monotonic() - t0) * 1000, 1)
+    return WriteResponse(
+        ok=True,
+        objectId=doc_id,
+        number=doc_code,
+        message=f"Dokument '{doc_code}' mit Part '{part_code}' verknuepft ({link_type})",
+        timing=TimingInfo(totalMs=ms, wrsMs=ms),
+    )
+
+
+def unlink_document_from_part(
+    client: WRSClient,
+    part_code: str,
+    doc_code: str,
+    link_type: str = "DescribedBy",
+) -> WriteResponse:
+    """Dokument-Verknuepfung von einem Part entfernen."""
+    t0 = time.monotonic()
+
+    part_raw = client.find_object("part", part_code)
+    part_id = extract_id(part_raw)
+    if not part_id:
+        from src.adapters.base import WRSError
+        raise WRSError(f"Part '{part_code}' nicht gefunden", status_code=404)
+
+    doc_raw = client.find_object("document", doc_code)
+    doc_id = extract_id(doc_raw)
+    if not doc_id:
+        from src.adapters.base import WRSError
+        raise WRSError(f"Dokument '{doc_code}' nicht gefunden", status_code=404)
+
+    client.unlink_document_from_part(part_id, doc_id, link_type)
+    ms = round((time.monotonic() - t0) * 1000, 1)
+    return WriteResponse(
+        ok=True,
+        objectId=doc_id,
+        number=doc_code,
+        message=f"Verknuepfung von '{doc_code}' zu '{part_code}' entfernt ({link_type})",
+        timing=TimingInfo(totalMs=ms, wrsMs=ms),
+    )
+
+
+# ── Downstream / Equivalence Links (BALDOWNSTREAM IBA) ──────
+
+
+def _parse_downstream_entries(value: str) -> list[dict[str, str]]:
+    """Parse BALDOWNSTREAM into structured entries.
+
+    BALDOWNSTREAM format:
+      "NUMBER, NAME, ORG, VERSION (VIEW), NUMBER, NAME, ORG, VERSION (VIEW), ..."
+    Each entry is a group of 4 comma-separated tokens.
+    Returns list of dicts with keys: number, name, organization, versionView.
+    """
+    if not value or value.startswith("<list:0"):
+        return []
+
+    parts = [s.strip() for s in value.split(",")]
+    entries: list[dict[str, str]] = []
+    i = 0
+    while i + 3 < len(parts):
+        entries.append({
+            "number": parts[i],
+            "name": parts[i + 1],
+            "organization": parts[i + 2],
+            "versionView": parts[i + 3],
+        })
+        i += 4
+    return entries
+
+
+def _build_downstream_string(entries: list[dict[str, str]]) -> str:
+    """Build BALDOWNSTREAM string from structured entries."""
+    tokens: list[str] = []
+    for e in entries:
+        tokens.extend([e["number"], e["name"], e["organization"], e["versionView"]])
+    return ", ".join(tokens)
+
+
+def _extract_downstream_raw(raw_part: dict) -> str:
+    """Extract BALDOWNSTREAM string from a raw OData part response."""
+    val = raw_part.get("BALDOWNSTREAM", "")
+    if isinstance(val, list):
+        val = ", ".join(str(v) for v in val)
+    return str(val) if val else ""
+
+
+def get_downstream_parts(
+    client: WRSClient,
+    part_code: str,
+) -> list[dict[str, str]]:
+    """Get downstream (manufacturing equivalent) parts for a design part.
+
+    Reads the BALDOWNSTREAM IBA and parses it into structured entries.
+    """
+    raw_part = client.find_object("part", part_code)
+    downstream_raw = _extract_downstream_raw(raw_part)
+    return _parse_downstream_entries(downstream_raw)
+
+
+def add_downstream_link(
+    client: WRSClient,
+    design_part_code: str,
+    mfg_part_code: str,
+) -> WriteResponse:
+    """Add a downstream/equivalence link (Design → Manufacturing).
+
+    Updates the BALDOWNSTREAM IBA on the design part by appending the
+    manufacturing part reference in Windchill's format:
+      "NUMBER, NAME, ORG, VERSION (VIEW)"
+    """
+    t0 = time.monotonic()
+    from src.adapters.base import WRSError
+
+    # 1. Load design part
+    design_raw = client.find_object("part", design_part_code)
+    design_id = extract_id(design_raw)
+    if not design_id:
+        raise WRSError(f"Design Part '{design_part_code}' nicht gefunden", status_code=404)
+
+    # 2. Load manufacturing part
+    mfg_raw = client.find_object("part", mfg_part_code)
+    mfg_id = extract_id(mfg_raw)
+    if not mfg_id:
+        raise WRSError(f"Manufacturing Part '{mfg_part_code}' nicht gefunden", status_code=404)
+
+    # 3. Parse current BALDOWNSTREAM
+    downstream_raw = _extract_downstream_raw(design_raw)
+    entries = _parse_downstream_entries(downstream_raw)
+
+    # 4. Check if already linked
+    mfg_number = str(mfg_raw.get("Number", ""))
+    if any(e["number"] == mfg_number for e in entries):
+        ms = round((time.monotonic() - t0) * 1000, 1)
+        return WriteResponse(
+            ok=True,
+            objectId=mfg_id,
+            number=mfg_number,
+            message=f"Downstream Link '{mfg_number}' existiert bereits",
+            timing=TimingInfo(totalMs=ms, wrsMs=ms),
+        )
+
+    # 5. Build new entry from manufacturing part's OData data
+    mfg_name = str(mfg_raw.get("Name", ""))
+    mfg_org = str(mfg_raw.get("OrganizationName", ""))
+    mfg_version = str(mfg_raw.get("Version", ""))
+    mfg_view = str(mfg_raw.get("View", ""))
+    version_view = f"{mfg_version} ({mfg_view})" if mfg_view else mfg_version
+
+    entries.append({
+        "number": mfg_number,
+        "name": mfg_name,
+        "organization": mfg_org,
+        "versionView": version_view,
+    })
+
+    # 6. PATCH design part with updated BALDOWNSTREAM
+    new_value = _build_downstream_string(entries)
+    client.update_object_attributes("part", design_id, {"BALDOWNSTREAM": new_value})
+
+    ms = round((time.monotonic() - t0) * 1000, 1)
+    return WriteResponse(
+        ok=True,
+        objectId=mfg_id,
+        number=mfg_number,
+        message=f"Downstream Link '{mfg_number}' zu '{design_part_code}' hinzugefuegt",
+        timing=TimingInfo(totalMs=ms, wrsMs=ms),
+    )
+
+
+def remove_downstream_link(
+    client: WRSClient,
+    design_part_code: str,
+    mfg_part_code: str,
+) -> WriteResponse:
+    """Remove a downstream/equivalence link from a design part.
+
+    Removes the manufacturing part reference from the BALDOWNSTREAM IBA.
+    """
+    t0 = time.monotonic()
+    from src.adapters.base import WRSError
+
+    # 1. Load design part
+    design_raw = client.find_object("part", design_part_code)
+    design_id = extract_id(design_raw)
+    if not design_id:
+        raise WRSError(f"Design Part '{design_part_code}' nicht gefunden", status_code=404)
+
+    # 2. Parse current BALDOWNSTREAM
+    downstream_raw = _extract_downstream_raw(design_raw)
+    entries = _parse_downstream_entries(downstream_raw)
+
+    # 3. Remove entry matching mfg_part_code
+    original_count = len(entries)
+    entries = [e for e in entries if e["number"] != mfg_part_code]
+
+    if len(entries) == original_count:
+        raise WRSError(
+            f"Downstream Link '{mfg_part_code}' nicht gefunden in '{design_part_code}'",
+            status_code=404,
+        )
+
+    # 4. PATCH design part with updated BALDOWNSTREAM
+    new_value = _build_downstream_string(entries)
+    client.update_object_attributes("part", design_id, {"BALDOWNSTREAM": new_value})
+
+    ms = round((time.monotonic() - t0) * 1000, 1)
+    return WriteResponse(
+        ok=True,
+        number=mfg_part_code,
+        message=f"Downstream Link '{mfg_part_code}' von '{design_part_code}' entfernt",
         timing=TimingInfo(totalMs=ms, wrsMs=ms),
     )

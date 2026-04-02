@@ -6,9 +6,15 @@ Endpoints:
   PATCH  /write/{type_key}/{code}/attributes     → Attribute aendern
   POST   /write/{type_key}/{code}/state          → Lifecycle-Status setzen
   POST   /write/{type_key}/{code}/checkout       → Auschecken
-  POST   /write/{type_key}/{code}/checkin        → Einchecken  POST   /write/{type_key}/{code}/revise         → Neue Revision erstellen
+  POST   /write/{type_key}/{code}/checkin        → Einchecken
+  POST   /write/{type_key}/{code}/revise         → Neue Revision erstellen
   POST   /write/bom/{code}/add-child             → BOM Kind hinzufuegen
-  POST   /write/bom/remove-child                 → BOM Kind entfernen"""
+  POST   /write/bom/remove-child                 → BOM Kind entfernen
+  POST   /write/{code}/link-document             → Dokument mit Part verknuepfen
+  POST   /write/{code}/unlink-document           → Dokument-Verknuepfung entfernen
+  GET    /write/{code}/downstream-parts          → Downstream-Parts abrufen
+  POST   /write/{code}/add-downstream            → Downstream Link hinzufuegen
+  POST   /write/{code}/remove-downstream         → Downstream Link entfernen"""
 
 import logging
 
@@ -18,9 +24,15 @@ from src.core.auth import require_auth
 from src.core.dependencies import get_client
 from src.models.dto import (
     AddBomChildRequest,
+    AddDownstreamLinkRequest,
     CreateObjectRequest,
+    DownstreamPartInfo,
+    DownstreamPartsResponse,
+    LinkDocumentRequest,
     RemoveBomChildRequest,
+    RemoveDownstreamLinkRequest,
     SetStateRequest,
+    UnlinkDocumentRequest,
     UpdateAttributesRequest,
     WriteResponse,
 )
@@ -149,6 +161,10 @@ def add_bom_child(
     client = get_client(request)
     return write_service.add_bom_child(
         client, code, body.childPartNumber, body.quantity, body.unit,
+        find_number=body.findNumber,
+        line_number=body.lineNumber,
+        trace_code=body.traceCode,
+        occurrences=body.occurrences,
     )
 
 
@@ -164,3 +180,97 @@ def remove_bom_child(
 ):
     client = get_client(request)
     return write_service.remove_bom_child(client, body.usageLinkId)
+
+
+# ── Dokument-Verknuepfung ───────────────────────────────────
+
+
+@router.post(
+    "/{code}/link-document",
+    response_model=WriteResponse,
+    summary="Dokument mit Part verknuepfen",
+)
+def link_document(
+    code: str,
+    body: LinkDocumentRequest,
+    request: Request,
+    _: None = Depends(require_auth),
+):
+    client = get_client(request)
+    return write_service.link_document_to_part(
+        client, code, body.documentNumber, body.linkType,
+    )
+
+
+@router.post(
+    "/{code}/unlink-document",
+    response_model=WriteResponse,
+    summary="Dokument-Verknuepfung von Part entfernen",
+)
+def unlink_document(
+    code: str,
+    body: UnlinkDocumentRequest,
+    request: Request,
+    _: None = Depends(require_auth),
+):
+    client = get_client(request)
+    return write_service.unlink_document_from_part(
+        client, code, body.documentNumber, body.linkType,
+    )
+
+
+# ── Downstream / Equivalence Links ──────────────────────────
+
+
+@router.get(
+    "/{code}/downstream-parts",
+    response_model=DownstreamPartsResponse,
+    summary="Downstream-Parts (Manufacturing-Aequivalente) abrufen",
+)
+def get_downstream_parts(
+    code: str,
+    request: Request,
+    _: None = Depends(require_auth),
+):
+    client = get_client(request)
+    entries = write_service.get_downstream_parts(client, code)
+    parts = [DownstreamPartInfo(**e) for e in entries]
+    return DownstreamPartsResponse(
+        designPartNumber=code,
+        downstreamParts=parts,
+        count=len(parts),
+    )
+
+
+@router.post(
+    "/{code}/add-downstream",
+    response_model=WriteResponse,
+    summary="Downstream/Equivalence Link hinzufuegen (Design → Manufacturing)",
+)
+def add_downstream_link(
+    code: str,
+    body: AddDownstreamLinkRequest,
+    request: Request,
+    _: None = Depends(require_auth),
+):
+    client = get_client(request)
+    return write_service.add_downstream_link(
+        client, code, body.manufacturingPartNumber,
+    )
+
+
+@router.post(
+    "/{code}/remove-downstream",
+    response_model=WriteResponse,
+    summary="Downstream/Equivalence Link entfernen",
+)
+def remove_downstream_link(
+    code: str,
+    body: RemoveDownstreamLinkRequest,
+    request: Request,
+    _: None = Depends(require_auth),
+):
+    client = get_client(request)
+    return write_service.remove_downstream_link(
+        client, code, body.manufacturingPartNumber,
+    )

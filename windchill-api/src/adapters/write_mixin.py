@@ -324,14 +324,26 @@ class WriteMixin:
         child_part_id: str,
         quantity: float = 1.0,
         unit: str = "each",
+        find_number: str | None = None,
+        line_number: int | None = None,
+        trace_code: str | None = None,
+        occurrences: list[str] | None = None,
     ) -> dict:
         """Kind-Part ueber einen neuen UsageLink zur BOM hinzufuegen.
+
+        Offizielle WRS-Doku: POST Parts('<parent>')/Uses
+        Body: Quantity, Unit, FindNumber, LineNumber, TraceCode,
+              Uses@odata.bind, Occurrences.
 
         Args:
             parent_part_id: OData-ID des Eltern-Parts.
             child_part_id:  OData-ID des Kind-Parts.
             quantity:       Menge (Default: 1).
             unit:           Mengeneinheit (Default: 'each').
+            find_number:    Fundstellen-Nummer (Reference Designator Key).
+            line_number:    BOM Zeilennummer.
+            trace_code:     Trace-Code (z.B. 'Untraced', 'Lot', 'Serial').
+            occurrences:    Liste von Occurrence-Bezeichnern (Reference Designators).
 
         Returns:
             Der erstellte UsageLink als OData-Dict.
@@ -344,6 +356,17 @@ class WriteMixin:
             "Quantity": quantity,
             "Unit": {"Value": unit},
         }
+
+        if find_number is not None:
+            body["FindNumber"] = find_number
+        if line_number is not None:
+            body["LineNumber"] = line_number
+        if trace_code is not None:
+            body["TraceCode"] = {"Value": trace_code}
+        if occurrences:
+            body["Occurrences"] = [
+                {"ReferenceDesignator": occ} for occ in occurrences
+            ]
 
         self._refresh_csrf()
         resp = self._post(url, json_body=body)
@@ -383,6 +406,82 @@ class WriteMixin:
         detail = _extract_error_detail(resp)
         raise WRSError(
             f"BOM Kind entfernen fehlgeschlagen (HTTP {resp.status_code}): {detail}",
+            status_code=resp.status_code,
+        )
+
+    # ── Dokument-Verknuepfung ────────────────────────────────
+
+    def link_document_to_part(
+        self: "WRSClientBase",
+        part_id: str,
+        doc_id: str,
+        link_type: str = "DescribedBy",
+    ) -> dict:
+        """Dokument mit einem Part verknuepfen.
+
+        Windchill kennt zwei Verknuepfungstypen:
+          - DescribedBy  (beschreibendes Dokument, z.B. Spezifikation)
+          - References    (referenziertes Dokument)
+
+        Args:
+            part_id:   OData-ID des Parts.
+            doc_id:    OData-ID des Dokuments.
+            link_type: 'DescribedBy' oder 'References' (Default: DescribedBy).
+
+        Returns:
+            Die erstellte Verknuepfung als OData-Dict.
+        """
+        from src.adapters.base import WRSError
+
+        nav = "DescribedBy" if link_type == "DescribedBy" else "References"
+        url = f"{self.odata_base}/ProdMgmt/Parts('{part_id}')/{nav}"
+        body = {
+            f"{nav}@odata.bind": f"Documents('{doc_id}')",
+        }
+
+        self._refresh_csrf()
+        resp = self._post(url, json_body=body)
+        if resp is None:
+            raise WRSError("Dokument verknuepfen fehlgeschlagen", status_code=502)
+
+        if resp.status_code in (200, 201):
+            return resp.json()
+
+        detail = _extract_error_detail(resp)
+        raise WRSError(
+            f"Dokument verknuepfen fehlgeschlagen (HTTP {resp.status_code}): {detail}",
+            status_code=resp.status_code,
+        )
+
+    def unlink_document_from_part(
+        self: "WRSClientBase",
+        part_id: str,
+        doc_id: str,
+        link_type: str = "DescribedBy",
+    ) -> None:
+        """Dokument-Verknuepfung von einem Part entfernen.
+
+        Args:
+            part_id:   OData-ID des Parts.
+            doc_id:    OData-ID des Dokuments.
+            link_type: 'DescribedBy' oder 'References'.
+        """
+        from src.adapters.base import WRSError
+
+        nav = "DescribedBy" if link_type == "DescribedBy" else "References"
+        url = f"{self.odata_base}/ProdMgmt/Parts('{part_id}')/{nav}('{doc_id}')"
+
+        self._refresh_csrf()
+        resp = self._delete(url)
+        if resp is None:
+            raise WRSError("Dokument-Verknuepfung entfernen fehlgeschlagen", status_code=502)
+
+        if resp.status_code in (200, 204):
+            return
+
+        detail = _extract_error_detail(resp)
+        raise WRSError(
+            f"Dokument-Verknuepfung entfernen fehlgeschlagen (HTTP {resp.status_code}): {detail}",
             status_code=resp.status_code,
         )
 

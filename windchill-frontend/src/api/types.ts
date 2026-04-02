@@ -305,10 +305,46 @@ export interface AddBomChildRequest {
   childPartNumber: string
   quantity?: number
   unit?: string
+  findNumber?: string
+  lineNumber?: number
+  traceCode?: string
+  occurrences?: string[]
 }
 
 export interface RemoveBomChildRequest {
   usageLinkId: string
+}
+
+export interface LinkDocumentRequest {
+  documentNumber: string
+  linkType?: string  // 'DescribedBy' | 'References'
+}
+
+export interface UnlinkDocumentRequest {
+  documentNumber: string
+  linkType?: string
+}
+
+export interface AddDownstreamLinkRequest {
+  manufacturingPartNumber: string
+}
+
+export interface RemoveDownstreamLinkRequest {
+  manufacturingPartNumber: string
+}
+
+export interface DownstreamPartInfo {
+  number: string
+  name: string
+  organization: string
+  versionView: string
+}
+
+export interface DownstreamPartsResponse {
+  ok: boolean
+  designPartNumber: string
+  downstreamParts: DownstreamPartInfo[]
+  count: number
 }
 
 export interface WriteResponse {

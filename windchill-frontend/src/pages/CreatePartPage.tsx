@@ -167,6 +167,35 @@ const CLASSIFICATIONS: ClassificationEntry[] = [
   { name: 'LVDS', depth: 4, isGroup: false },
 ]
 
+/* ── Subtype Display-Namen (wie im Windchill UI) ─────────── */
+const TYPE_DISPLAY_NAMES: Record<string, string> = {
+  'PTC.ProdMgmt.BALMECHATRONICPART': 'Component',
+  'PTC.ProdMgmt.BALAUXPART':         'Auxiliary Material',
+  'PTC.ProdMgmt.BALENCDOCPART':      'Enclosed Document Part',
+  'PTC.ProdMgmt.BALEQUIPMENTPART':   'Equipment',
+  'PTC.ProdMgmt.BALPACKAGEPART':     'Package',
+  'PTC.ProdMgmt.BALPRODUCTPART':     'Product',
+  'PTC.ProdMgmt.BALCOLLECTIONPART':  'Collection',
+  'PTC.ProdMgmt.BALRAWMATERIAL':     'Raw Material',
+}
+
+/* ── Subtype → Default-Classification Mapping ────────────── */
+// Jeder Balluff-Subtype hat eine passende Default-TBD-Classification.
+// Wenn der User den Subtype wechselt, wird die Classification
+// automatisch angepasst (wie im Windchill UI).
+const TYPE_CLASSIFICATION_MAP: Record<string, string> = {
+  'PTC.ProdMgmt.BALMECHATRONICPART': 'WTPartComponentTBD',
+  'PTC.ProdMgmt.BALAUXPART':         'WTPartAuxiliaryTBD',
+  'PTC.ProdMgmt.BALENCDOCPART':      'WTPartEncDocTBD',
+  'PTC.ProdMgmt.BALEQUIPMENTPART':   'WTPartEquipmentTBD',
+  'PTC.ProdMgmt.BALPACKAGEPART':     'WTPartPackingTBD',
+  'PTC.ProdMgmt.BALRAWMATERIAL':     'WTPartAuxiliaryTBD',
+  'PTC.ProdMgmt.BALPRODUCTPART':     '',
+  'PTC.ProdMgmt.BALCOLLECTIONPART':  '',
+}
+
+const DEFAULT_TYPE = 'PTC.ProdMgmt.BALMECHATRONICPART'
+
 /* ── Form State ───────────────────────────────────────────── */
 
 interface FormState {
@@ -186,7 +215,7 @@ interface FormState {
 }
 
 const INITIAL: FormState = {
-  TypeId: '',
+  TypeId: DEFAULT_TYPE,
   Number: '',
   Name: '',
   Description: '',
@@ -197,7 +226,7 @@ const INITIAL: FormState = {
   GatheringPart: 'no',
   ConfigurableModule: 'no',
   ProductFamily: 'PIU',
-  Classification: '',
+  Classification: TYPE_CLASSIFICATION_MAP[DEFAULT_TYPE] || '',
   ContainerBinding: '',
 }
 
@@ -233,7 +262,15 @@ export default function CreatePartPage() {
       .then((resp) => {
         setSubtypes(resp.subtypes)
         setSubtypesLoaded(true)
-        if (resp.subtypes.length > 0) {
+        // Default: BALMECHATRONICPART (= Component) wie im Windchill UI
+        const hasMecha = resp.subtypes.some((s) => s.odataType === DEFAULT_TYPE)
+        if (hasMecha) {
+          setForm((prev) => prev.TypeId === DEFAULT_TYPE ? prev : {
+            ...prev,
+            TypeId: DEFAULT_TYPE,
+            Classification: TYPE_CLASSIFICATION_MAP[DEFAULT_TYPE] || prev.Classification,
+          })
+        } else if (resp.subtypes.length > 0) {
           setForm((prev) => prev.TypeId ? prev : { ...prev, TypeId: resp.subtypes[0].odataType })
         }
       })
@@ -249,7 +286,17 @@ export default function CreatePartPage() {
 
   const set = useCallback(
     (key: keyof FormState, val: string) =>
-      setForm((prev) => ({ ...prev, [key]: val })),
+      setForm((prev) => {
+        const next = { ...prev, [key]: val }
+        // Wenn der Subtype gewechselt wird, Classification automatisch anpassen
+        if (key === 'TypeId') {
+          const defaultClf = TYPE_CLASSIFICATION_MAP[val] || ''
+          if (defaultClf) {
+            next.Classification = defaultClf
+          }
+        }
+        return next
+      }),
     [],
   )
 
@@ -279,7 +326,14 @@ export default function CreatePartPage() {
           navigate(`/detail/part/${encodeURIComponent(resp.number)}`)
         }, 1200)
       } catch (err) {
-        setError(err instanceof Error ? err.message : String(err))
+        const msg = err instanceof Error ? err.message : String(err)
+        if (msg.includes('403') || msg.toLowerCase().includes('secured action') || msg.toLowerCase().includes('authorization')) {
+          const typeName = TYPE_DISPLAY_NAMES[form.TypeId] || form.TypeId
+          const containerName = containers.find((c) => c.odataBinding === form.ContainerBinding)?.name || form.ContainerBinding
+          setError(`Keine Berechtigung: Der Typ "${typeName}" darf im Container "${containerName}" nicht erstellt werden. Bitte einen anderen Typ oder Container wählen.`)
+        } else {
+          setError(msg)
+        }
       } finally {
         setBusy(false)
       }
@@ -336,7 +390,9 @@ export default function CreatePartPage() {
                 className="input"
               >
                 {subtypes.map((st) => (
-                  <option key={st.odataType} value={st.odataType}>{st.name}</option>
+                  <option key={st.odataType} value={st.odataType}>
+                    {TYPE_DISPLAY_NAMES[st.odataType] || st.name}
+                  </option>
                 ))}
               </select>
             </Field>
@@ -456,14 +512,14 @@ export default function CreatePartPage() {
             />
           </Field>
 
-          {/* Classification */}
-          <Field label="Classification" required>
-            <ClassificationPicker
-              nodes={clfNodes}
-              loaded={clfNodesLoaded}
-              value={form.Classification}
-              onChange={(v) => set('Classification', v)}
-            />
+          {/* Classification — automatisch vom Type bestimmt */}
+          <Field label="Classification">
+            <div className="input bg-slate-50 text-slate-600 cursor-default flex items-center justify-between">
+              <span>{form.Classification
+                ? (clfNodes.find((n) => n.internalName === form.Classification)?.displayName || form.Classification)
+                : '—'}</span>
+              <span className="text-xs text-slate-400">automatisch via Type</span>
+            </div>
           </Field>
         </Section>
 

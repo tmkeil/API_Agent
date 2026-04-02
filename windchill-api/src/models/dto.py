@@ -350,15 +350,61 @@ class SetStateRequest(BaseModel):
 
 
 class AddBomChildRequest(BaseModel):
-    """Request body for adding a child to a BOM."""
+    """Request body for adding a child to a BOM.
+
+    Offizielle WRS-Doku: POST Parts('<parent>')/Uses
+    mit Quantity, Unit, FindNumber, LineNumber, TraceCode, Occurrences.
+    """
     childPartNumber: str
     quantity: float = 1.0
     unit: str = "each"
+    findNumber: Optional[str] = None
+    lineNumber: Optional[int] = None
+    traceCode: Optional[str] = None
+    occurrences: Optional[list[str]] = None
 
 
 class RemoveBomChildRequest(BaseModel):
     """Request body for removing a child from a BOM."""
     usageLinkId: str
+
+
+class LinkDocumentRequest(BaseModel):
+    """Request body for linking a document to a part."""
+    documentNumber: str
+    linkType: str = "DescribedBy"   # 'DescribedBy' oder 'References'
+
+
+class UnlinkDocumentRequest(BaseModel):
+    """Request body for unlinking a document from a part."""
+    documentNumber: str
+    linkType: str = "DescribedBy"
+
+
+class AddDownstreamLinkRequest(BaseModel):
+    """Request body for adding a downstream/equivalence link (Design → Manufacturing)."""
+    manufacturingPartNumber: str
+
+
+class RemoveDownstreamLinkRequest(BaseModel):
+    """Request body for removing a downstream/equivalence link."""
+    manufacturingPartNumber: str
+
+
+class DownstreamPartInfo(BaseModel):
+    """Info about a downstream (manufacturing equivalent) part."""
+    number: str
+    name: str
+    organization: str
+    versionView: str
+
+
+class DownstreamPartsResponse(BaseModel):
+    """Response for downstream parts query."""
+    ok: bool = True
+    designPartNumber: str
+    downstreamParts: list[DownstreamPartInfo] = []
+    count: int = 0
 
 
 class WriteResponse(BaseModel):

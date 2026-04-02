@@ -142,16 +142,19 @@ def _build_part_body(attrs: dict[str, Any]) -> tuple[dict[str, Any], dict[str, A
     if context:
         create_body["Context@odata.bind"] = context
 
-    # --- IBAs / Soft Attributes ---
+    # --- IBAs / Soft Attributes (alle per PATCH nach Create) ---
     # OData-Feldnamen sind OHNE Unterstriche (z.B. BALCPORDERPREFIX statt BAL_CP_ORDER_PREFIX)
     product_family = attrs.get("ProductFamily", "")
     if product_family:
         patch_body["BALCPORDERPREFIX"] = product_family
 
-    # Classification: Windchill verlangt dieses Feld beim Create (Pflicht).
+    # Classification: Objekt mit ClfNodeInternalName (s. offizielle PTC Doku).
+    # Wird per PATCH gesetzt, da "Invalid JSON type" beim Create.
     classification = attrs.get("Classification", "")
     if classification:
-        create_body["BALCLASSIFICATIONBINDINGWTPART"] = classification
+        patch_body["BALCLASSIFICATIONBINDINGWTPART"] = {
+            "ClfNodeInternalName": classification,
+        }
 
     # Falls weitere OData-Properties direkt mitgegeben werden (Power-User),
     # uebernehmen in create_body, ohne die obigen zu ueberschreiben.

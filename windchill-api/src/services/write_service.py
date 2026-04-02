@@ -80,9 +80,12 @@ def _build_part_body(attrs: dict[str, Any]) -> tuple[dict[str, Any], dict[str, A
 
     # --- @odata.type (Soft Type / Subtype) ---
     # Windchill verlangt einen konkreten Subtype, Base WTPart ist nicht instantiierbar.
-    # Format: "PTC.ProdMgmt.BALMECHATRONICPART" (ohne #-Prefix)
+    # Format: "#PTC.ProdMgmt.BALMECHATRONICPART" (mit #-Prefix, OData Standard)
     odata_type = attrs.get("TypeId", "")
     if odata_type:
+        # OData JSON Payload erwartet '#'-Prefix fuer @odata.type
+        if not odata_type.startswith("#"):
+            odata_type = f"#{odata_type}"
         create_body["@odata.type"] = odata_type
 
     # --- Direkte String-Properties (Create) ---

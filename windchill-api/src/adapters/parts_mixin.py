@@ -195,33 +195,26 @@ class PartsMixin:
         laden wir Parts OHNE $select (voller Payload) und extrahieren
         die Classification-Daten aus den Responses.
 
+        Nur erste Seite laden (keine Paginierung) um die Ladezeit
+        auf ~2s statt ~22s zu begrenzen.
+
         Returns:
             Liste von Dicts mit InternalName + DisplayName.
         """
         url = f"{self.odata_base}/ProdMgmt/Parts"
         # Ohne $select — voller Payload, damit BALCLASSIFICATIONBINDINGWTPART enthalten ist
-        params = {"$top": "200"}
+        # Nur erste Seite: $top=50 reicht fuer Classification-Diversitaet
+        params = {"$top": "50"}
 
         try:
-            items = self._get_all_pages(url, params, return_none_on_error=True)
+            data = self._get_json(url, params=params)
+            items = data.get("value", []) if data else []
             if not items:
                 logger.warning("get_classification_nodes: Keine Parts geladen")
                 return []
         except Exception:
             logger.warning("get_classification_nodes request failed", exc_info=True)
             return []
-
-        # Logge die Keys des ersten Parts um zu sehen ob BALCLASSIFICATIONBINDINGWTPART dabei ist
-        if items:
-            sample_keys = [k for k in items[0].keys() if not k.startswith("@")]
-            logger.info("Part sample keys (non-odata): %s", sample_keys)
-            # Logge alle Keys die 'class' oder 'clf' enthalten (case-insensitive)
-            clf_keys = [k for k in items[0].keys() if 'class' in k.lower() or 'clf' in k.lower()]
-            logger.info("Part keys containing 'class/clf': %s", clf_keys)
-            # Logge den Wert von BALCLASSIFICATIONBINDINGWTPART falls vorhanden
-            sample_clf = items[0].get("BALCLASSIFICATIONBINDINGWTPART")
-            logger.info("Part[0] BALCLASSIFICATIONBINDINGWTPART = %s (type: %s)",
-                        sample_clf, type(sample_clf).__name__)
 
         # Distinct ClfNodeInternalName sammeln
         clf_set: set[str] = set()

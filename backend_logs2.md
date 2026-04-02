@@ -184,3 +184,10 @@ INFO:     127.0.0.1:59114 - "GET /api/classification-nodes HTTP/1.1" 200 OK
 2026-04-02 16:05:23,298 [INFO] src.services.parts_service: Classification nodes: 10
 2026-04-02 16:05:23,300 [INFO] api: GET /api/classification-nodes → 200 (11825.8 ms)
 INFO:     127.0.0.1:60703 - "GET /api/classification-nodes HTTP/1.1" 200 OK
+2026-04-02 16:10:58,187 [INFO] src.services.write_service: Create Part body: {'@odata.type': 'PTC.ProdMgmt.BALAUXPART', 'Name': 'abc2', 'Source': {'Value': 'notapplicable'}, 'DefaultUnit': {'Value': 'ea'}, 'AssemblyMode': {'Value': 'separable'}, 'GatheringPart': False, 'PhantomManufacturingPart': False, 'DefaultTraceCode': {'Value': '0'}, 'Context@odata.bind': "Containers('OR:wt.pdmlink.PDMLinkProduct:131530')", 'BALCLASSIFICATIONBINDINGWTPART': {'ClfNodeInternalName': 'WTPartAuxiliaryTBD'}}
+2026-04-02 16:10:58,187 [INFO] src.services.write_service: Post-create PATCH body: {'View': 'Design', 'BALCPORDERPREFIX': 'PIU'}
+2026-04-02 16:10:58,377 [INFO] httpx: HTTP Request: GET https://plm-dev.neuhausen.balluff.net/Windchill/servlet/odata/PTC/GetCSRFToken() "HTTP/1.1 200 200"
+2026-04-02 16:10:58,378 [INFO] src.adapters.base: CSRF-Token erhalten: CSRF_NONCE=EidwkbiNlHAS…
+2026-04-02 16:10:58,952 [INFO] httpx: HTTP Request: POST https://plm-dev.neuhausen.balluff.net/Windchill/servlet/odata/v6/ProdMgmt/Parts "HTTP/1.1 403 403"
+2026-04-02 16:10:58,953 [INFO] api: POST /api/write/create → 403 (768.6 ms)
+INFO:     127.0.0.1:58758 - "POST /api/write/create HTTP/1.1" 403 Forbidden

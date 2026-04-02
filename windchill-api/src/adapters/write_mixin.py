@@ -68,6 +68,13 @@ class WriteMixin:
         url = f"{odata_base}/{service}/{entity_set}"
 
         self._refresh_csrf()
+
+        # Debug: Request-Details loggen
+        logger.info("POST %s — Headers: %s", url,
+                    {k: (v[:20] + '…' if len(str(v)) > 20 else v)
+                     for k, v in self._http.headers.items()})
+        logger.info("POST body keys: %s", list(attributes.keys()))
+
         resp = self._post(url, json_body=attributes)
         if resp is None:
             raise WRSError(f"Erstellen von {entity_set} fehlgeschlagen", status_code=502)
@@ -77,6 +84,8 @@ class WriteMixin:
 
         # Windchill Fehler-Details extrahieren
         detail = _extract_error_detail(resp)
+        logger.warning("POST %s → %d — Full response: %s",
+                       url, resp.status_code, resp.text[:2000])
         raise WRSError(
             f"Erstellen fehlgeschlagen (HTTP {resp.status_code}): {detail}",
             status_code=resp.status_code,

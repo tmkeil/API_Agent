@@ -143,14 +143,15 @@ def _build_part_body(attrs: dict[str, Any]) -> tuple[dict[str, Any], dict[str, A
         create_body["Context@odata.bind"] = context
 
     # --- IBAs / Soft Attributes ---
+    # OData-Feldnamen sind OHNE Unterstriche (z.B. BALCPORDERPREFIX statt BAL_CP_ORDER_PREFIX)
     product_family = attrs.get("ProductFamily", "")
     if product_family:
-        patch_body["BAL_CP_ORDER_PREFIX"] = product_family
+        patch_body["BALCPORDERPREFIX"] = product_family
 
     # Classification: Windchill verlangt dieses Feld beim Create (Pflicht).
     classification = attrs.get("Classification", "")
     if classification:
-        create_body["BAL_CLASSIFICATION_BINDING_WTPART"] = classification
+        create_body["BALCLASSIFICATIONBINDINGWTPART"] = classification
 
     # Falls weitere OData-Properties direkt mitgegeben werden (Power-User),
     # uebernehmen in create_body, ohne die obigen zu ueberschreiben.

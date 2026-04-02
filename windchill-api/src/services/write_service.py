@@ -92,11 +92,11 @@ def _build_part_body(attrs: dict[str, Any]) -> tuple[dict[str, Any], dict[str, A
     if unit:
         create_body["DefaultUnit"] = {"Value": unit}
 
-    # View: "Design" | "Manufacturing"
-    # {"Value": "Design"} gibt HTTP 400, deshalb als String versuchen
+    # View: Wird beim Create nicht akzeptiert (HTTP 400 egal welches Format).
+    # Muss per PATCH nach Create gesetzt werden.
     view = attrs.get("View", "")
     if view:
-        create_body["View"] = view
+        patch_body["View"] = view
 
     # AssemblyMode: "separable" | "inseparable" | "component"
     assembly = attrs.get("AssemblyMode", "separable")
@@ -110,8 +110,11 @@ def _build_part_body(attrs: dict[str, Any]) -> tuple[dict[str, Any], dict[str, A
     phantom = attrs.get("PhantomManufacturingPart", "no").lower() in ("yes", "true")
     create_body["PhantomManufacturingPart"] = phantom
 
+    # ConfigurableModule: Wird beim Create nicht akzeptiert ("Invalid JSON type").
+    # Muss per PATCH nach Create gesetzt werden.
     configurable = attrs.get("ConfigurableModule", "no").lower() == "yes"
-    create_body["ConfigurableModule"] = configurable
+    if configurable:
+        patch_body["ConfigurableModule"] = True
 
     # EndItem: Pflichtfeld, Default false
     end_item = attrs.get("EndItem", "no").lower() in ("yes", "true")

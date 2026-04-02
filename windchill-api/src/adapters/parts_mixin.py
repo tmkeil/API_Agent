@@ -191,21 +191,16 @@ class PartsMixin:
     def get_classification_nodes(self: "WRSClientBase") -> list[dict]:
         """Verfuegbare Classifications aus bestehenden Parts ermitteln.
 
-        Die ClfStructure/ClfNodes-API liefert nur den Root-Knoten und
-        unterstuetzt weder $expand=Children noch Navigation auf Kinder.
-
-        Pragmatischer Ansatz: Laedt eine Stichprobe existierender Parts
-        mit ``$select=BALCLASSIFICATIONBINDINGWTPART`` und sammelt die
-        distinct Classification-Werte (ClfNodeInternalName).
+        $select=BALCLASSIFICATIONBINDINGWTPART gibt HTTP 400, daher
+        laden wir Parts OHNE $select (voller Payload) und extrahieren
+        die Classification-Daten aus den Responses.
 
         Returns:
             Liste von Dicts mit InternalName + DisplayName.
         """
         url = f"{self.odata_base}/ProdMgmt/Parts"
-        params = {
-            "$select": "Number,BALCLASSIFICATIONBINDINGWTPART",
-            "$top": "500",
-        }
+        # Ohne $select — voller Payload, damit BALCLASSIFICATIONBINDINGWTPART enthalten ist
+        params = {"$top": "200"}
 
         try:
             items = self._get_all_pages(url, params, return_none_on_error=True)
@@ -215,6 +210,18 @@ class PartsMixin:
         except Exception:
             logger.warning("get_classification_nodes request failed", exc_info=True)
             return []
+
+        # Logge die Keys des ersten Parts um zu sehen ob BALCLASSIFICATIONBINDINGWTPART dabei ist
+        if items:
+            sample_keys = [k for k in items[0].keys() if not k.startswith("@")]
+            logger.info("Part sample keys (non-odata): %s", sample_keys)
+            # Logge alle Keys die 'class' oder 'clf' enthalten (case-insensitive)
+            clf_keys = [k for k in items[0].keys() if 'class' in k.lower() or 'clf' in k.lower()]
+            logger.info("Part keys containing 'class/clf': %s", clf_keys)
+            # Logge den Wert von BALCLASSIFICATIONBINDINGWTPART falls vorhanden
+            sample_clf = items[0].get("BALCLASSIFICATIONBINDINGWTPART")
+            logger.info("Part[0] BALCLASSIFICATIONBINDINGWTPART = %s (type: %s)",
+                        sample_clf, type(sample_clf).__name__)
 
         # Distinct ClfNodeInternalName sammeln
         clf_set: set[str] = set()

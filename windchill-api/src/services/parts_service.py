@@ -505,6 +505,33 @@ def get_part_subtypes(client: WRSClient) -> "PartSubtypeListResponse":
     return PartSubtypeListResponse(subtypes=subtypes)
 
 
+# ── Classification Nodes ─────────────────────────────────────
+
+
+def get_classification_nodes(client: WRSClient) -> "ClassificationNodeListResponse":
+    """Classification-Knoten aus Windchill ClfStructure laden."""
+    from src.models.dto import ClassificationNode, ClassificationNodeListResponse
+
+    raw_items = client.get_classification_nodes()
+    nodes = []
+    for raw in raw_items:
+        internal = (raw.get("InternalName") or raw.get("ClfNodeInternalName")
+                    or raw.get("Name") or "")
+        display = (raw.get("DisplayName") or raw.get("ClfNodeDisplayName")
+                   or raw.get("Description") or internal)
+        parent = (raw.get("ParentInternalName") or raw.get("ParentName") or "")
+        # Leaf-Erkennung: kein HasChildren-Flag bekannt, wird im Frontend geloest
+        is_leaf = not raw.get("HasChildren", True)
+        nodes.append(ClassificationNode(
+            internalName=str(internal),
+            displayName=str(display),
+            parentInternalName=str(parent),
+            isLeaf=is_leaf,
+        ))
+
+    return ClassificationNodeListResponse(nodes=nodes)
+
+
 # ── Containers ───────────────────────────────────────────────
 
 

@@ -16,6 +16,7 @@ import type {
   PartDetailResponse,
   PartSearchResult,
   PartSubtypeListResponse,
+  ClassificationNodeListResponse,
   ReferencingPartsResponse,
   SetStateRequest,
   SystemInfo,
@@ -204,6 +205,11 @@ export async function fetchContainers(): Promise<ContainerListResponse> {
 // Part Subtypes (Soft Types — for @odata.type)
 export async function fetchPartSubtypes(): Promise<PartSubtypeListResponse> {
   return request<PartSubtypeListResponse>(`${BASE}/part-subtypes`)
+}
+
+// Classification Nodes (from ClfStructure)
+export async function fetchClassificationNodes(): Promise<ClassificationNodeListResponse> {
+  return request<ClassificationNodeListResponse>(`${BASE}/classification-nodes`)
 }
 
 // Occurrences (Use Case: "Wo kommt Code XABC vor?")

@@ -19,6 +19,7 @@ from src.core.session import log_session_event
 from src.models.dto import (
     BomNodeResponse,
     BomViewConfig,
+    ClassificationNodeListResponse,
     ContainerListResponse,
     DocumentListResponse,
     OccurrencesResponse,
@@ -197,3 +198,19 @@ def list_part_subtypes(
 ):
     client = get_client(request)
     return parts_service.get_part_subtypes(client)
+
+
+# ── Classification Nodes ─────────────────────────────────────
+
+
+@router.get(
+    "/classification-nodes",
+    response_model=ClassificationNodeListResponse,
+    summary="Classification-Knoten aus Windchill ClfStructure",
+)
+def list_classification_nodes(
+    request: Request,
+    _: None = Depends(require_auth),
+):
+    client = get_client(request)
+    return parts_service.get_classification_nodes(client)

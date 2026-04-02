@@ -444,3 +444,16 @@ class PartSubtype(BaseModel):
 class PartSubtypeListResponse(BaseModel):
     """Response fuer Part-Subtype-Listing."""
     subtypes: list[PartSubtype] = []
+
+
+class ClassificationNode(BaseModel):
+    """Ein Knoten im Windchill Classification-Baum."""
+    internalName: str = ""
+    displayName: str = ""
+    parentInternalName: str = ""
+    isLeaf: bool = False
+
+
+class ClassificationNodeListResponse(BaseModel):
+    """Response fuer Classification-Node-Listing."""
+    nodes: list[ClassificationNode] = []

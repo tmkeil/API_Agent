@@ -366,6 +366,19 @@ export interface PartSubtypeListResponse {
   subtypes: PartSubtype[]
 }
 
+// ── Classification Nodes ────────────────────────────────────
+
+export interface ClassificationNode {
+  internalName: string
+  displayName: string
+  parentInternalName: string
+  isLeaf: boolean
+}
+
+export interface ClassificationNodeListResponse {
+  nodes: ClassificationNode[]
+}
+
 // ── Advanced Search ─────────────────────────────────────────
 
 export interface AdvancedSearchRequest {

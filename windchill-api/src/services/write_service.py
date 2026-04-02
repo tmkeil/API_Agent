@@ -148,13 +148,12 @@ def _build_part_body(attrs: dict[str, Any]) -> tuple[dict[str, Any], dict[str, A
     if product_family:
         patch_body["BALCPORDERPREFIX"] = product_family
 
-    # Classification: Pflicht beim Create. Offizielles PTC-Format:
-    #   "Classification": {"ClfNodeInternalName": "CHIPSET"}
-    # Feldname beim Schreiben ist "Classification" (PTC Standard),
-    # beim Lesen kommt es als "BALCLASSIFICATIONBINDINGWTPART" zurueck.
+    # Classification: Pflicht beim Create.
+    # Balluff-spezifischer Feldname: BALCLASSIFICATIONBINDINGWTPART
+    # Format: Objekt mit ClfNodeInternalName (wie bei PTC Classification).
     classification = attrs.get("Classification", "")
     if classification:
-        create_body["Classification"] = {
+        create_body["BALCLASSIFICATIONBINDINGWTPART"] = {
             "ClfNodeInternalName": classification,
         }
 

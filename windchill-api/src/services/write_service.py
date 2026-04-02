@@ -142,17 +142,19 @@ def _build_part_body(attrs: dict[str, Any]) -> tuple[dict[str, Any], dict[str, A
     if context:
         create_body["Context@odata.bind"] = context
 
-    # --- IBAs / Soft Attributes (alle per PATCH nach Create) ---
+    # --- IBAs / Soft Attributes ---
     # OData-Feldnamen sind OHNE Unterstriche (z.B. BALCPORDERPREFIX statt BAL_CP_ORDER_PREFIX)
     product_family = attrs.get("ProductFamily", "")
     if product_family:
         patch_body["BALCPORDERPREFIX"] = product_family
 
-    # Classification: Objekt mit ClfNodeInternalName (s. offizielle PTC Doku).
-    # Wird per PATCH gesetzt, da "Invalid JSON type" beim Create.
+    # Classification: Pflicht beim Create. Offizielles PTC-Format:
+    #   "Classification": {"ClfNodeInternalName": "CHIPSET"}
+    # Feldname beim Schreiben ist "Classification" (PTC Standard),
+    # beim Lesen kommt es als "BALCLASSIFICATIONBINDINGWTPART" zurueck.
     classification = attrs.get("Classification", "")
     if classification:
-        patch_body["BALCLASSIFICATIONBINDINGWTPART"] = {
+        create_body["Classification"] = {
             "ClfNodeInternalName": classification,
         }
 

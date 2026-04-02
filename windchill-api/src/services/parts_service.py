@@ -506,18 +506,42 @@ def get_containers(client: WRSClient) -> "ContainerListResponse":
     # Debug: erstes Record loggen, damit wir die Feldnamen sehen
     if raw_items:
         logger.info("Container-Record Felder: %s", list(raw_items[0].keys()))
+        for i, r in enumerate(raw_items[:3]):
+            logger.info("Container[%d] komplett: %s", i, dict(r))
 
     containers = []
     for raw in raw_items:
-        # Versuche verschiedene Feldnamen — DataAdmin kann andere haben als ProdMgmt
         cid = raw.get("ID") or raw.get("id") or raw.get("ContainerID") or ""
         name = (raw.get("Name") or raw.get("name") or raw.get("DisplayName")
                 or raw.get("ContainerName") or "")
+
+        # ContainerType aus verschiedenen Quellen ermitteln
         ctype_raw = (raw.get("ContainerType") or raw.get("Type")
                      or raw.get("type") or "")
-        ctype = ctype_raw
         if isinstance(ctype_raw, dict):
             ctype = ctype_raw.get("Display") or ctype_raw.get("Value") or str(ctype_raw)
+        else:
+            ctype = str(ctype_raw)
+
+        # Fallback: Typ aus der OData-ID oder @odata.type ableiten
+        if not ctype:
+            odata_type = raw.get("@odata.type", "")
+            odata_id = str(cid)
+            if "PDMLinkProduct" in odata_id or "PDMLinkProduct" in odata_type:
+                ctype = "Product"
+            elif "Project2" in odata_id or "Project" in odata_type:
+                ctype = "Project"
+            elif "WTLibrary" in odata_id or "Library" in odata_type:
+                ctype = "Library"
+            elif "WTOrganization" in odata_id or "Organization" in odata_type:
+                ctype = "Organization"
+            else:
+                # Typ aus OData-ID extrahieren: "OR:wt.pdmlink.PDMLinkProduct:12345"
+                if ":" in odata_id:
+                    parts = odata_id.split(":")
+                    if len(parts) >= 3:
+                        java_class = parts[1]  # z.B. "wt.pdmlink.PDMLinkProduct"
+                        ctype = java_class.split(".")[-1]  # z.B. "PDMLinkProduct"
 
         binding = f"Containers('{cid}')" if cid else ""
         containers.append(ContainerItem(
@@ -526,6 +550,11 @@ def get_containers(client: WRSClient) -> "ContainerListResponse":
             containerType=str(ctype),
             odataBinding=binding,
         ))
+
+    # Sortierung: Products zuerst, dann alphabetisch nach Name
+    type_order = {"Product": 0, "PDMLinkProduct": 0, "Library": 1, "WTLibrary": 1,
+                  "Project": 2, "Project2": 2}
+    containers.sort(key=lambda c: (type_order.get(c.containerType, 9), c.name))
 
     ms = round((time.monotonic() - t0) * 1000, 1)
     return ContainerListResponse(

@@ -5,14 +5,6 @@ import type { ContainerItem } from '../api/types'
 
 /* ── Windchill-Systemkonstanten (aus Part-Erstellformular) ── */
 
-const VIEWS = [
-  { value: 'Design', label: 'Design' },
-  { value: 'Manufacturing', label: 'Manufacturing' },
-  { value: '0002', label: '0002' },
-  { value: 'CN01', label: 'CN01' },
-  { value: 'MX02', label: 'MX02' },
-]
-
 const SOURCES = [
   { value: 'notapplicable', label: 'Not Applicable' },
   { value: 'make', label: 'Make' },
@@ -176,7 +168,6 @@ interface FormState {
   Number: string
   Name: string
   Description: string
-  View: string
   Source: string
   DefaultUnit: string
   AssemblyMode: string
@@ -191,7 +182,6 @@ const INITIAL: FormState = {
   Number: '',
   Name: '',
   Description: '',
-  View: 'Design',
   Source: 'notapplicable',
   DefaultUnit: 'ea',
   AssemblyMode: 'separable',
@@ -210,6 +200,7 @@ export default function CreatePartPage() {
   const [success, setSuccess] = useState('')
   const [containers, setContainers] = useState<ContainerItem[]>([])
   const [containersLoaded, setContainersLoaded] = useState(false)
+  const [containerSearch, setContainerSearch] = useState('')
 
   useEffect(() => {
     fetchContainers()
@@ -222,6 +213,15 @@ export default function CreatePartPage() {
       })
       .catch(() => { setContainersLoaded(true) })
   }, [])
+
+  // Container-Liste filtern (Suchfeld)
+  const filteredContainers = useMemo(() => {
+    if (!containerSearch.trim()) return containers
+    const q = containerSearch.toLowerCase()
+    return containers.filter((c) =>
+      c.name.toLowerCase().includes(q) || c.containerType.toLowerCase().includes(q)
+    )
+  }, [containers, containerSearch])
 
   const set = useCallback(
     (key: keyof FormState, val: string) =>
@@ -285,17 +285,28 @@ export default function CreatePartPage() {
           {/* Container / Product */}
           {containers.length > 0 ? (
             <Field label="Product / Container" required>
+              {containers.length > 20 && (
+                <input
+                  type="text"
+                  value={containerSearch}
+                  onChange={(e) => setContainerSearch(e.target.value)}
+                  placeholder="Container suchen…"
+                  className="input mb-1 text-xs"
+                />
+              )}
               <select
                 value={form.ContainerBinding}
                 onChange={(e) => set('ContainerBinding', e.target.value)}
                 className="input"
+                size={containers.length > 20 ? 6 : 1}
               >
-                {containers.map((c) => (
+                {filteredContainers.map((c) => (
                   <option key={c.containerId} value={c.odataBinding}>
                     {c.name} ({c.containerType})
                   </option>
                 ))}
               </select>
+              <span className="text-xs text-slate-400">{filteredContainers.length} von {containers.length} Containern</span>
             </Field>
           ) : containersLoaded ? (
             <div className="bg-amber-50 border border-amber-200 text-amber-700 text-sm rounded p-3">
@@ -360,17 +371,11 @@ export default function CreatePartPage() {
             </select>
           </Field>
 
-          {/* View */}
-          <Field label="View" required>
-            <select
-              value={form.View}
-              onChange={(e) => set('View', e.target.value)}
-              className="input"
-            >
-              {VIEWS.map((v) => (
-                <option key={v.value} value={v.value}>{v.label}</option>
-              ))}
-            </select>
+          {/* View — read-only in WRS REST API, wird durch Container/Kontext bestimmt */}
+          <Field label="View">
+            <div className="text-xs text-slate-500 bg-slate-50 border border-slate-200 rounded p-2">
+              Wird automatisch durch den gewählten Container bestimmt (Design / Manufacturing).
+            </div>
           </Field>
 
           {/* Assembly Mode */}

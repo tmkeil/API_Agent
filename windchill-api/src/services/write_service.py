@@ -77,10 +77,10 @@ def _build_part_body(attrs: dict[str, Any]) -> dict[str, Any]:
     if unit:
         body["DefaultUnit"] = {"Value": unit}
 
-    # View: "Design" | "Manufacturing" | "0002" | "CN01" | "MX02"
-    view = attrs.get("View", "")
-    if view:
-        body["View"] = {"Value": view}
+    # View: NICHT bei Part-Erstellung senden — laut offizieller PTC Doku ist View
+    # kein beschreibbares Feld beim POST /ProdMgmt/Parts.
+    # View wird vom Container / Windchill-Kontext bestimmt.
+    # (siehe: WCCG_RESTAccessExamplesCreatePart.html)
 
     # AssemblyMode: "separable" | "inseparable" | "component"
     assembly = attrs.get("AssemblyMode", "separable")
@@ -120,7 +120,7 @@ def _build_part_body(attrs: dict[str, Any]) -> dict[str, Any]:
     _handled = {
         "Source", "DefaultUnit", "View", "Number", "Name", "Description",
         "AssemblyMode", "GatheringPart", "ConfigurableModule",
-        "ProductFamily", "Classification",
+        "PhantomManufacturingPart", "ProductFamily", "Classification",
     }
     for key, val in attrs.items():
         if key not in body and key not in _handled:

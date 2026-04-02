@@ -77,10 +77,13 @@ def _build_part_body(attrs: dict[str, Any]) -> dict[str, Any]:
     if unit:
         body["DefaultUnit"] = {"Value": unit}
 
-    # View: NICHT bei Part-Erstellung senden — laut offizieller PTC Doku ist View
-    # kein beschreibbares Feld beim POST /ProdMgmt/Parts.
-    # View wird vom Container / Windchill-Kontext bestimmt.
-    # (siehe: WCCG_RESTAccessExamplesCreatePart.html)
+    # View: "Design" | "Manufacturing"
+    # Hinweis: {"Value": "Design"} gibt HTTP 400 "Invalid JSON type for property 'View'".
+    # Deshalb als einfachen String senden. Falls das auch scheitert, muss View
+    # über einen anderen Mechanismus gesetzt werden (z.B. Container-Kontext).
+    view = attrs.get("View", "")
+    if view:
+        body["View"] = view
 
     # AssemblyMode: "separable" | "inseparable" | "component"
     assembly = attrs.get("AssemblyMode", "separable")

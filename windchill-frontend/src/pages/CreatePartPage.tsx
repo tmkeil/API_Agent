@@ -5,6 +5,11 @@ import type { ContainerItem } from '../api/types'
 
 /* ── Windchill-Systemkonstanten (aus Part-Erstellformular) ── */
 
+const VIEWS = [
+  { value: 'Design', label: 'Design' },
+  { value: 'Manufacturing', label: 'Manufacturing' },
+]
+
 const SOURCES = [
   { value: 'notapplicable', label: 'Not Applicable' },
   { value: 'make', label: 'Make' },
@@ -168,6 +173,7 @@ interface FormState {
   Number: string
   Name: string
   Description: string
+  View: string
   Source: string
   DefaultUnit: string
   AssemblyMode: string
@@ -182,6 +188,7 @@ const INITIAL: FormState = {
   Number: '',
   Name: '',
   Description: '',
+  View: 'Design',
   Source: 'notapplicable',
   DefaultUnit: 'ea',
   AssemblyMode: 'separable',
@@ -298,7 +305,6 @@ export default function CreatePartPage() {
                 value={form.ContainerBinding}
                 onChange={(e) => set('ContainerBinding', e.target.value)}
                 className="input"
-                size={containers.length > 20 ? 6 : 1}
               >
                 {filteredContainers.map((c) => (
                   <option key={c.containerId} value={c.odataBinding}>
@@ -306,7 +312,9 @@ export default function CreatePartPage() {
                   </option>
                 ))}
               </select>
-              <span className="text-xs text-slate-400">{filteredContainers.length} von {containers.length} Containern</span>
+              {containers.length > 20 && (
+                <span className="text-xs text-slate-400">{filteredContainers.length} von {containers.length}</span>
+              )}
             </Field>
           ) : containersLoaded ? (
             <div className="bg-amber-50 border border-amber-200 text-amber-700 text-sm rounded p-3">
@@ -371,11 +379,17 @@ export default function CreatePartPage() {
             </select>
           </Field>
 
-          {/* View — read-only in WRS REST API, wird durch Container/Kontext bestimmt */}
+          {/* View */}
           <Field label="View">
-            <div className="text-xs text-slate-500 bg-slate-50 border border-slate-200 rounded p-2">
-              Wird automatisch durch den gewählten Container bestimmt (Design / Manufacturing).
-            </div>
+            <select
+              value={form.View}
+              onChange={(e) => set('View', e.target.value)}
+              className="input"
+            >
+              {VIEWS.map((v) => (
+                <option key={v.value} value={v.value}>{v.label}</option>
+              ))}
+            </select>
           </Field>
 
           {/* Assembly Mode */}

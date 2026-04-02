@@ -191,41 +191,110 @@ class PartsMixin:
     def get_classification_nodes(self: "WRSClientBase") -> list[dict]:
         """Classification-Knoten aus ClfStructure/ClfNodes laden.
 
+        Die ClfStructure-API ist hierarchisch: der Wurzelaufruf liefert
+        nur Root-Knoten. Kinder muessen ueber ``$expand=Children``
+        oder rekursive Navigation geladen werden.
+
         Versucht mehrere URL-Varianten (versioniert + unversioniert),
         da ClfStructure bei manchen Windchill-Konfigurationen nur
         ohne OData-Version erreichbar ist.
 
         Returns:
-            Liste von ClfNode-Dicts (OData raw).
+            Flache Liste aller ClfNode-Dicts (OData raw).
         """
-        # Verschiedene URL-Varianten versuchen
-        urls = [
-            f"{self.odata_base}/ClfStructure/ClfNodes",
+        base_urls = [
             f"{self.base_url}/servlet/odata/ClfStructure/ClfNodes",
+            f"{self.odata_base}/ClfStructure/ClfNodes",
             f"{self.base_url}/servlet/odata/v4/ClfStructure/ClfNodes",
         ]
 
-        for url in urls:
-            logger.info("Trying ClfNodes at: %s", url)
+        root_items: list[dict] = []
+        working_base: str = ""
+
+        # ── Schritt 1: Root-Knoten laden (mit $expand=Children versuch) ──
+        for base in base_urls:
+            logger.info("Trying ClfNodes at: %s", base)
             try:
-                resp = self._raw_get(url, timeout=15)
-                logger.info("ClfNodes %s → HTTP %d", url, resp.status_code)
+                # Versuch mit $expand=Children($levels=max) — liefert ggf. den ganzen Baum
+                resp = self._raw_get(base, params={"$expand": "Children($levels=max)"}, timeout=30)
+                logger.info("ClfNodes %s ($expand) → HTTP %d", base, resp.status_code)
                 if resp.status_code == 200:
                     data = resp.json()
-                    items = data.get("value", [])
-                    logger.info("ClfNodes loaded %d items from %s", len(items), url)
-                    if items:
-                        logger.info("ClfNode sample keys: %s", list(items[0].keys()))
-                        for i, node in enumerate(items[:3]):
-                            logger.info("ClfNode[%d]: %s", i, {k: v for k, v in node.items()
-                                        if k not in ("@odata.type", "@odata.id", "@odata.editLink")})
-                    return items
+                    root_items = data.get("value", [])
+                    working_base = base
+                    break
+
+                # Fallback: ohne $expand
+                resp = self._raw_get(base, timeout=15)
+                logger.info("ClfNodes %s (plain) → HTTP %d", base, resp.status_code)
+                if resp.status_code == 200:
+                    data = resp.json()
+                    root_items = data.get("value", [])
+                    working_base = base
+                    break
             except Exception:
-                logger.info("ClfNodes failed at %s", url, exc_info=True)
+                logger.info("ClfNodes failed at %s", base, exc_info=True)
                 continue
 
-        logger.warning("ClfStructure/ClfNodes: Keine der URLs war erfolgreich")
-        return []
+        if not root_items:
+            logger.warning("ClfStructure/ClfNodes: Keine der URLs war erfolgreich")
+            return []
+
+        logger.info("ClfNodes root: %d items from %s", len(root_items), working_base)
+
+        # ── Schritt 2: Baum flach machen ──
+        all_nodes: list[dict] = []
+        self._flatten_clf_tree(all_nodes, root_items, working_base)
+        logger.info("ClfNodes total (flat): %d Knoten", len(all_nodes))
+        if all_nodes:
+            logger.info("ClfNode sample keys: %s", list(all_nodes[0].keys()))
+            for i, node in enumerate(all_nodes[:5]):
+                logger.info("ClfNode[%d]: %s", i, {k: v for k, v in node.items()
+                            if k not in ("@odata.type", "@odata.id", "@odata.editLink",
+                                         "Children", "ClfNodeAttributes")})
+        return all_nodes
+
+    def _flatten_clf_tree(
+        self: "WRSClientBase",
+        result: list[dict],
+        nodes: list[dict],
+        working_base: str,
+        depth: int = 0,
+    ) -> None:
+        """Rekursiv ClfNode-Baum flach machen.
+
+        Wenn ``Children`` schon inline sind ($expand hat funktioniert),
+        werden sie direkt verarbeitet. Sonst werden Children pro Knoten
+        via Navigation-Property nachgeladen.
+        """
+        if depth > 20:  # Schutz gegen Endlosrekursion
+            return
+        for node in nodes:
+            result.append(node)
+            children = node.get("Children")
+
+            if isinstance(children, list) and children:
+                # Children waren inline ($expand hat funktioniert)
+                self._flatten_clf_tree(result, children, working_base, depth + 1)
+            elif children is None or (isinstance(children, list) and not children):
+                # Kein $expand oder Blattknoten — versuche Navigation nachladen
+                internal = node.get("InternalName") or node.get("ID") or ""
+                if not internal:
+                    continue
+                # Nur nachladen wenn kein Blattknoten
+                if node.get("Instantiable") is True and not node.get("Children"):
+                    continue  # Blattknoten ohne Kinder — ueberspringen
+
+                child_url = f"{working_base}('{internal}')/Children"
+                try:
+                    resp = self._raw_get(child_url, timeout=15)
+                    if resp.status_code == 200:
+                        child_data = resp.json().get("value", [])
+                        if child_data:
+                            logger.debug("ClfNode '%s' → %d children", internal, len(child_data))
+                            self._flatten_clf_tree(result, child_data, working_base, depth + 1)
+                except Exception:
+                    logger.debug("ClfNode children load failed for '%s'", internal, exc_info=True)
 
     # ── Container-Liste ──────────────────────────────────────
 
@@ -236,20 +305,35 @@ class PartsMixin:
         nicht der ProdMgmt-Domain. Ermittelt via:
         ``GET /servlet/odata/v6/DataAdmin/Containers``
 
+        Versucht verschiedene Strategien um nur Product-Container
+        zu laden und das Paginieren von 1000+ Containern zu vermeiden:
+          1. OData Type-Cast: /Containers/PTC.DataAdmin.PDMLinkProduct
+          2. $filter auf @odata.type
+          3. Ungefiltert mit $select um Payload zu reduzieren
+
         Returns:
-            Liste von Container-Dicts mit ID, Name, ContainerType etc.
+            Liste von Container-Dicts mit ID, Name, @odata.type etc.
         """
         url = f"{self.odata_base}/DataAdmin/Containers"
 
-        # Versuche zuerst mit Server-seitigem Filter …
+        # Strategie 1: OData Type-Cast (nur Product-Container)
+        type_cast_url = f"{url}/PTC.DataAdmin.PDMLinkProduct"
+        items = self._get_all_pages(type_cast_url, {}, return_none_on_error=True)
+        if items:
+            logger.info("Container type-cast lieferte %d Product-Container", len(items))
+            return items
+
+        # Strategie 2: $filter auf ContainerType
         items = self._get_all_pages(
             url, {"$filter": "ContainerType eq 'Product'"}, return_none_on_error=True
         )
+        if items:
+            logger.info("Container $filter lieferte %d Container", len(items))
+            return items
 
-        # Fallback: kein Filter (manche Windchill-Versionen unterstützen $filter nicht)
-        if items is None:
-            logger.info("Container $filter fehlgeschlagen – lade alle Container ungefiltert")
-            items = self._get_all_pages(url)
+        # Strategie 3: Ungefiltert aber mit $select um Payload zu reduzieren
+        logger.info("Container-Filter fehlgeschlagen – lade alle mit $select")
+        items = self._get_all_pages(url, {"$select": "ID,Name"})
 
         if items is None:
             return []

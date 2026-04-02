@@ -57,6 +57,116 @@ const PRODUCT_FAMILIES = [
 
 /* ── Classification Tree (Windchill Part Classification) ─── */
 
+interface ClassificationEntry {
+  name: string
+  depth: number
+  isGroup: boolean
+}
+
+const CLASSIFICATIONS: ClassificationEntry[] = [
+  { name: 'Component', depth: 0, isGroup: true },
+  { name: 'Label', depth: 1, isGroup: false },
+  { name: 'TBD', depth: 1, isGroup: false },
+  { name: 'Accessory', depth: 1, isGroup: true },
+  { name: 'Nut Kit', depth: 2, isGroup: false },
+  { name: 'Auxiliary and operating materials', depth: 1, isGroup: true },
+  { name: 'Adhesive', depth: 2, isGroup: false },
+  { name: 'Adhesive strip', depth: 2, isGroup: false },
+  { name: 'Potting Material', depth: 2, isGroup: false },
+  { name: 'Tin Solder', depth: 2, isGroup: false },
+  { name: 'ECAD Electrical Component', depth: 1, isGroup: true },
+  { name: 'ECAD Undefined', depth: 2, isGroup: false },
+  { name: 'Pseudo Components', depth: 2, isGroup: false },
+  { name: 'Circuit Protection', depth: 2, isGroup: true },
+  { name: 'Fuses', depth: 3, isGroup: false },
+  { name: 'Inrush Current Limiters', depth: 3, isGroup: false },
+  { name: 'Power Controllers', depth: 3, isGroup: false },
+  { name: 'Resettable Fuses', depth: 3, isGroup: false },
+  { name: 'Reverse Polarity Protection', depth: 3, isGroup: false },
+  { name: 'TVS Diodes', depth: 3, isGroup: false },
+  { name: 'Varistors', depth: 3, isGroup: false },
+  { name: 'Connectors', depth: 2, isGroup: true },
+  { name: 'Audio_Video Connectors', depth: 3, isGroup: false },
+  { name: 'Card Edge Connectors', depth: 3, isGroup: false },
+  { name: 'Circular Connectors', depth: 3, isGroup: false },
+  { name: 'D-Sub', depth: 3, isGroup: false },
+  { name: 'FFC_FPC Connectors', depth: 3, isGroup: false },
+  { name: 'Modular_Ethernet Connectors', depth: 3, isGroup: false },
+  { name: 'Pin Headers', depth: 3, isGroup: false },
+  { name: 'Power Connectors', depth: 3, isGroup: false },
+  { name: 'RF_Coaxial Connectors', depth: 3, isGroup: false },
+  { name: 'Ribbon Connectors', depth: 3, isGroup: false },
+  { name: 'Terminal Blocks', depth: 3, isGroup: false },
+  { name: 'Terminals', depth: 3, isGroup: false },
+  { name: 'USB Connectors', depth: 3, isGroup: false },
+  { name: 'Discrete Semiconductors', depth: 2, isGroup: true },
+  { name: 'Diodes', depth: 3, isGroup: true },
+  { name: 'Current Limiting_Regulator', depth: 4, isGroup: false },
+  { name: 'General Diodes', depth: 4, isGroup: false },
+  { name: 'Zener', depth: 4, isGroup: false },
+  { name: 'Thyristors', depth: 3, isGroup: true },
+  { name: 'DIACs & SIDACs', depth: 4, isGroup: false },
+  { name: 'SCRs', depth: 4, isGroup: false },
+  { name: 'Transistors', depth: 3, isGroup: true },
+  { name: 'Bipolar', depth: 4, isGroup: false },
+  { name: 'IGBTs', depth: 4, isGroup: false },
+  { name: 'JFETs', depth: 4, isGroup: false },
+  { name: 'MOSFETs', depth: 4, isGroup: false },
+  { name: 'ECAD Electromechanical', depth: 2, isGroup: true },
+  { name: 'Antennas', depth: 3, isGroup: false },
+  { name: 'Electromagnetic Interfaces', depth: 3, isGroup: false },
+  { name: 'Encoders', depth: 3, isGroup: false },
+  { name: 'Heatsink', depth: 3, isGroup: false },
+  { name: 'IC & Component Sockets', depth: 3, isGroup: false },
+  { name: 'Relays', depth: 3, isGroup: false },
+  { name: 'Shielding', depth: 3, isGroup: false },
+  { name: 'Spacers', depth: 3, isGroup: false },
+  { name: 'Speakers', depth: 3, isGroup: false },
+  { name: 'Wire Management', depth: 3, isGroup: false },
+  { name: 'Switches', depth: 3, isGroup: true },
+  { name: 'DIP', depth: 4, isGroup: false },
+  { name: 'Jumper', depth: 4, isGroup: false },
+  { name: 'Rocker', depth: 4, isGroup: false },
+  { name: 'Rotary', depth: 4, isGroup: false },
+  { name: 'Slide', depth: 4, isGroup: false },
+  { name: 'Snap Action', depth: 4, isGroup: false },
+  { name: 'Tactile', depth: 4, isGroup: false },
+  { name: 'Integrated Circuits (ICs)', depth: 2, isGroup: true },
+  { name: 'Analog Switches & Multiplexers', depth: 3, isGroup: false },
+  { name: 'ASICs', depth: 3, isGroup: false },
+  { name: 'Audio_Video ICs', depth: 3, isGroup: false },
+  { name: 'Clock & Timing', depth: 3, isGroup: false },
+  { name: 'Codemeter', depth: 3, isGroup: false },
+  { name: 'Solid State Relays', depth: 3, isGroup: false },
+  { name: 'Data Converter ICs', depth: 3, isGroup: true },
+  { name: 'Analog to Digital', depth: 4, isGroup: false },
+  { name: 'Digital Potentiometers', depth: 4, isGroup: false },
+  { name: 'Digital to Analog', depth: 4, isGroup: false },
+  { name: 'Time to Digital', depth: 4, isGroup: false },
+  { name: 'Embedded Processors & Controllers', depth: 3, isGroup: true },
+  { name: 'CPLDs', depth: 4, isGroup: false },
+  { name: 'Digital Signal Controllers & Processors', depth: 4, isGroup: false },
+  { name: 'FPGAs', depth: 4, isGroup: false },
+  { name: 'Microcontrollers', depth: 4, isGroup: false },
+  { name: 'Microprocessors', depth: 4, isGroup: false },
+  { name: 'Programmable System On a Chip', depth: 4, isGroup: false },
+  { name: 'System On a Modul', depth: 4, isGroup: false },
+  { name: 'Interface ICs', depth: 3, isGroup: true },
+  { name: 'Anybus', depth: 4, isGroup: false },
+  { name: 'CAN Bus', depth: 4, isGroup: false },
+  { name: 'CC-Link', depth: 4, isGroup: false },
+  { name: 'CLIQ', depth: 4, isGroup: false },
+  { name: 'Current Limiters', depth: 4, isGroup: false },
+  { name: 'Digital Isolators', depth: 4, isGroup: false },
+  { name: 'Ethernet', depth: 4, isGroup: false },
+  { name: 'IEEE-1394', depth: 4, isGroup: false },
+  { name: 'Interbus', depth: 4, isGroup: false },
+  { name: 'IO-Expander', depth: 4, isGroup: false },
+  { name: 'IO-Link', depth: 4, isGroup: false },
+  { name: 'LIN Bus', depth: 4, isGroup: false },
+  { name: 'LVDS', depth: 4, isGroup: false },
+]
+
 /* ── Form State ───────────────────────────────────────────── */
 
 interface FormState {
@@ -444,6 +554,7 @@ function ClassificationPicker({ nodes, loaded, value, onChange }: {
   const wrapperRef = useRef<HTMLDivElement>(null)
   const searchRef = useRef<HTMLInputElement>(null)
 
+  // Close on outside click
   useEffect(() => {
     if (!open) return
     const handler = (e: MouseEvent) => {
@@ -453,22 +564,56 @@ function ClassificationPicker({ nodes, loaded, value, onChange }: {
     return () => document.removeEventListener('mousedown', handler)
   }, [open])
 
+  // Focus search when opened
   useEffect(() => {
     if (open) searchRef.current?.focus()
   }, [open])
 
-  const filtered = useMemo(() => {
-    if (!search.trim()) return nodes
-    const q = search.toLowerCase()
+  // Wenn API Ergebnisse liefert, nutze diese (flat list mit InternalName).
+  // Sonst Fallback auf hardcoded CLASSIFICATIONS (tree mit DisplayName).
+  const useApi = loaded && nodes.length > 0
+
+  const lowerSearch = search.toLowerCase()
+
+  // Hardcoded tree filter (mit Eltern-Kontext)
+  const filteredTree = useMemo(() => {
+    if (useApi) return []
+    if (!lowerSearch) return CLASSIFICATIONS
+
+    const matchingIndices = new Set<number>()
+    CLASSIFICATIONS.forEach((entry, i) => {
+      if (!entry.isGroup && entry.name.toLowerCase().includes(lowerSearch)) {
+        matchingIndices.add(i)
+        let currentDepth = entry.depth
+        for (let j = i - 1; j >= 0; j--) {
+          if (CLASSIFICATIONS[j].depth < currentDepth && CLASSIFICATIONS[j].isGroup) {
+            matchingIndices.add(j)
+            currentDepth = CLASSIFICATIONS[j].depth
+            if (currentDepth === 0) break
+          }
+        }
+      }
+    })
+
+    return CLASSIFICATIONS.filter((_, i) => matchingIndices.has(i))
+  }, [lowerSearch, useApi])
+
+  // API-basierter flat filter
+  const filteredApi = useMemo(() => {
+    if (!useApi) return []
+    if (!lowerSearch) return nodes
     return nodes.filter((n) =>
-      n.displayName.toLowerCase().includes(q) || n.internalName.toLowerCase().includes(q)
+      n.displayName.toLowerCase().includes(lowerSearch) || n.internalName.toLowerCase().includes(lowerSearch)
     )
-  }, [nodes, search])
+  }, [nodes, lowerSearch, useApi])
 
-  const selectedDisplay = nodes.find((n) => n.internalName === value)?.displayName || value
+  // Anzeigename fuer den ausgewaehlten Wert
+  const selectedDisplay = useApi
+    ? (nodes.find((n) => n.internalName === value)?.displayName || value)
+    : value
 
-  const handleSelect = (internalName: string) => {
-    onChange(internalName)
+  const handleSelect = (name: string) => {
+    onChange(name)
     setOpen(false)
     setSearch('')
   }
@@ -489,6 +634,7 @@ function ClassificationPicker({ nodes, loaded, value, onChange }: {
 
   return (
     <div ref={wrapperRef} className="relative">
+      {/* Trigger button */}
       <button
         type="button"
         onClick={() => setOpen(!open)}
@@ -511,8 +657,10 @@ function ClassificationPicker({ nodes, loaded, value, onChange }: {
         </span>
       </button>
 
+      {/* Dropdown panel */}
       {open && (
         <div className="absolute z-50 mt-1 w-full bg-white border border-slate-200 rounded shadow-lg">
+          {/* Search */}
           <div className="p-2 border-b border-slate-100">
             <input
               ref={searchRef}
@@ -522,34 +670,77 @@ function ClassificationPicker({ nodes, loaded, value, onChange }: {
               className="w-full text-sm px-2.5 py-1.5 border border-slate-200 rounded focus:outline-none focus:ring-1 focus:ring-indigo-400"
             />
           </div>
+
+          {/* Tree / flat list */}
           <div className="max-h-64 overflow-y-auto py-1">
-            {filtered.length === 0 ? (
-              <div className="px-3 py-2 text-sm text-slate-400">Keine Treffer</div>
+            {useApi ? (
+              /* ── API-basierte flat list (InternalName) ── */
+              filteredApi.length === 0 ? (
+                <div className="px-3 py-2 text-sm text-slate-400">Keine Treffer</div>
+              ) : (
+                filteredApi.map((node) => {
+                  const selected = value === node.internalName
+                  return (
+                    <button
+                      key={node.internalName}
+                      type="button"
+                      onClick={() => handleSelect(node.internalName)}
+                      className={`w-full text-left px-3 py-1.5 text-sm transition-colors ${
+                        selected
+                          ? 'bg-indigo-50 text-indigo-700 font-medium'
+                          : 'text-slate-700 hover:bg-slate-50'
+                      }`}
+                    >
+                      {node.displayName}
+                      {node.displayName !== node.internalName && (
+                        <span className="text-xs text-slate-400 ml-1">({node.internalName})</span>
+                      )}
+                    </button>
+                  )
+                })
+              )
             ) : (
-              filtered.map((node) => {
-                const selected = value === node.internalName
-                return (
-                  <button
-                    key={node.internalName}
-                    type="button"
-                    onClick={() => handleSelect(node.internalName)}
-                    className={`w-full text-left px-3 py-1.5 text-sm transition-colors ${
-                      selected
-                        ? 'bg-indigo-50 text-indigo-700 font-medium'
-                        : 'text-slate-700 hover:bg-slate-50'
-                    }`}
-                  >
-                    {node.displayName}
-                    {node.displayName !== node.internalName && (
-                      <span className="text-xs text-slate-400 ml-1">({node.internalName})</span>
-                    )}
-                  </button>
-                )
-              })
+              /* ── Hardcoded tree (DisplayName) ── */
+              filteredTree.length === 0 ? (
+                <div className="px-3 py-2 text-sm text-slate-400">Keine Treffer</div>
+              ) : (
+                filteredTree.map((entry) => {
+                  if (entry.isGroup) {
+                    return (
+                      <div
+                        key={`g-${entry.name}`}
+                        className="px-3 py-1 text-xs font-semibold text-slate-400 uppercase tracking-wide select-none"
+                        style={{ paddingLeft: `${12 + entry.depth * 16}px` }}
+                      >
+                        {entry.name}
+                      </div>
+                    )
+                  }
+                  const selected = value === entry.name
+                  return (
+                    <button
+                      key={entry.name}
+                      type="button"
+                      onClick={() => handleSelect(entry.name)}
+                      className={`w-full text-left px-3 py-1.5 text-sm transition-colors ${
+                        selected
+                          ? 'bg-indigo-50 text-indigo-700 font-medium'
+                          : 'text-slate-700 hover:bg-slate-50'
+                      }`}
+                      style={{ paddingLeft: `${12 + entry.depth * 16}px` }}
+                    >
+                      {entry.name}
+                    </button>
+                  )
+                })
+              )
             )}
           </div>
           <div className="px-3 py-1.5 border-t border-slate-100 text-xs text-slate-400">
-            {filtered.length} von {nodes.length}
+            {useApi
+              ? `${filteredApi.length} von ${nodes.length} (API)`
+              : `${filteredTree.filter((e) => !e.isGroup).length} von ${CLASSIFICATIONS.filter((e) => !e.isGroup).length} (Fallback)`
+            }
           </div>
         </div>
       )}

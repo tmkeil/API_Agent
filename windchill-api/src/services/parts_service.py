@@ -509,10 +509,9 @@ def get_part_subtypes(client: WRSClient) -> "PartSubtypeListResponse":
 
 
 def get_classification_nodes(client: WRSClient) -> "ClassificationNodeListResponse":
-    """Classification-Knoten aus Windchill ClfStructure laden.
+    """Classification-Knoten aus Windchill laden.
 
-    Nur ``Instantiable=true``-Knoten werden zurueckgegeben, da nur
-    diese als Classification an einem Part zugewiesen werden koennen.
+    Verwendet die aus bestehenden Parts ermittelten Classifications.
     """
     from src.models.dto import ClassificationNode, ClassificationNodeListResponse
 
@@ -521,35 +520,20 @@ def get_classification_nodes(client: WRSClient) -> "ClassificationNodeListRespon
 
     nodes = []
     for raw in raw_items:
-        # Nur zuweisbare (instantiable) Knoten zurueckgeben
-        if raw.get("Instantiable") is False:
-            continue
-
         internal = (raw.get("InternalName") or raw.get("ClfNodeInternalName")
                     or raw.get("Name") or "")
         display = (raw.get("DisplayName") or raw.get("ClfNodeDisplayName")
                    or raw.get("Description") or internal)
-
-        # Parent aus HierarchicalPath ableiten: "Balluff/Foo/Bar" → Parent="Foo"
-        hier_path = raw.get("HierarchicalPath") or ""
-        parts = [p for p in hier_path.split("/") if p]
-        parent = parts[-2] if len(parts) >= 2 else ""
-
-        # Anzeigename mit Pfad ergaenzen wenn vorhanden
-        if len(parts) > 1:
-            display_with_path = " › ".join(parts[1:])  # ohne Root "Balluff"
-        else:
-            display_with_path = display
-
-        is_leaf = raw.get("Instantiable", False) is True
+        if not internal:
+            continue
         nodes.append(ClassificationNode(
             internalName=str(internal),
-            displayName=str(display_with_path),
-            parentInternalName=str(parent),
-            isLeaf=is_leaf,
+            displayName=str(display),
+            parentInternalName="",
+            isLeaf=True,
         ))
 
-    logger.info("Classification nodes (instantiable): %d", len(nodes))
+    logger.info("Classification nodes: %d", len(nodes))
     return ClassificationNodeListResponse(nodes=nodes)
 
 

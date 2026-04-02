@@ -189,112 +189,57 @@ class PartsMixin:
     # ── Classification Nodes ─────────────────────────────────
 
     def get_classification_nodes(self: "WRSClientBase") -> list[dict]:
-        """Classification-Knoten aus ClfStructure/ClfNodes laden.
+        """Verfuegbare Classifications aus bestehenden Parts ermitteln.
 
-        Die ClfStructure-API ist hierarchisch: der Wurzelaufruf liefert
-        nur Root-Knoten. Kinder muessen ueber ``$expand=Children``
-        oder rekursive Navigation geladen werden.
+        Die ClfStructure/ClfNodes-API liefert nur den Root-Knoten und
+        unterstuetzt weder $expand=Children noch Navigation auf Kinder.
 
-        Versucht mehrere URL-Varianten (versioniert + unversioniert),
-        da ClfStructure bei manchen Windchill-Konfigurationen nur
-        ohne OData-Version erreichbar ist.
+        Pragmatischer Ansatz: Laedt eine Stichprobe existierender Parts
+        mit ``$select=BALCLASSIFICATIONBINDINGWTPART`` und sammelt die
+        distinct Classification-Werte (ClfNodeInternalName).
 
         Returns:
-            Flache Liste aller ClfNode-Dicts (OData raw).
+            Liste von Dicts mit InternalName + DisplayName.
         """
-        base_urls = [
-            f"{self.base_url}/servlet/odata/ClfStructure/ClfNodes",
-            f"{self.odata_base}/ClfStructure/ClfNodes",
-            f"{self.base_url}/servlet/odata/v4/ClfStructure/ClfNodes",
-        ]
+        url = f"{self.odata_base}/ProdMgmt/Parts"
+        params = {
+            "$select": "Number,BALCLASSIFICATIONBINDINGWTPART",
+            "$top": "500",
+        }
 
-        root_items: list[dict] = []
-        working_base: str = ""
-
-        # ── Schritt 1: Root-Knoten laden (mit $expand=Children versuch) ──
-        for base in base_urls:
-            logger.info("Trying ClfNodes at: %s", base)
-            try:
-                # Versuch mit $expand=Children($levels=max) — liefert ggf. den ganzen Baum
-                resp = self._raw_get(base, params={"$expand": "Children($levels=max)"}, timeout=30)
-                logger.info("ClfNodes %s ($expand) → HTTP %d", base, resp.status_code)
-                if resp.status_code == 200:
-                    data = resp.json()
-                    root_items = data.get("value", [])
-                    working_base = base
-                    break
-
-                # Fallback: ohne $expand
-                resp = self._raw_get(base, timeout=15)
-                logger.info("ClfNodes %s (plain) → HTTP %d", base, resp.status_code)
-                if resp.status_code == 200:
-                    data = resp.json()
-                    root_items = data.get("value", [])
-                    working_base = base
-                    break
-            except Exception:
-                logger.info("ClfNodes failed at %s", base, exc_info=True)
-                continue
-
-        if not root_items:
-            logger.warning("ClfStructure/ClfNodes: Keine der URLs war erfolgreich")
+        try:
+            items = self._get_all_pages(url, params, return_none_on_error=True)
+            if not items:
+                logger.warning("get_classification_nodes: Keine Parts geladen")
+                return []
+        except Exception:
+            logger.warning("get_classification_nodes request failed", exc_info=True)
             return []
 
-        logger.info("ClfNodes root: %d items from %s", len(root_items), working_base)
+        # Distinct ClfNodeInternalName sammeln
+        clf_set: set[str] = set()
+        for item in items:
+            clf = item.get("BALCLASSIFICATIONBINDINGWTPART")
+            if isinstance(clf, dict):
+                internal = clf.get("ClfNodeInternalName") or clf.get("InternalName") or ""
+                display = clf.get("ClfNodeDisplayName") or clf.get("DisplayName") or ""
+                if internal:
+                    clf_set.add(f"{internal}||{display}")
+            elif isinstance(clf, str) and clf:
+                clf_set.add(f"{clf}||{clf}")
 
-        # ── Schritt 2: Baum flach machen ──
-        all_nodes: list[dict] = []
-        self._flatten_clf_tree(all_nodes, root_items, working_base)
-        logger.info("ClfNodes total (flat): %d Knoten", len(all_nodes))
-        if all_nodes:
-            logger.info("ClfNode sample keys: %s", list(all_nodes[0].keys()))
-            for i, node in enumerate(all_nodes[:5]):
-                logger.info("ClfNode[%d]: %s", i, {k: v for k, v in node.items()
-                            if k not in ("@odata.type", "@odata.id", "@odata.editLink",
-                                         "Children", "ClfNodeAttributes")})
-        return all_nodes
+        nodes: list[dict] = []
+        for entry in sorted(clf_set):
+            internal, display = entry.split("||", 1)
+            nodes.append({
+                "InternalName": internal,
+                "DisplayName": display or internal,
+            })
 
-    def _flatten_clf_tree(
-        self: "WRSClientBase",
-        result: list[dict],
-        nodes: list[dict],
-        working_base: str,
-        depth: int = 0,
-    ) -> None:
-        """Rekursiv ClfNode-Baum flach machen.
-
-        Wenn ``Children`` schon inline sind ($expand hat funktioniert),
-        werden sie direkt verarbeitet. Sonst werden Children pro Knoten
-        via Navigation-Property nachgeladen.
-        """
-        if depth > 20:  # Schutz gegen Endlosrekursion
-            return
-        for node in nodes:
-            result.append(node)
-            children = node.get("Children")
-
-            if isinstance(children, list) and children:
-                # Children waren inline ($expand hat funktioniert)
-                self._flatten_clf_tree(result, children, working_base, depth + 1)
-            elif children is None or (isinstance(children, list) and not children):
-                # Kein $expand oder Blattknoten — versuche Navigation nachladen
-                internal = node.get("InternalName") or node.get("ID") or ""
-                if not internal:
-                    continue
-                # Nur nachladen wenn kein Blattknoten
-                if node.get("Instantiable") is True and not node.get("Children"):
-                    continue  # Blattknoten ohne Kinder — ueberspringen
-
-                child_url = f"{working_base}('{internal}')/Children"
-                try:
-                    resp = self._raw_get(child_url, timeout=15)
-                    if resp.status_code == 200:
-                        child_data = resp.json().get("value", [])
-                        if child_data:
-                            logger.debug("ClfNode '%s' → %d children", internal, len(child_data))
-                            self._flatten_clf_tree(result, child_data, working_base, depth + 1)
-                except Exception:
-                    logger.debug("ClfNode children load failed for '%s'", internal, exc_info=True)
+        logger.info("Found %d distinct classifications from %d parts: %s",
+                    len(nodes), len(items),
+                    [n["InternalName"] for n in nodes[:20]])
+        return nodes
 
     # ── Container-Liste ──────────────────────────────────────
 

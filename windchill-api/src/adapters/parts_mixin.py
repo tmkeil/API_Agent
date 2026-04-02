@@ -155,8 +155,17 @@ class PartsMixin:
             Liste von Container-Dicts mit ID, Name, ContainerType etc.
         """
         url = f"{self.odata_base}/DataAdmin/Containers"
-        params = {"$filter": "ContainerType eq 'Product'"}
-        items = self._get_all_pages(url, params)
+
+        # Versuche zuerst mit Server-seitigem Filter …
+        items = self._get_all_pages(
+            url, {"$filter": "ContainerType eq 'Product'"}, return_none_on_error=True
+        )
+
+        # Fallback: kein Filter (manche Windchill-Versionen unterstützen $filter nicht)
+        if items is None:
+            logger.info("Container $filter fehlgeschlagen – lade alle Container ungefiltert")
+            items = self._get_all_pages(url)
+
         if items is None:
             return []
         return items

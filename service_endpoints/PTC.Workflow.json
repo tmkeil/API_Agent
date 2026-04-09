@@ -1,0 +1,705 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "description": "PTC Workflow Domain",
+    "version": "5",
+    "title": "PTC.Workflow"
+  },
+  "host": "plm-dev.neuhausen.balluff.net:443",
+  "basePath": "/Windchill/servlet/odata/v5/Workflow",
+  "tags": [
+    {
+      "name": "Service Endpoints"
+    }
+  ],
+  "schemes": [
+    "https"
+  ],
+  "paths": {
+    "/GetWorkItemReassignUserList(WorkItems=@WorkItems)": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Gets list of Users which are in container team of passed workitem OIDs",
+        "description": "Gets list of Users which are in container team of passed workitem OIDs",
+        "operationId": "Function_GetWorkItemReassignUserList_With",
+        "parameters": [
+          {
+            "name": "@WorkItems",
+            "in": "query",
+            "description": "list of workitem IDs",
+            "required": true,
+            "type": "string",
+            "x-example": "[\"OR:wt.workflow.work.WorkItem:1234\",\"OR:wt.workflow.work.WorkItem:3456\"]"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/PTC.PrincipalMgmt.User"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/GetWorkItemReassignUserList(WorkItems=@WorkItems,RestrictReassignToRole=@RestrictReassignToRole)": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Gets list of Users which are in container team of passed workitem OIDs",
+        "description": "Gets list of Users which are in container team of passed workitem OIDs",
+        "operationId": "Function_GetWorkItemReassignUserList_With_@RestrictReassignToRole",
+        "parameters": [
+          {
+            "name": "@WorkItems",
+            "in": "query",
+            "description": "list of workitem IDs",
+            "required": true,
+            "type": "string",
+            "x-example": "[\"OR:wt.workflow.work.WorkItem:1234\",\"OR:wt.workflow.work.WorkItem:3456\"]"
+          },
+          {
+            "name": "@RestrictReassignToRole",
+            "in": "query",
+            "description": "check box value to restrict list of users to selected Role/ResourcePool",
+            "required": false,
+            "type": "string",
+            "x-example": "[\"OR:wt.workflow.work.WorkItem:1234\",\"OR:wt.workflow.work.WorkItem:3456\"]"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/PTC.PrincipalMgmt.User"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/ReassignWorkItems": {
+      "post": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Reassign the passed in list of workitems to passed in userName",
+        "description": "Reassign the passed in list of workitems to passed in userName",
+        "operationId": "Action_ReassignWorkItems",
+        "parameters": [
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$filter",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$top",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$skip",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$count",
+            "in": "query",
+            "required": false,
+            "type": "boolean",
+            "default": false
+          },
+          {
+            "name": "$orderby",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "CSRF_NONCE",
+            "in": "header",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/PTC.Workflow.ReassignWorkItems.Unbound.Body"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "array",
+                  "items": {
+                    "description": "If the reassignment action was successful, it will return all WorkItems with reassigned state updated.",
+                    "$ref": "#/definitions/PTC.Workflow.WorkItem"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/WorkItems": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get WorkItems",
+        "description": "Get WorkItems",
+        "operationId": "GetWorkItems",
+        "parameters": [
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$filter",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$top",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$skip",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$count",
+            "in": "query",
+            "required": false,
+            "type": "boolean",
+            "default": false
+          },
+          {
+            "name": "$orderby",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/PTC.Workflow.WorkItem"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/WorkItems('{WorkItemId}')": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get WorkItem for a given WorkItemId",
+        "description": "Get WorkItem for a given WorkItemId",
+        "operationId": "GetWorkItem",
+        "parameters": [
+          {
+            "name": "WorkItemId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/PTC.Workflow.WorkItem"
+            }
+          }
+        }
+      }
+    },
+    "/WorkItems('{WorkItemId}')/Activity": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get Activity",
+        "description": "Get Activity",
+        "operationId": "WorkItem.Activity.GetActivity",
+        "parameters": [
+          {
+            "name": "WorkItemId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/PTC.Workflow.Activity"
+            }
+          }
+        }
+      }
+    },
+    "/WorkItems('{WorkItemId}')/CompletedBy": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get User",
+        "description": "Get User",
+        "operationId": "WorkItem.CompletedBy.GetUser",
+        "parameters": [
+          {
+            "name": "WorkItemId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/PTC.PrincipalMgmt.User"
+            }
+          }
+        }
+      }
+    },
+    "/WorkItems('{WorkItemId}')/OriginalOwner": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get User",
+        "description": "Get User",
+        "operationId": "WorkItem.OriginalOwner.GetUser",
+        "parameters": [
+          {
+            "name": "WorkItemId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/PTC.PrincipalMgmt.User"
+            }
+          }
+        }
+      }
+    },
+    "/WorkItems('{WorkItemId}')/Owner": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get User",
+        "description": "Get User",
+        "operationId": "WorkItem.Owner.GetUser",
+        "parameters": [
+          {
+            "name": "WorkItemId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/PTC.PrincipalMgmt.User"
+            }
+          }
+        }
+      }
+    },
+    "/WorkItems('{WorkItemId}')/PTC.Workflow.CompleteWorkitem": {
+      "post": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Complete workitem.",
+        "description": "Complete workitem.",
+        "operationId": "PTC.Workflow.WorkItem.Action_CompleteWorkitem_With_WorkitemComment_VoteAction_AutomateFastTrack_Variables_SignatureToken_SubjectName_ActivityName",
+        "parameters": [
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "CSRF_NONCE",
+            "in": "header",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "SECURE_TOKEN",
+            "in": "header",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "WorkItemId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/PTC.Workflow.CompleteWorkitem.Body"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/PTC.Workflow.WorkItem"
+            }
+          }
+        }
+      }
+    },
+    "/WorkItems('{WorkItemId}')/PTC.Workflow.SaveWorkitem": {
+      "post": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Complete workitem.",
+        "description": "Complete workitem.",
+        "operationId": "PTC.Workflow.WorkItem.Action_SaveWorkitem_With_WorkitemComment_VoteAction_AutomateFastTrack_Variables",
+        "parameters": [
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "CSRF_NONCE",
+            "in": "header",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "WorkItemId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/PTC.Workflow.SaveWorkitem.Body"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/PTC.Workflow.WorkItem"
+            }
+          }
+        }
+      }
+    },
+    "/WorkItems('{WorkItemId}')/ProcessTemplate": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get WorkItemProcessTemplate",
+        "description": "Get WorkItemProcessTemplate",
+        "operationId": "WorkItem.ProcessTemplate.GetWorkItemProcessTemplate",
+        "parameters": [
+          {
+            "name": "WorkItemId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/PTC.Workflow.WorkItemProcessTemplate"
+            }
+          }
+        }
+      }
+    },
+    "/WorkItems('{WorkItemId}')/Subject": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get Subject",
+        "description": "Get Subject",
+        "operationId": "WorkItem.Subject.GetSubject",
+        "parameters": [
+          {
+            "name": "WorkItemId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/PTC.Workflow.Subject"
+            }
+          }
+        }
+      }
+    },
+    "/WorkItems/PTC.Workflow.ProjectWorkItem": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get WorkItems of type ProjectWorkItem",
+        "description": "Get WorkItems of type ProjectWorkItem",
+        "operationId": "GetProjectWorkItems",
+        "parameters": [
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$filter",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$top",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$skip",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$count",
+            "in": "query",
+            "required": false,
+            "type": "boolean",
+            "default": false
+          },
+          {
+            "name": "$orderby",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/PTC.Workflow.ProjectWorkItem"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

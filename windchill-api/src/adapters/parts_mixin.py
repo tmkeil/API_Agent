@@ -38,7 +38,7 @@ class PartsMixin:
         """
         from src.adapters.base import WRSError
 
-        url = f"{self.odata_base}/ProdMgmt/Parts"
+        url = f"{self._odata_url('ProdMgmt')}/Parts"
         safe = part_number.replace("'", "''")
 
         # Nur exakte Filter — kein contains/startswith, um Falsch-Treffer zu vermeiden
@@ -60,7 +60,7 @@ class PartsMixin:
 
     def get_part_by_id(self: "WRSClientBase", part_id: str) -> Optional[dict]:
         """Part nach interner OData-ID laden."""
-        url = f"{self.odata_base}/ProdMgmt/Parts('{part_id}')"
+        url = f"{self._odata_url('ProdMgmt')}/Parts('{part_id}')"
         try:
             return self._get_json(url)
         except Exception:
@@ -75,7 +75,7 @@ class PartsMixin:
           2. Nummer enthaelt  (breit)
           3. Name enthaelt    (breit)
         """
-        url = f"{self.odata_base}/ProdMgmt/Parts"
+        url = f"{self._odata_url('ProdMgmt')}/Parts"
         collected: dict[str, dict] = {}
         safe = query.replace("'", "''")
 
@@ -110,7 +110,7 @@ class PartsMixin:
         Fallback: Gesamten Part laden falls $select nicht unterstuetzt wird.
         """
         result = {name: "" for name in attr_names}
-        url = f"{self.odata_base}/ProdMgmt/Parts('{part_id}')"
+        url = f"{self._odata_url('ProdMgmt')}/Parts('{part_id}')"
 
         # Versuch 1: Gezieltes $select (schneller, weniger Daten)
         try:
@@ -155,7 +155,7 @@ class PartsMixin:
             Liste von Dicts: [{"name": "BALMECHATRONICPART",
                                "odataType": "PTC.ProdMgmt.BALMECHATRONICPART"}, ...]
         """
-        url = f"{self.odata_base}/ProdMgmt/Parts"
+        url = f"{self._odata_url('ProdMgmt')}/Parts"
         params = {"$select": "Number", "$top": "200"}
 
         try:
@@ -214,7 +214,7 @@ class PartsMixin:
         Returns:
             Liste von Dicts mit InternalName + DisplayName.
         """
-        url = f"{self.odata_base}/ProdMgmt/Parts"
+        url = f"{self._odata_url('ProdMgmt')}/Parts"
         params = {"$top": "50"}
 
         # Start mit bekannten Classifications
@@ -269,7 +269,7 @@ class PartsMixin:
         Returns:
             Liste von Container-Dicts mit ID, Name, @odata.type etc.
         """
-        url = f"{self.odata_base}/DataAdmin/Containers"
+        url = f"{self._odata_url('DataAdmin')}/Containers"
 
         # Strategie 1: OData Type-Cast (nur Product-Container)
         type_cast_url = f"{url}/PTC.DataAdmin.PDMLinkProduct"

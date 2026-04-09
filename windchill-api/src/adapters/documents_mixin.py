@@ -45,13 +45,13 @@ class DocumentsMixin:
                     all_docs.append(item)
 
         # Quelle 1: DescribedBy
-        url = f"{self.odata_base}/ProdMgmt/Parts('{part_id}')/DescribedBy"
+        url = f"{self._odata_url('ProdMgmt')}/Parts('{part_id}')/DescribedBy"
         _collect(self._get_all_pages(url, return_none_on_error=True))
 
         # Quelle 2: DocMgmt mit Balluff-spezifischem Filter
         if part_number and self._doc_service_available:
             safe = part_number.replace("'", "''")
-            url = f"{self.odata_base}/DocMgmt/Documents"
+            url = f"{self._odata_url('DocMgmt')}/Documents"
             result = self._get_all_pages(
                 url,
                 {"$filter": f"BALREFERENCEPART/any(s:s eq '{safe}')"},
@@ -65,7 +65,7 @@ class DocumentsMixin:
 
         # Quelle 3: Fallback — References
         if not all_docs:
-            url = f"{self.odata_base}/ProdMgmt/Parts('{part_id}')/References"
+            url = f"{self._odata_url('ProdMgmt')}/Parts('{part_id}')/References"
             _collect(self._get_all_pages(url, return_none_on_error=True))
 
         return all_docs
@@ -81,7 +81,7 @@ class DocumentsMixin:
         seen: set[str] = set()
 
         # Quelle 1: PartDocAssociations mit inline-Expand
-        url = f"{self.odata_base}/ProdMgmt/Parts('{part_id}')/PartDocAssociations"
+        url = f"{self._odata_url('ProdMgmt')}/Parts('{part_id}')/PartDocAssociations"
         result = self._get_all_pages(url, {"$expand": "RelatedCADDoc"}, return_none_on_error=True)
         if result:
             for assoc in result:
@@ -93,7 +93,7 @@ class DocumentsMixin:
 
         # Quelle 2: Fallback — Representations
         if not all_cads:
-            url = f"{self.odata_base}/ProdMgmt/Parts('{part_id}')/Representations"
+            url = f"{self._odata_url('ProdMgmt')}/Parts('{part_id}')/Representations"
             result = self._get_all_pages(url, return_none_on_error=True)
             if result:
                 for cad in result:
@@ -123,7 +123,7 @@ class DocumentsMixin:
         if exclude_ids is None:
             exclude_ids = set()
 
-        url = f"{self.odata_base}/ProdMgmt/Parts('{part_id}')/References"
+        url = f"{self._odata_url('ProdMgmt')}/Parts('{part_id}')/References"
         items = self._get_all_pages(url, return_none_on_error=True)
         if not items:
             return []
@@ -151,11 +151,8 @@ class DocumentsMixin:
           2. DescribedByParts Navigation (CAD-Dokumente)
           3. AssociatedParts Navigation
         """
-        # CADDocumentMgmt only exists in v4
-        if service == "CADDocumentMgmt":
-            odata_base = f"{self.base_url}/servlet/odata/v4"
-        else:
-            odata_base = self.odata_base
+        # Domain-spezifische URL verwenden
+        odata_base = self._odata_url(service)
 
         results: list[dict] = []
         seen: set[str] = set()
@@ -163,7 +160,7 @@ class DocumentsMixin:
         # Try verschiedene Nav-Properties
         nav_props = ["Describes", "DescribesObjects", "DescribedByParts", "AssociatedParts"]
         for nav in nav_props:
-            url = f"{odata_base}/{service}/{entity_set}('{doc_id}')/{nav}"
+            url = f"{odata_base}/{entity_set}('{doc_id}')/{nav}"
             items = self._get_all_pages(url, return_none_on_error=True)
             if items:
                 for item in items:
@@ -189,11 +186,8 @@ class DocumentsMixin:
           2. PrimaryContent Navigation
           3. Attachments / ContentItems Fallback
         """
-        # CADDocumentMgmt only exists in v4
-        if service == "CADDocumentMgmt":
-            odata_base = f"{self.base_url}/servlet/odata/v4"
-        else:
-            odata_base = self.odata_base
+        # Domain-spezifische URL verwenden
+        odata_base = self._odata_url(service)
 
         results: list[dict] = []
         seen: set[str] = set()
@@ -201,7 +195,7 @@ class DocumentsMixin:
         # Strategie 1: ContentHolders (gibt alle Dateien)
         nav_props = ["ContentHolders", "PrimaryContent", "Attachments", "ContentItems"]
         for nav in nav_props:
-            url = f"{odata_base}/{service}/{entity_set}('{doc_id}')/{nav}"
+            url = f"{odata_base}/{entity_set}('{doc_id}')/{nav}"
             items = self._get_all_pages(url, return_none_on_error=True)
             if items:
                 for item in items:
@@ -236,22 +230,19 @@ class DocumentsMixin:
         """
         from src.adapters.base import WRSError
 
-        # CADDocumentMgmt only exists in v4
-        if service == "CADDocumentMgmt":
-            odata_base = f"{self.base_url}/servlet/odata/v4"
-        else:
-            odata_base = self.odata_base
+        # Domain-spezifische URL verwenden
+        odata_base = self._odata_url(service)
 
         urls: list[str] = []
         if file_id:
             urls.append(
-                f"{odata_base}/{service}/{entity_set}('{doc_id}')"
+                f"{odata_base}/{entity_set}('{doc_id}')"
                 f"/ContentHolders('{file_id}')/$value"
             )
         urls.extend([
-            f"{odata_base}/{service}/{entity_set}('{doc_id}')/PrimaryContent/$value",
-            f"{odata_base}/{service}/{entity_set}('{doc_id}')/Content/$value",
-            f"{odata_base}/{service}/{entity_set}('{doc_id}')/$value",
+            f"{odata_base}/{entity_set}('{doc_id}')/PrimaryContent/$value",
+            f"{odata_base}/{entity_set}('{doc_id}')/Content/$value",
+            f"{odata_base}/{entity_set}('{doc_id}')/$value",
         ])
 
         for url in urls:

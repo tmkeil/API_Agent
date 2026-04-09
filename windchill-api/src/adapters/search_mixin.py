@@ -54,28 +54,26 @@ class SearchMixin:
         "problem_report":  ("ChangeMgmt",        "ProblemReports",  "WTChangeIssue"),
     }
 
-    # CADDocumentMgmt is often only available via OData v4, not v6.
-    # This list provides alternative (base_url, service, entity_set) triples
-    # that are tried when the primary base returns nothing.
-    _CAD_FALLBACK_BASES: list[tuple[str, str]] = [
-        # v4 base for CADDocumentMgmt
-        ("v4", "CADDocumentMgmt/CADDocuments"),
+    # CADDocumentMgmt und DocMgmt Fallback-Pfade.
+    # Verwendet _odata_url() fuer korrekte Versionen.
+    _CAD_FALLBACK_DOMAINS: list[tuple[str, str]] = [
+        # CADDocumentMgmt (v5 gemaess Swagger-Spec)
+        ("CADDocumentMgmt", "CADDocuments"),
         # Some installs expose EPM docs under DocMgmt
-        ("v6", "DocMgmt/Documents"),
+        ("DocMgmt", "Documents"),
     ]
 
     def _find_cad_document(self: "WRSClientBase", number: str) -> dict | None:
         """Try multiple OData endpoints to find a CAD/EPM document by number.
 
-        CADDocumentMgmt often only exists as v4 service. Falls back to
+        CADDocumentMgmt often only exists as v5 service. Falls back to
         DocMgmt/Documents with a Number filter.
         """
         safe = number.replace("'", "''")
         filters = [f"Number eq '{safe}'", f"contains(Number,'{safe}')"]
 
-        for odata_ver, svc_path in self._CAD_FALLBACK_BASES:
-            base = f"{self.base_url}/servlet/odata/{odata_ver}"
-            url = f"{base}/{svc_path}"
+        for domain, entity_set in self._CAD_FALLBACK_DOMAINS:
+            url = f"{self._odata_url(domain)}/{entity_set}"
             for filt in filters:
                 resp = self._get(url, {"$filter": filt}, suppress_errors=True)
                 if resp and resp.status_code == 200:
@@ -116,8 +114,8 @@ class SearchMixin:
                 f"{wc_type} '{number}' nicht in Windchill gefunden", status_code=404
             )
 
-        # --- Standard path (v6) ---
-        url = f"{self.odata_base}/{service}/{entity_set}"
+        # --- Standard path ---
+        url = f"{self._odata_url(service)}/{entity_set}"
         safe = number.replace("'", "''")
 
         filters = [
@@ -186,11 +184,10 @@ class SearchMixin:
         # ── Phase 1: Erste Seite pro Typ (parallel) ──────────
 
         def _fetch_first(type_key: str, service: str, entity_set: str, wc_type: str):
-            # CADDocumentMgmt only exists in v4 — try v4, then DocMgmt/Documents
+            # CADDocumentMgmt — verwende domain-spezifische URL
             if type_key == "cad_document":
-                for ver, svc_path in self._CAD_FALLBACK_BASES:
-                    base = f"{self.base_url}/servlet/odata/{ver}"
-                    url = f"{base}/{svc_path}"
+                for domain, entity in self._CAD_FALLBACK_DOMAINS:
+                    url = f"{self._odata_url(domain)}/{entity}"
                     params: dict[str, str] = {"$filter": combined_filter}
                     try:
                         resp = self._raw_get(url, params)
@@ -204,10 +201,10 @@ class SearchMixin:
                                     item["_entity_type_key"] = type_key
                                 return type_key, wc_type, items, next_link
                     except Exception:
-                        logger.debug("search CAD fallback failed %s", svc_path, exc_info=True)
+                        logger.debug("search CAD fallback failed %s/%s", domain, entity, exc_info=True)
                 return type_key, wc_type, [], None
 
-            url = f"{self.odata_base}/{service}/{entity_set}"
+            url = f"{self._odata_url(service)}/{entity_set}"
             params: dict[str, str] = {"$filter": combined_filter}
             try:
                 resp = self._raw_get(url, params)
@@ -400,11 +397,10 @@ class SearchMixin:
             if cancelled.is_set():
                 return type_key, wc_type, [], None
 
-            # CADDocumentMgmt only exists in v4
+            # CADDocumentMgmt — verwende domain-spezifische URL
             if type_key == "cad_document":
-                for ver, svc_path in self._CAD_FALLBACK_BASES:
-                    base = f"{self.base_url}/servlet/odata/{ver}"
-                    url = f"{base}/{svc_path}"
+                for domain, entity in self._CAD_FALLBACK_DOMAINS:
+                    url = f"{self._odata_url(domain)}/{entity}"
                     params: dict[str, str] = {"$filter": combined_filter}
                     try:
                         resp = self._raw_get(url, params)
@@ -418,10 +414,10 @@ class SearchMixin:
                                     item["_entity_type_key"] = type_key
                                 return type_key, wc_type, items, next_link
                     except Exception:
-                        logger.debug("stream search CAD fallback failed %s", svc_path, exc_info=True)
+                        logger.debug("stream search CAD fallback failed %s/%s", domain, entity, exc_info=True)
                 return type_key, wc_type, [], None
 
-            url = f"{self.odata_base}/{service}/{entity_set}"
+            url = f"{self._odata_url(service)}/{entity_set}"
             params: dict[str, str] = {"$filter": combined_filter}
             try:
                 resp = self._raw_get(url, params)
@@ -588,7 +584,7 @@ class SearchMixin:
         # ── Phase 1: Erste Seite pro Typ ─────────────────────
 
         def _fetch_first(type_key: str, service: str, entity_set: str, wc_type: str):
-            url = f"{self.odata_base}/{service}/{entity_set}"
+            url = f"{self._odata_url(service)}/{entity_set}"
             params: dict[str, str] = {}
             if filter_str:
                 params["$filter"] = filter_str

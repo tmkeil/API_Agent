@@ -45,7 +45,7 @@ class BomMixin:
             oder None falls die Action nicht verfuegbar ist (Fallback noetig).
         """
         url = (
-            f"{self.odata_base}/ProdMgmt/Parts('{part_id}')"
+            f"{self._odata_url('ProdMgmt')}/Parts('{part_id}')"
             f"/PTC.ProdMgmt.GetPartStructure"
             f"?$expand=Components($expand=Part,PartUse)"
         )
@@ -145,7 +145,7 @@ class BomMixin:
         # Gecachte Strategie aus vorherigem Aufruf verwenden
         if self._bom_nav_strategy:
             nav, use_expand = self._bom_nav_strategy
-            url = f"{self.odata_base}/ProdMgmt/Parts('{part_id}')/{nav}"
+            url = f"{self._odata_url('ProdMgmt')}/Parts('{part_id}')/{nav}"
             params = {"$expand": "Uses"} if use_expand else None
             result = self._get_all_pages(url, params, return_none_on_error=True)
             if result is not None:
@@ -154,7 +154,7 @@ class BomMixin:
 
         # Alle Strategien durchprobieren
         for nav in nav_options:
-            url = f"{self.odata_base}/ProdMgmt/Parts('{part_id}')/{nav}"
+            url = f"{self._odata_url('ProdMgmt')}/Parts('{part_id}')/{nav}"
 
             # Zuerst mit $expand=Uses (liefert Kind-Parts inline mit)
             result = self._get_all_pages(url, {"$expand": "Uses"}, return_none_on_error=True)
@@ -214,7 +214,7 @@ class BomMixin:
 
     def _resolve_link_via_nav(self: "WRSClientBase", link_id: str, nav: str) -> Optional[dict]:
         """Hilfsmethode: Kind-Part ueber ein bestimmtes Navigation-Property laden."""
-        url = f"{self.odata_base}/ProdMgmt/UsageLinks('{link_id}')/{nav}"
+        url = f"{self._odata_url('ProdMgmt')}/UsageLinks('{link_id}')/{nav}"
         try:
             data = self._get_json(url)
             # OData kann Collection oder einzelnes Objekt liefern

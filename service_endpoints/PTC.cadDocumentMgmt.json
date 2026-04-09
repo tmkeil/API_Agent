@@ -1,0 +1,3099 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "description": "PTC CAD Document Management Domain",
+    "version": "5",
+    "title": "PTC.CADDocumentMgmt"
+  },
+  "host": "plm-dev.neuhausen.balluff.net:443",
+  "basePath": "/Windchill/servlet/odata/v5/CADDocumentMgmt",
+  "tags": [
+    {
+      "name": "Service Endpoints"
+    }
+  ],
+  "schemes": [
+    "https"
+  ],
+  "paths": {
+    "/CADDocuments": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get CADDocuments",
+        "description": "Get CADDocuments",
+        "operationId": "GetCADDocuments",
+        "parameters": [
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$filter",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$top",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$skip",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$count",
+            "in": "query",
+            "required": false,
+            "type": "boolean",
+            "default": false
+          },
+          {
+            "name": "$orderby",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/PTC.CADDocumentMgmt.CADDocument"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/CADDocuments('{CADDocumentId}')": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get CADDocument for a given CADDocumentId",
+        "description": "Get CADDocument for a given CADDocumentId",
+        "operationId": "GetCADDocument",
+        "parameters": [
+          {
+            "name": "CADDocumentId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/PTC.CADDocumentMgmt.CADDocument"
+            }
+          }
+        }
+      }
+    },
+    "/CADDocuments('{CADDocumentId}')/AllPrimaryContents": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get ContentItem",
+        "description": "Get ContentItem",
+        "operationId": "CADDocument.AllPrimaryContents.GetContentItems",
+        "parameters": [
+          {
+            "name": "CADDocumentId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$filter",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$top",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$skip",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$count",
+            "in": "query",
+            "required": false,
+            "type": "boolean",
+            "default": false
+          },
+          {
+            "name": "$orderby",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/PTC.ContentItem"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/CADDocuments('{CADDocumentId}')/AllPrimaryContents('{ContentItemId}')": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get ContentItem for a given ContentItemId",
+        "description": "Get ContentItem for a given ContentItemId",
+        "operationId": "CADDocument.AllPrimaryContents.GetContentItem",
+        "parameters": [
+          {
+            "name": "CADDocumentId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "ContentItemId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/PTC.ContentItem"
+            }
+          }
+        }
+      }
+    },
+    "/CADDocuments('{CADDocumentId}')/Attachments": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get ContentItem",
+        "description": "Get ContentItem",
+        "operationId": "CADDocument.Attachments.GetContentItems",
+        "parameters": [
+          {
+            "name": "CADDocumentId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$filter",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$top",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$skip",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$count",
+            "in": "query",
+            "required": false,
+            "type": "boolean",
+            "default": false
+          },
+          {
+            "name": "$orderby",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/PTC.ContentItem"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/CADDocuments('{CADDocumentId}')/Attachments('{ContentItemId}')": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get ContentItem for a given ContentItemId",
+        "description": "Get ContentItem for a given ContentItemId",
+        "operationId": "CADDocument.Attachments.GetContentItem",
+        "parameters": [
+          {
+            "name": "CADDocumentId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "ContentItemId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/PTC.ContentItem"
+            }
+          }
+        }
+      }
+    },
+    "/CADDocuments('{CADDocumentId}')/Context": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get Container",
+        "description": "Get Container",
+        "operationId": "CADDocument.Context.GetContainer",
+        "parameters": [
+          {
+            "name": "CADDocumentId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/PTC.DataAdmin.Container"
+            }
+          }
+        }
+      }
+    },
+    "/CADDocuments('{CADDocumentId}')/Creator": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get User",
+        "description": "Get User",
+        "operationId": "CADDocument.Creator.GetUser",
+        "parameters": [
+          {
+            "name": "CADDocumentId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/PTC.PrincipalMgmt.User"
+            }
+          }
+        }
+      }
+    },
+    "/CADDocuments('{CADDocumentId}')/DerivedSources": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get DerivedSource",
+        "description": "Get DerivedSource",
+        "operationId": "CADDocument.DerivedSources.GetDerivedSources",
+        "parameters": [
+          {
+            "name": "CADDocumentId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$filter",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$top",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$skip",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$count",
+            "in": "query",
+            "required": false,
+            "type": "boolean",
+            "default": false
+          },
+          {
+            "name": "$orderby",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/PTC.CADDocumentMgmt.DerivedSource"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/CADDocuments('{CADDocumentId}')/DerivedSources('{DerivedSourceId}')": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get DerivedSource for a given DerivedSourceId",
+        "description": "Get DerivedSource for a given DerivedSourceId",
+        "operationId": "CADDocument.DerivedSources.GetDerivedSource",
+        "parameters": [
+          {
+            "name": "CADDocumentId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "DerivedSourceId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/PTC.CADDocumentMgmt.DerivedSource"
+            }
+          }
+        }
+      }
+    },
+    "/CADDocuments('{CADDocumentId}')/Drawings": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get CADDocument",
+        "description": "Get CADDocument",
+        "operationId": "CADDocument.Drawings.GetCADDocuments",
+        "parameters": [
+          {
+            "name": "CADDocumentId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$filter",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$top",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$skip",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$count",
+            "in": "query",
+            "required": false,
+            "type": "boolean",
+            "default": false
+          },
+          {
+            "name": "$orderby",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/PTC.CADDocumentMgmt.CADDocument"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/CADDocuments('{CADDocumentId}')/Drawings('{DrawingsId}')": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get CADDocument for a given DrawingsId",
+        "description": "Get CADDocument for a given DrawingsId",
+        "operationId": "CADDocument.Drawings.GetCADDocument",
+        "parameters": [
+          {
+            "name": "CADDocumentId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "DrawingsId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/PTC.CADDocumentMgmt.CADDocument"
+            }
+          }
+        }
+      }
+    },
+    "/CADDocuments('{CADDocumentId}')/Folder": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get Folder",
+        "description": "Get Folder",
+        "operationId": "CADDocument.Folder.GetFolder",
+        "parameters": [
+          {
+            "name": "CADDocumentId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/PTC.DataAdmin.Folder"
+            }
+          }
+        }
+      }
+    },
+    "/CADDocuments('{CADDocumentId}')/Modifier": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get User",
+        "description": "Get User",
+        "operationId": "CADDocument.Modifier.GetUser",
+        "parameters": [
+          {
+            "name": "CADDocumentId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/PTC.PrincipalMgmt.User"
+            }
+          }
+        }
+      }
+    },
+    "/CADDocuments('{CADDocumentId}')/Organization": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get Organization",
+        "description": "Get Organization",
+        "operationId": "CADDocument.Organization.GetOrganization",
+        "parameters": [
+          {
+            "name": "CADDocumentId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/PTC.PrincipalMgmt.Organization"
+            }
+          }
+        }
+      }
+    },
+    "/CADDocuments('{CADDocumentId}')/PTC.CADDocumentMgmt.GetMultiLevelComponentsReport": {
+      "post": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Returns Multi-Level CAD Parts List and Single-Level Consolidated Part and Assembly List, using Navigation criteria passed in navigationCriteria in the body.",
+        "description": "Returns Multi-Level CAD Parts List and Single-Level Consolidated Part and Assembly List, using Navigation criteria passed in navigationCriteria in the body. NOTE: For ConfigSpecs and Filters enter them in JSON format. Example: \"@odata.type\":\"#PTC.NavCriteria.WTPartStandardConfigSpec\", \"WorkingIncluded\":true, \"View\":\"Manufacturing\"",
+        "operationId": "PTC.CADDocumentMgmt.CADDocument.Action_GetMultiLevelComponentsReport_With_BOMMembersOnly_ShowSingleLevelReport",
+        "parameters": [
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$filter",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$top",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$skip",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$count",
+            "in": "query",
+            "required": false,
+            "type": "boolean",
+            "default": false
+          },
+          {
+            "name": "$orderby",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "CSRF_NONCE",
+            "in": "header",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "CADDocumentId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/PTC.CADDocumentMgmt.GetMultiLevelComponentsReport.Body"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/PTC.CADDocumentMgmt.CADDocumentsListReportItem"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/CADDocuments('{CADDocumentId}')/PTC.CADDocumentMgmt.GetStructure": {
+      "post": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get Structure of the CAD Document.If BOMMembersOnly is passed as true, then only BOM members will be shown in the structure.Relevant filters can be applied by providing the NavigationCriteria.",
+        "description": "Get Structure of the CAD Document.If BOMMembersOnly is passed as true, then only BOM members will be shown in the structure.Relevant filters can be applied by providing the NavigationCriteria.",
+        "operationId": "PTC.CADDocumentMgmt.CADDocument.Action_GetStructure_With_NavigationCriteria_PathFilterWithSiblings",
+        "parameters": [
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "CSRF_NONCE",
+            "in": "header",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "CADDocumentId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/PTC.CADDocumentMgmt.GetStructure.Body"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/PTC.CADDocumentMgmt.CADStructure"
+            }
+          }
+        }
+      }
+    },
+    "/CADDocuments('{CADDocumentId}')/PTC.CADDocumentMgmt.SetState": {
+      "post": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Execute SetState",
+        "description": "Execute SetState",
+        "operationId": "PTC.CADDocumentMgmt.CADDocument.Action_SetState_With",
+        "parameters": [
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "CSRF_NONCE",
+            "in": "header",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "CADDocumentId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/PTC.CADDocumentMgmt.SetState.Body"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/PTC.CADDocumentMgmt.CADDocument"
+            }
+          }
+        }
+      }
+    },
+    "/CADDocuments('{CADDocumentId}')/PartDocAssociations": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get PartDocAssociation",
+        "description": "Get PartDocAssociation",
+        "operationId": "CADDocument.PartDocAssociations.GetPartDocAssociations",
+        "parameters": [
+          {
+            "name": "CADDocumentId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$filter",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$top",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$skip",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$count",
+            "in": "query",
+            "required": false,
+            "type": "boolean",
+            "default": false
+          },
+          {
+            "name": "$orderby",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/PTC.CADDocumentMgmt.PartDocAssociation"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/CADDocuments('{CADDocumentId}')/PartDocAssociations('{PartDocAssociationId}')": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get PartDocAssociation for a given PartDocAssociationId",
+        "description": "Get PartDocAssociation for a given PartDocAssociationId",
+        "operationId": "CADDocument.PartDocAssociations.GetPartDocAssociation",
+        "parameters": [
+          {
+            "name": "CADDocumentId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "PartDocAssociationId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/PTC.CADDocumentMgmt.PartDocAssociation"
+            }
+          }
+        }
+      }
+    },
+    "/CADDocuments('{CADDocumentId}')/References": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get CADDocumentReference",
+        "description": "Get CADDocumentReference",
+        "operationId": "CADDocument.References.GetCADDocumentReferences",
+        "parameters": [
+          {
+            "name": "CADDocumentId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$filter",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$top",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$skip",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$count",
+            "in": "query",
+            "required": false,
+            "type": "boolean",
+            "default": false
+          },
+          {
+            "name": "$orderby",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/PTC.CADDocumentMgmt.CADDocumentReference"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/CADDocuments('{CADDocumentId}')/References('{CADDocumentReferenceId}')": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get CADDocumentReference for a given CADDocumentReferenceId",
+        "description": "Get CADDocumentReference for a given CADDocumentReferenceId",
+        "operationId": "CADDocument.References.GetCADDocumentReference",
+        "parameters": [
+          {
+            "name": "CADDocumentId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "CADDocumentReferenceId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/PTC.CADDocumentMgmt.CADDocumentReference"
+            }
+          }
+        }
+      }
+    },
+    "/CADDocuments('{CADDocumentId}')/Representations": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get Representation",
+        "description": "Get Representation",
+        "operationId": "CADDocument.Representations.GetRepresentations",
+        "parameters": [
+          {
+            "name": "CADDocumentId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$filter",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$top",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$skip",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$count",
+            "in": "query",
+            "required": false,
+            "type": "boolean",
+            "default": false
+          },
+          {
+            "name": "$orderby",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/PTC.Visualization.Representation"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/CADDocuments('{CADDocumentId}')/Representations('{RepresentationId}')": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get Representation for a given RepresentationId",
+        "description": "Get Representation for a given RepresentationId",
+        "operationId": "CADDocument.Representations.GetRepresentation",
+        "parameters": [
+          {
+            "name": "CADDocumentId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "RepresentationId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/PTC.Visualization.Representation"
+            }
+          }
+        }
+      }
+    },
+    "/CADDocuments('{CADDocumentId}')/Revisions": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get CADDocument",
+        "description": "Get CADDocument",
+        "operationId": "CADDocument.Revisions.GetCADDocuments",
+        "parameters": [
+          {
+            "name": "CADDocumentId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$filter",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$top",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$skip",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$count",
+            "in": "query",
+            "required": false,
+            "type": "boolean",
+            "default": false
+          },
+          {
+            "name": "$orderby",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/PTC.CADDocumentMgmt.CADDocument"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/CADDocuments('{CADDocumentId}')/Revisions('{RevisionsId}')": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get CADDocument for a given RevisionsId",
+        "description": "Get CADDocument for a given RevisionsId",
+        "operationId": "CADDocument.Revisions.GetCADDocument",
+        "parameters": [
+          {
+            "name": "CADDocumentId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "RevisionsId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/PTC.CADDocumentMgmt.CADDocument"
+            }
+          }
+        }
+      }
+    },
+    "/CADDocuments('{CADDocumentId}')/SmallThumbnails": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get ContentItem",
+        "description": "Get ContentItem",
+        "operationId": "CADDocument.SmallThumbnails.GetContentItems",
+        "parameters": [
+          {
+            "name": "CADDocumentId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$filter",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$top",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$skip",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$count",
+            "in": "query",
+            "required": false,
+            "type": "boolean",
+            "default": false
+          },
+          {
+            "name": "$orderby",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/PTC.ContentItem"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/CADDocuments('{CADDocumentId}')/SmallThumbnails('{ContentItemId}')": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get ContentItem for a given ContentItemId",
+        "description": "Get ContentItem for a given ContentItemId",
+        "operationId": "CADDocument.SmallThumbnails.GetContentItem",
+        "parameters": [
+          {
+            "name": "CADDocumentId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "ContentItemId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/PTC.ContentItem"
+            }
+          }
+        }
+      }
+    },
+    "/CADDocuments('{CADDocumentId}')/Thumbnails": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get ContentItem",
+        "description": "Get ContentItem",
+        "operationId": "CADDocument.Thumbnails.GetContentItems",
+        "parameters": [
+          {
+            "name": "CADDocumentId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$filter",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$top",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$skip",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$count",
+            "in": "query",
+            "required": false,
+            "type": "boolean",
+            "default": false
+          },
+          {
+            "name": "$orderby",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/PTC.ContentItem"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/CADDocuments('{CADDocumentId}')/Thumbnails('{ContentItemId}')": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get ContentItem for a given ContentItemId",
+        "description": "Get ContentItem for a given ContentItemId",
+        "operationId": "CADDocument.Thumbnails.GetContentItem",
+        "parameters": [
+          {
+            "name": "CADDocumentId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "ContentItemId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/PTC.ContentItem"
+            }
+          }
+        }
+      }
+    },
+    "/CADDocuments('{CADDocumentId}')/Uses": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get CADDocumentUse",
+        "description": "Get CADDocumentUse",
+        "operationId": "CADDocument.Uses.GetCADDocumentUses",
+        "parameters": [
+          {
+            "name": "CADDocumentId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$filter",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$top",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$skip",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$count",
+            "in": "query",
+            "required": false,
+            "type": "boolean",
+            "default": false
+          },
+          {
+            "name": "$orderby",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/PTC.CADDocumentMgmt.CADDocumentUse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/CADDocuments('{CADDocumentId}')/Uses('{CADDocumentUseId}')": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get CADDocumentUse for a given CADDocumentUseId",
+        "description": "Get CADDocumentUse for a given CADDocumentUseId",
+        "operationId": "CADDocument.Uses.GetCADDocumentUse",
+        "parameters": [
+          {
+            "name": "CADDocumentId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "CADDocumentUseId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/PTC.CADDocumentMgmt.CADDocumentUse"
+            }
+          }
+        }
+      }
+    },
+    "/CADDocuments('{CADDocumentId}')/Versions": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get CADDocument",
+        "description": "Get CADDocument",
+        "operationId": "CADDocument.Versions.GetCADDocuments",
+        "parameters": [
+          {
+            "name": "CADDocumentId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$filter",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$top",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$skip",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$count",
+            "in": "query",
+            "required": false,
+            "type": "boolean",
+            "default": false
+          },
+          {
+            "name": "$orderby",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/PTC.CADDocumentMgmt.CADDocument"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/CADDocuments('{CADDocumentId}')/Versions('{VersionsId}')": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get CADDocument for a given VersionsId",
+        "description": "Get CADDocument for a given VersionsId",
+        "operationId": "CADDocument.Versions.GetCADDocument",
+        "parameters": [
+          {
+            "name": "CADDocumentId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "VersionsId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/PTC.CADDocumentMgmt.CADDocument"
+            }
+          }
+        }
+      }
+    },
+    "/CADDocuments(@CADDocumentId)/PTC.CADDocumentMgmt.GetDynamicStructureRepresentation()": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Execute GetDynamicStructureRepresentation",
+        "description": "Execute GetDynamicStructureRepresentation",
+        "operationId": "PTC.CADDocumentMgmt.CADDocument.Function_GetDynamicStructureRepresentation",
+        "parameters": [
+          {
+            "name": "@CADDocumentId",
+            "in": "query",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/PTC.Hyperlink"
+            }
+          }
+        }
+      }
+    },
+    "/CADDocuments(@CADDocumentId)/PTC.CADDocumentMgmt.GetDynamicStructureRepresentation(NavigationCriteriaId=@NavigationCriteriaId)": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Execute GetDynamicStructureRepresentation",
+        "description": "Execute GetDynamicStructureRepresentation",
+        "operationId": "PTC.CADDocumentMgmt.CADDocument.Function_GetDynamicStructureRepresentation_With",
+        "parameters": [
+          {
+            "name": "@CADDocumentId",
+            "in": "query",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "@NavigationCriteriaId",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/PTC.Hyperlink"
+            }
+          }
+        }
+      }
+    },
+    "/CADDocuments(@CADDocumentId)/PTC.CADDocumentMgmt.GetDynamicStructureRepresentationPVZ(@NavigationCriteriaId=@@NavigationCriteriaId,@IncludeAnnotations=@@IncludeAnnotations)": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Execute GetDynamicStructureRepresentationPVZ",
+        "description": "Execute GetDynamicStructureRepresentationPVZ",
+        "operationId": "PTC.CADDocumentMgmt.CADDocument.Function_GetDynamicStructureRepresentationPVZ_With_@@IncludeAnnotations",
+        "parameters": [
+          {
+            "name": "@CADDocumentId",
+            "in": "query",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "@@NavigationCriteriaId",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "@@IncludeAnnotations",
+            "in": "query",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "type": "string",
+              "format": "binary"
+            }
+          }
+        }
+      }
+    },
+    "/CADDocuments(@CADDocumentId)/PTC.CADDocumentMgmt.GetDynamicStructureRepresentationPVZ(IncludeAnnotations=@IncludeAnnotations)": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Execute GetDynamicStructureRepresentationPVZ",
+        "description": "Execute GetDynamicStructureRepresentationPVZ",
+        "operationId": "PTC.CADDocumentMgmt.CADDocument.Function_GetDynamicStructureRepresentationPVZ_With",
+        "parameters": [
+          {
+            "name": "@CADDocumentId",
+            "in": "query",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "@IncludeAnnotations",
+            "in": "query",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "type": "string",
+              "format": "binary"
+            }
+          }
+        }
+      }
+    },
+    "/CADDocuments(@CADDocumentId)/PTC.CADDocumentMgmt.GetLifeCycleTemplate()": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Execute GetLifeCycleTemplate",
+        "description": "Execute GetLifeCycleTemplate",
+        "operationId": "PTC.CADDocumentMgmt.CADDocument.Function_GetLifeCycleTemplate",
+        "parameters": [
+          {
+            "name": "@CADDocumentId",
+            "in": "query",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/PTC.LifeCycleTemplate"
+            }
+          }
+        }
+      }
+    },
+    "/CADDocuments(@CADDocumentId)/PTC.CADDocumentMgmt.GetValidStateTransitions()": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Execute GetValidStateTransitions",
+        "description": "Execute GetValidStateTransitions",
+        "operationId": "PTC.CADDocumentMgmt.CADDocument.Function_GetValidStateTransitions",
+        "parameters": [
+          {
+            "name": "@CADDocumentId",
+            "in": "query",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/PTC.EnumTypeList"
+            }
+          }
+        }
+      }
+    },
+    "/CADDocuments/PTC.CADDocumentMgmt.BAL_EPM_EPLAN_SCHEMATIC": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get CADDocuments of type BAL_EPM_EPLAN_SCHEMATIC",
+        "description": "Get CADDocuments of type BAL_EPM_EPLAN_SCHEMATIC",
+        "operationId": "GetBAL_EPM_EPLAN_SCHEMATICs",
+        "parameters": [
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$filter",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$top",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$skip",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$count",
+            "in": "query",
+            "required": false,
+            "type": "boolean",
+            "default": false
+          },
+          {
+            "name": "$orderby",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/PTC.CADDocumentMgmt.BAL_EPM_EPLAN_SCHEMATIC"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/CADDocuments/PTC.CADDocumentMgmt.BAL_EPM_SWX_DRAWING": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get CADDocuments of type BAL_EPM_SWX_DRAWING",
+        "description": "Get CADDocuments of type BAL_EPM_SWX_DRAWING",
+        "operationId": "GetBAL_EPM_SWX_DRAWINGs",
+        "parameters": [
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$filter",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$top",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$skip",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$count",
+            "in": "query",
+            "required": false,
+            "type": "boolean",
+            "default": false
+          },
+          {
+            "name": "$orderby",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/PTC.CADDocumentMgmt.BAL_EPM_SWX_DRAWING"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/CADDocuments/PTC.CADDocumentMgmt.BAL_EPM_SWX_MODEL": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get CADDocuments of type BAL_EPM_SWX_MODEL",
+        "description": "Get CADDocuments of type BAL_EPM_SWX_MODEL",
+        "operationId": "GetBAL_EPM_SWX_MODELs",
+        "parameters": [
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$filter",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$top",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$skip",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$count",
+            "in": "query",
+            "required": false,
+            "type": "boolean",
+            "default": false
+          },
+          {
+            "name": "$orderby",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/PTC.CADDocumentMgmt.BAL_EPM_SWX_MODEL"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/CADDocuments/PTC.CADDocumentMgmt.BAL_EPM_VIU_01": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get CADDocuments of type BAL_EPM_VIU_01",
+        "description": "Get CADDocuments of type BAL_EPM_VIU_01",
+        "operationId": "GetBAL_EPM_VIU_01s",
+        "parameters": [
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$filter",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$top",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$skip",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$count",
+            "in": "query",
+            "required": false,
+            "type": "boolean",
+            "default": false
+          },
+          {
+            "name": "$orderby",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/PTC.CADDocumentMgmt.BAL_EPM_VIU_01"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/CADDocuments/PTC.CADDocumentMgmt.BAL_EPM_VIU_02": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get CADDocuments of type BAL_EPM_VIU_02",
+        "description": "Get CADDocuments of type BAL_EPM_VIU_02",
+        "operationId": "GetBAL_EPM_VIU_02s",
+        "parameters": [
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$filter",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$top",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$skip",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$count",
+            "in": "query",
+            "required": false,
+            "type": "boolean",
+            "default": false
+          },
+          {
+            "name": "$orderby",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/PTC.CADDocumentMgmt.BAL_EPM_VIU_02"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/CADDocuments/PTC.CADDocumentMgmt.ECADBoard": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get CADDocuments of type ECADBoard",
+        "description": "Get CADDocuments of type ECADBoard",
+        "operationId": "GetECADBoards",
+        "parameters": [
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$filter",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$top",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$skip",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$count",
+            "in": "query",
+            "required": false,
+            "type": "boolean",
+            "default": false
+          },
+          {
+            "name": "$orderby",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/PTC.CADDocumentMgmt.ECADBoard"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/CADDocuments/PTC.CADDocumentMgmt.ECADDefinition": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get CADDocuments of type ECADDefinition",
+        "description": "Get CADDocuments of type ECADDefinition",
+        "operationId": "GetECADDefinitions",
+        "parameters": [
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$filter",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$top",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$skip",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$count",
+            "in": "query",
+            "required": false,
+            "type": "boolean",
+            "default": false
+          },
+          {
+            "name": "$orderby",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/PTC.CADDocumentMgmt.ECADDefinition"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/CADDocuments/PTC.CADDocumentMgmt.ECADDerived": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get CADDocuments of type ECADDerived",
+        "description": "Get CADDocuments of type ECADDerived",
+        "operationId": "GetECADDeriveds",
+        "parameters": [
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$filter",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$top",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$skip",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$count",
+            "in": "query",
+            "required": false,
+            "type": "boolean",
+            "default": false
+          },
+          {
+            "name": "$orderby",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/PTC.CADDocumentMgmt.ECADDerived"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/CADDocuments/PTC.CADDocumentMgmt.ECADDocument": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get CADDocuments of type ECADDocument",
+        "description": "Get CADDocuments of type ECADDocument",
+        "operationId": "GetECADDocuments",
+        "parameters": [
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$filter",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$top",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$skip",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$count",
+            "in": "query",
+            "required": false,
+            "type": "boolean",
+            "default": false
+          },
+          {
+            "name": "$orderby",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/PTC.CADDocumentMgmt.ECADDocument"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/CADDocuments/PTC.CADDocumentMgmt.ECADSchematic": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get CADDocuments of type ECADSchematic",
+        "description": "Get CADDocuments of type ECADSchematic",
+        "operationId": "GetECADSchematics",
+        "parameters": [
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$filter",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$top",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$skip",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$count",
+            "in": "query",
+            "required": false,
+            "type": "boolean",
+            "default": false
+          },
+          {
+            "name": "$orderby",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/PTC.CADDocumentMgmt.ECADSchematic"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/CADDocuments/PTC.CADDocumentMgmt.ElectricalSchematic": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get CADDocuments of type ElectricalSchematic",
+        "description": "Get CADDocuments of type ElectricalSchematic",
+        "operationId": "GetElectricalSchematics",
+        "parameters": [
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$filter",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$top",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$skip",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$count",
+            "in": "query",
+            "required": false,
+            "type": "boolean",
+            "default": false
+          },
+          {
+            "name": "$orderby",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/PTC.CADDocumentMgmt.ElectricalSchematic"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/EditCADDocumentsSecurityLabels": {
+      "post": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Execute EditCADDocumentsSecurityLabels",
+        "description": "Execute EditCADDocumentsSecurityLabels",
+        "operationId": "Action_EditCADDocumentsSecurityLabels",
+        "parameters": [
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$filter",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$top",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$skip",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$count",
+            "in": "query",
+            "required": false,
+            "type": "boolean",
+            "default": false
+          },
+          {
+            "name": "$orderby",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "CSRF_NONCE",
+            "in": "header",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/PTC.CADDocumentMgmt.EditCADDocumentsSecurityLabels.Unbound.Body"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/PTC.CADDocumentMgmt.CADDocument"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/SetStateCADDocuments": {
+      "post": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Execute SetStateCADDocuments",
+        "description": "Execute SetStateCADDocuments",
+        "operationId": "Action_SetStateCADDocuments",
+        "parameters": [
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$filter",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$top",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$skip",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$count",
+            "in": "query",
+            "required": false,
+            "type": "boolean",
+            "default": false
+          },
+          {
+            "name": "$orderby",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "CSRF_NONCE",
+            "in": "header",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/PTC.CADDocumentMgmt.SetStateCADDocuments.Unbound.Body"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/PTC.CADDocumentMgmt.CADDocument"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

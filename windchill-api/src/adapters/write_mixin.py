@@ -63,9 +63,7 @@ class WriteMixin:
             raise WRSError(f"Unbekannter Objekttyp: '{type_key}'", status_code=400)
 
         service, entity_set = self._WRITABLE_ENTITIES[type_key]
-        # CADDocumentMgmt only exists in v4
-        odata_base = f"{self.base_url}/servlet/odata/v4" if type_key == "cad_document" else self.odata_base
-        url = f"{odata_base}/{service}/{entity_set}"
+        url = f"{self._odata_url(service)}/{entity_set}"
 
         self._refresh_csrf()
 
@@ -113,9 +111,7 @@ class WriteMixin:
             raise WRSError(f"Unbekannter Objekttyp: '{type_key}'", status_code=400)
 
         service, entity_set = self._WRITABLE_ENTITIES[type_key]
-        # CADDocumentMgmt only exists in v4
-        odata_base = f"{self.base_url}/servlet/odata/v4" if type_key == "cad_document" else self.odata_base
-        url = f"{odata_base}/{service}/{entity_set}('{obj_id}')"
+        url = f"{self._odata_url(service)}/{entity_set}('{obj_id}')"
 
         self._refresh_csrf()
         resp = self._patch(url, json_body=attributes)
@@ -159,12 +155,9 @@ class WriteMixin:
 
         service, entity_set = self._WRITABLE_ENTITIES[type_key]
 
-        # CADDocumentMgmt only exists in v4
-        odata_base = f"{self.base_url}/servlet/odata/v4" if type_key == "cad_document" else self.odata_base
-
         # Strategie 1: OData Action (Windchill 12+)
         action_url = (
-            f"{odata_base}/{service}/{entity_set}('{obj_id}')"
+            f"{self._odata_url(service)}/{entity_set}('{obj_id}')"
             f"/PTC.{service}.SetLifeCycleState"
         )
         body: dict[str, Any] = {"State": target_state}
@@ -180,11 +173,11 @@ class WriteMixin:
                 except Exception:
                     pass
             # Erfolg — Objekt neu laden
-            obj_url = f"{odata_base}/{service}/{entity_set}('{obj_id}')"
+            obj_url = f"{self._odata_url(service)}/{entity_set}('{obj_id}')"
             return self._get_json(obj_url)
 
         # Strategie 2: Generischer LifeCycleState Patch (Fallback)
-        patch_url = f"{odata_base}/{service}/{entity_set}('{obj_id}')"
+        patch_url = f"{self._odata_url(service)}/{entity_set}('{obj_id}')"
         state_body: dict[str, Any] = {"State": target_state}
         resp = self._patch(patch_url, json_body=state_body, suppress_errors=True)
         if resp and resp.status_code in (200, 204):
@@ -217,9 +210,7 @@ class WriteMixin:
             raise WRSError(f"Unbekannter Objekttyp: '{type_key}'", status_code=400)
 
         service, entity_set = self._WRITABLE_ENTITIES[type_key]
-        # CADDocumentMgmt only exists in v4
-        odata_base = f"{self.base_url}/servlet/odata/v4" if type_key == "cad_document" else self.odata_base
-        url = f"{odata_base}/{service}/{entity_set}('{obj_id}')/PTC.{service}.CheckOut"
+        url = f"{self._odata_url(service)}/{entity_set}('{obj_id}')/PTC.{service}.CheckOut"
 
         self._refresh_csrf()
         resp = self._post(url, json_body={})
@@ -251,9 +242,7 @@ class WriteMixin:
             raise WRSError(f"Unbekannter Objekttyp: '{type_key}'", status_code=400)
 
         service, entity_set = self._WRITABLE_ENTITIES[type_key]
-        # CADDocumentMgmt only exists in v4
-        odata_base = f"{self.base_url}/servlet/odata/v4" if type_key == "cad_document" else self.odata_base
-        url = f"{odata_base}/{service}/{entity_set}('{obj_id}')/PTC.{service}.CheckIn"
+        url = f"{self._odata_url(service)}/{entity_set}('{obj_id}')/PTC.{service}.CheckIn"
 
         body: dict[str, Any] = {}
         if comment:
@@ -292,13 +281,8 @@ class WriteMixin:
             raise WRSError(f"Unbekannter Objekttyp: '{type_key}'", status_code=400)
 
         service, entity_set = self._WRITABLE_ENTITIES[type_key]
-        odata_base = (
-            f"{self.base_url}/servlet/odata/v4"
-            if type_key == "cad_document"
-            else self.odata_base
-        )
         url = (
-            f"{odata_base}/{service}/{entity_set}('{obj_id}')"
+            f"{self._odata_url(service)}/{entity_set}('{obj_id}')"
             f"/PTC.{service}.Revise"
         )
 
@@ -350,7 +334,7 @@ class WriteMixin:
         """
         from src.adapters.base import WRSError
 
-        url = f"{self.odata_base}/ProdMgmt/Parts('{parent_part_id}')/Uses"
+        url = f"{self._odata_url('ProdMgmt')}/Parts('{parent_part_id}')/Uses"
         body: dict = {
             "Uses@odata.bind": f"Parts('{child_part_id}')",
             "Quantity": quantity,
@@ -393,7 +377,7 @@ class WriteMixin:
         """
         from src.adapters.base import WRSError
 
-        url = f"{self.odata_base}/ProdMgmt/UsageLinks('{usage_link_id}')"
+        url = f"{self._odata_url('ProdMgmt')}/UsageLinks('{usage_link_id}')"
 
         self._refresh_csrf()
         resp = self._delete(url)
@@ -434,7 +418,7 @@ class WriteMixin:
         from src.adapters.base import WRSError
 
         nav = "DescribedBy" if link_type == "DescribedBy" else "References"
-        url = f"{self.odata_base}/ProdMgmt/Parts('{part_id}')/{nav}"
+        url = f"{self._odata_url('ProdMgmt')}/Parts('{part_id}')/{nav}"
         body = {
             f"{nav}@odata.bind": f"Documents('{doc_id}')",
         }
@@ -469,7 +453,7 @@ class WriteMixin:
         from src.adapters.base import WRSError
 
         nav = "DescribedBy" if link_type == "DescribedBy" else "References"
-        url = f"{self.odata_base}/ProdMgmt/Parts('{part_id}')/{nav}('{doc_id}')"
+        url = f"{self._odata_url('ProdMgmt')}/Parts('{part_id}')/{nav}('{doc_id}')"
 
         self._refresh_csrf()
         resp = self._delete(url)

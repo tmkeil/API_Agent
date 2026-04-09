@@ -71,7 +71,7 @@ class ChangeMixin:
             )
 
         # Step 2: Query AffectedObjects navigation property
-        url = f"{self.odata_base}/{service}/{entity_set}('{change_id}')/AffectedObjects"
+        url = f"{self._odata_url(service)}/{entity_set}('{change_id}')/AffectedObjects"
         items = self._get_all_pages(url, return_none_on_error=True)
         if items is None:
             # Fallback: try $expand approach
@@ -109,7 +109,7 @@ class ChangeMixin:
             )
 
         # ResultingObjects nav property
-        url = f"{self.odata_base}/{service}/{entity_set}('{change_id}')/ResultingObjects"
+        url = f"{self._odata_url(service)}/{entity_set}('{change_id}')/ResultingObjects"
         items = self._get_all_pages(url, return_none_on_error=True)
         if items is None:
             items = self._expand_change_nav(service, entity_set, number, "ResultingObjects")
@@ -125,7 +125,7 @@ class ChangeMixin:
         number: str,
     ) -> dict | None:
         """Find a change object by Number, returning the latest version."""
-        url = f"{self.odata_base}/{service}/{entity_set}"
+        url = f"{self._odata_url(service)}/{entity_set}"
         safe = number.replace("'", "''")
 
         resp = self._get(
@@ -152,7 +152,7 @@ class ChangeMixin:
         nav_property: str,
     ) -> list[dict]:
         """Fallback: $expand on the entity set to get navigation property inline."""
-        url = f"{self.odata_base}/{service}/{entity_set}"
+        url = f"{self._odata_url(service)}/{entity_set}"
         safe = number.replace("'", "''")
         resp = self._get(
             url,

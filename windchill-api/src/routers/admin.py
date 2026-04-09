@@ -2,12 +2,13 @@
 Router: Administrative / Infrastruktur-Endpoints.
 
 Endpoints:
-  GET    /logs                       → API Activity Log
-  POST   /export                     → BOM als JSON exportieren
-  GET    /export/download/{filename} → Export-Datei herunterladen
-  GET    /benchmark                  → Performance-Benchmark
-  GET    /cache/stats                → Cache-Status
-  DELETE /cache                      → Cache leeren
+  GET    /logs                               → API Activity Log
+  POST   /export                             → BOM als JSON exportieren
+  GET    /export/download/{filename}         → Export-Datei herunterladen
+  GET    /export/balluff/{part_number}       → Balluff BOM Export (flat table)
+  GET    /benchmark                          → Performance-Benchmark
+  GET    /cache/stats                        → Cache-Status
+  DELETE /cache                              → Cache leeren
 """
 
 import logging
@@ -19,8 +20,8 @@ from src.core.auth import require_auth
 from src.core.cache import cache
 from src.core.dependencies import get_client, get_session
 from src.core.session import log_session_event
-from src.models.dto import BenchmarkResponse, CacheStats
-from src.services import admin_service, parts_service
+from src.models.dto import BalluffBomExportResponse, BenchmarkResponse, CacheStats
+from src.services import admin_service, bom_export_service, parts_service
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -134,6 +135,34 @@ def export_download(
     return FileResponse(filepath, filename=filename, media_type="application/json")
 
 
+# ── Balluff BOM Export (flat table) ──────────────────────────
+
+
+@router.get(
+    "/export/balluff/{part_number}",
+    response_model=BalluffBomExportResponse,
+    summary="Balluff BOM Export als flache Tabelle",
+)
+def balluff_bom_export(
+    part_number: str,
+    request: Request = None,
+    _: None = Depends(require_auth),
+):
+    client = get_client(request)
+    session = get_session(request)
+    try:
+        result = bom_export_service.balluff_bom_export(client, part_number)
+    except Exception as e:
+        raise HTTPException(500, f"Balluff-Export fehlgeschlagen: {e}")
+
+    if session:
+        log_session_event(
+            session, "GET", f"/api/export/balluff/{part_number}", 200, 0, "web",
+            f"balluff export: {part_number} ({result['rowCount']} rows)",
+        )
+    return result
+
+
 # ── Benchmark ────────────────────────────────────────────────
 
 
@@ -184,7 +213,13 @@ def diagnose_fields(
     Damit kann man pruefen, welche Felder Windchill tatsaechlich liefert.
     """
     client = get_client(request)
-    url = f"{client.odata_base}/{entity}"
+    # Domain aus Entity-Pfad extrahieren (z.B. "ProdMgmt/Parts" -> "ProdMgmt")
+    domain = entity.split("/")[0] if "/" in entity else entity
+    entity_path = entity.split("/", 1)[1] if "/" in entity else ""
+    if entity_path:
+        url = f"{client._odata_url(domain)}/{entity_path}"
+    else:
+        url = client._odata_url(domain)
     items = client.get_all_pages(url, {"$top": str(top)}, return_none_on_error=True)
     if items is None:
         return {"error": f"Entity '{entity}' nicht erreichbar", "fields": [], "records": []}
@@ -305,10 +340,10 @@ def diagnose_service_doc(
     results = {}
 
     for label, base in [
-        ("versioned", client.odata_base),
-        ("unversioned", f"{client.base_url}/servlet/odata"),
+        ("versioned", client._odata_url(domain)),
+        ("unversioned", f"{client.base_url}/servlet/odata/{domain}"),
     ]:
-        url = f"{base}/{domain}"
+        url = base
         try:
             resp = client._raw_get(url, timeout=15)
             results[label] = {
@@ -350,7 +385,7 @@ def diagnose_classifications(
     results: dict = {}
 
     # 1) $metadata pruefen
-    for label, base in [("versioned", client.odata_base), ("unversioned", f"{client.base_url}/servlet/odata")]:
+    for label, base in [("versioned", client._odata_url(type_path.split('/')[0])), ("unversioned", f"{client.base_url}/servlet/odata")]:
         meta_url = f"{base}/{type_path.split('/')[0]}/$metadata"
         try:
             resp = client._raw_get(meta_url, timeout=15)
@@ -372,7 +407,7 @@ def diagnose_classifications(
         "Classification/Nodes",
         "Classification/ClassificationNodes",
     ]:
-        url = f"{client.odata_base}/{domain_entity}"
+        url = f"{client._odata_url(domain_entity.split('/')[0])}/{domain_entity.split('/', 1)[1]}"
         try:
             resp = client._raw_get(url, timeout=10)
             entry: dict = {"url": url, "status": resp.status_code}
@@ -389,7 +424,7 @@ def diagnose_classifications(
 
     # 3) Distinct Classification-Werte aus echten Parts (Top 50)
     try:
-        url = f"{client.odata_base}/ProdMgmt/Parts"
+        url = f"{client._odata_url('ProdMgmt')}/Parts"
         params = {
             "$select": "Number,Name,BAL_CLASSIFICATION_BINDING_WTPART",
             "$top": "50",

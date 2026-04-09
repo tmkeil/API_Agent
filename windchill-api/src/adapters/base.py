@@ -24,6 +24,24 @@ logger = logging.getLogger(__name__)
 
 
 # ═════════════════════════════════════════════════════════════
+# Domain → OData-Version (aus interner Swagger-Spec)
+# ═════════════════════════════════════════════════════════════
+
+DOMAIN_VERSIONS: dict[str, str] = {
+    "ProdMgmt":          "v7",
+    "DataAdmin":         "v7",
+    "DocMgmt":           "v7",
+    "ChangeMgmt":        "v8",
+    "CADDocumentMgmt":   "v5",
+    "Reporting":         "v4",
+    "Workflow":          "v5",
+    "ViewMgmt":          "v3",
+    "Factory":           "v6",
+    "BalluffCustom":     "v1",
+}
+
+
+# ═════════════════════════════════════════════════════════════
 # Exceptions
 # ═════════════════════════════════════════════════════════════
 
@@ -67,6 +85,7 @@ class WRSClientBase:
         max_retries: int = 3,
     ):
         self.base_url = base_url.rstrip("/")
+        # Legacy: odata_base bleibt fuer Abwaertskompatibilitaet
         self.odata_base = f"{self.base_url}/servlet/odata/{odata_version}"
         self._timeout = timeout
         self._max_retries = max_retries
@@ -106,6 +125,22 @@ class WRSClientBase:
             self._http.close()
             raise
 
+    # ── Domain-URL-Helper ────────────────────────────────────
+
+    def _odata_url(self, domain: str) -> str:
+        """OData-Base-URL fuer eine bestimmte Domain zurueckgeben.
+
+        Verwendet die korrekte API-Version pro Domain gemaess der
+        internen Swagger-Spezifikation.
+
+        Beispiel: _odata_url("ProdMgmt") → ".../servlet/odata/v7/ProdMgmt"
+        """
+        version = DOMAIN_VERSIONS.get(domain)
+        if not version:
+            logger.warning("Unbekannte Domain '%s', Fallback auf odata_base", domain)
+            return f"{self.odata_base}/{domain}"
+        return f"{self.base_url}/servlet/odata/{version}/{domain}"
+
     # ── Verbindung & Authentifizierung ───────────────────────
 
     def _connect(self) -> None:
@@ -122,12 +157,13 @@ class WRSClientBase:
         Raises:
             WRSError: Keine Verbindung oder Authentifizierung fehlgeschlagen.
         """
-        logger.info("Connecting to %s", self.odata_base)
+        prod_mgmt_url = self._odata_url("ProdMgmt")
+        logger.info("Connecting to %s", prod_mgmt_url)
 
         # Schritt 1: Verbindungstest mit explizitem Basic-Auth
         try:
             resp = self._http.get(
-                f"{self.odata_base}/ProdMgmt",
+                prod_mgmt_url,
                 auth=(self._username, self._password),
                 timeout=15,
             )
@@ -227,7 +263,7 @@ class WRSClientBase:
         (Login-Seite nochmal), was kein echter Erfolg ist.
         """
         try:
-            resp = self._raw_get(f"{self.odata_base}/ProdMgmt", timeout=15)
+            resp = self._raw_get(self._odata_url("ProdMgmt"), timeout=15)
         except (httpx.ConnectError, httpx.TimeoutException, httpx.NetworkError) as e:
             logger.error(
                 "Verify-Auth Verbindung fehlgeschlagen: %s — %s",

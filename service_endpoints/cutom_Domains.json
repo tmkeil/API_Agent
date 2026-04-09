@@ -1,0 +1,185 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "description": "Balluff Custom OData API Domain",
+    "version": "1",
+    "title": "BalluffCustom"
+  },
+  "host": "plm-dev.neuhausen.balluff.net:443",
+  "basePath": "/Windchill/servlet/odata/v1/BalluffCustom",
+  "tags": [
+    {
+      "name": "Service Endpoints"
+    }
+  ],
+  "schemes": [
+    "https"
+  ],
+  "paths": {
+    "/ChangeProductState": {
+      "post": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Change the state of a product",
+        "description": "Change the state of a product",
+        "operationId": "Action_ChangeProductState",
+        "parameters": [
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "CSRF_NONCE",
+            "in": "header",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/BalluffCustom.ChangeProductState.Unbound.Body"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/BalluffCustom.BalluffCustomODataResponse"
+            }
+          }
+        }
+      }
+    },
+    "/CreateProductFromtemplate": {
+      "post": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Create a Product from template.",
+        "description": "Create a Product from template.",
+        "operationId": "Action_CreateProductFromtemplate",
+        "parameters": [
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "CSRF_NONCE",
+            "in": "header",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/BalluffCustom.CreateProductFromtemplate.Unbound.Body"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/BalluffCustom.BalluffCustomODataResponse"
+            }
+          }
+        }
+      }
+    },
+    "/GetEquivalence(ProductNumber=@ProductNumber)": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get Equivalence object of the given number",
+        "description": "Get Equivalence object of the given number",
+        "operationId": "Function_GetEquivalence_With",
+        "parameters": [
+          {
+            "name": "@ProductNumber",
+            "in": "query",
+            "description": "Number of the product",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/BalluffCustom.BalluffCustomEquivalenceEntry"
+            }
+          }
+        }
+      }
+    },
+    "/UpdateProduct": {
+      "post": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Update attribute of a product",
+        "description": "Update attribute of a product",
+        "operationId": "Action_UpdateProduct",
+        "parameters": [
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "CSRF_NONCE",
+            "in": "header",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/BalluffCustom.UpdateProduct.Unbound.Body"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/BalluffCustom.BalluffCustomODataResponse"
+            }
+          }
+        }
+      }
+    }
+  }
+}

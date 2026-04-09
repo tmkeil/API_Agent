@@ -1,0 +1,4441 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "description": "PTC Document Management Domain",
+    "version": "7",
+    "title": "PTC.DocMgmt"
+  },
+  "host": "plm-dev.neuhausen.balluff.net:443",
+  "basePath": "/Windchill/servlet/odata/v7/DocMgmt",
+  "tags": [
+    {
+      "name": "Service Endpoints"
+    }
+  ],
+  "schemes": [
+    "https"
+  ],
+  "paths": {
+    "/CheckInDocuments": {
+      "post": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Execute CheckInDocuments",
+        "description": "Execute CheckInDocuments",
+        "operationId": "Action_CheckInDocuments",
+        "parameters": [
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$filter",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$top",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$skip",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$count",
+            "in": "query",
+            "required": false,
+            "type": "boolean",
+            "default": false
+          },
+          {
+            "name": "$orderby",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "CSRF_NONCE",
+            "in": "header",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/PTC.DocMgmt.CheckInDocuments.Unbound.Body"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/PTC.DocMgmt.Document"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/CheckOutDocuments": {
+      "post": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Execute CheckOutDocuments",
+        "description": "Execute CheckOutDocuments",
+        "operationId": "Action_CheckOutDocuments",
+        "parameters": [
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$filter",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$top",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$skip",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$count",
+            "in": "query",
+            "required": false,
+            "type": "boolean",
+            "default": false
+          },
+          {
+            "name": "$orderby",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "CSRF_NONCE",
+            "in": "header",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/PTC.DocMgmt.CheckOutDocuments.Unbound.Body"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/PTC.DocMgmt.Document"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/CreateDocuments": {
+      "post": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Execute CreateDocuments",
+        "description": "Execute CreateDocuments",
+        "operationId": "Action_CreateDocuments",
+        "parameters": [
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$filter",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$top",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$skip",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$count",
+            "in": "query",
+            "required": false,
+            "type": "boolean",
+            "default": false
+          },
+          {
+            "name": "$orderby",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "CSRF_NONCE",
+            "in": "header",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/PTC.DocMgmt.CreateDocuments.Unbound.Body"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/PTC.DocMgmt.Document"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/DeleteDocuments": {
+      "post": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Execute DeleteDocuments",
+        "description": "Execute DeleteDocuments",
+        "operationId": "Action_DeleteDocuments",
+        "parameters": [
+          {
+            "name": "CSRF_NONCE",
+            "in": "header",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/PTC.DocMgmt.DeleteDocuments.Unbound.Body"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/Documents": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get Documents",
+        "description": "Get Documents",
+        "operationId": "GetDocuments",
+        "parameters": [
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$filter",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$top",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$skip",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$count",
+            "in": "query",
+            "required": false,
+            "type": "boolean",
+            "default": false
+          },
+          {
+            "name": "$orderby",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/PTC.DocMgmt.Document"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Create Document",
+        "description": "Create Document",
+        "operationId": "PostDocument",
+        "parameters": [
+          {
+            "name": "CSRF_NONCE",
+            "in": "header",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/Create.PTC.DocMgmt.Document"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Created"
+          }
+        }
+      }
+    },
+    "/Documents('{DocumentId}')": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get Document for a given DocumentId",
+        "description": "Get Document for a given DocumentId",
+        "operationId": "GetDocument",
+        "parameters": [
+          {
+            "name": "DocumentId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/PTC.DocMgmt.Document"
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "DeleteDocument",
+        "description": "DeleteDocument",
+        "operationId": "DeleteDocument",
+        "parameters": [
+          {
+            "name": "DocumentId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "CSRF_NONCE",
+            "in": "header",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Update an existing Document",
+        "description": "Update an existing Document",
+        "operationId": "UpdateDocument",
+        "parameters": [
+          {
+            "name": "DocumentId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "CSRF_NONCE",
+            "in": "header",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/Update.PTC.DocMgmt.Document"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/Documents('{DocumentId}')/Attachments": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get ContentItem",
+        "description": "Get ContentItem",
+        "operationId": "Document.Attachments.GetContentItems",
+        "parameters": [
+          {
+            "name": "DocumentId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$filter",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$top",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$skip",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$count",
+            "in": "query",
+            "required": false,
+            "type": "boolean",
+            "default": false
+          },
+          {
+            "name": "$orderby",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/PTC.ContentItem"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Create ContentItem",
+        "description": "Create ContentItem",
+        "operationId": "Document.Attachments.PostContentItem",
+        "parameters": [
+          {
+            "name": "DocumentId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "CSRF_NONCE",
+            "in": "header",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/Create.PTC.ContentItem"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/Documents('{DocumentId}')/Attachments('{ContentItemId}')": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get ContentItem for a given ContentItemId",
+        "description": "Get ContentItem for a given ContentItemId",
+        "operationId": "Document.Attachments.GetContentItem",
+        "parameters": [
+          {
+            "name": "DocumentId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "ContentItemId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/PTC.ContentItem"
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Delete an existing ContentItem",
+        "description": "Delete an existing ContentItem",
+        "operationId": "Document.Attachments.DeletePTC.ContentItem",
+        "parameters": [
+          {
+            "name": "DocumentId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "ContentItemId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "CSRF_NONCE",
+            "in": "header",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Update an existing ContentItem",
+        "description": "Update an existing ContentItem",
+        "operationId": "Document.Attachments.UpdateContentItem",
+        "parameters": [
+          {
+            "name": "DocumentId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "ContentItemId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "CSRF_NONCE",
+            "in": "header",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/Update.PTC.ContentItem"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/Documents('{DocumentId}')/Context": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get Container",
+        "description": "Get Container",
+        "operationId": "Document.Context.GetContainer",
+        "parameters": [
+          {
+            "name": "DocumentId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/PTC.DataAdmin.Container"
+            }
+          }
+        }
+      }
+    },
+    "/Documents('{DocumentId}')/Creator": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get User",
+        "description": "Get User",
+        "operationId": "Document.Creator.GetUser",
+        "parameters": [
+          {
+            "name": "DocumentId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/PTC.PrincipalMgmt.User"
+            }
+          }
+        }
+      }
+    },
+    "/Documents('{DocumentId}')/DocUsageLinks": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get DocumentUsageLink",
+        "description": "Get DocumentUsageLink",
+        "operationId": "Document.DocUsageLinks.GetDocumentUsageLinks",
+        "parameters": [
+          {
+            "name": "DocumentId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$filter",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$top",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$skip",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$count",
+            "in": "query",
+            "required": false,
+            "type": "boolean",
+            "default": false
+          },
+          {
+            "name": "$orderby",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/PTC.DocMgmt.DocumentUsageLink"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/Documents('{DocumentId}')/DocUsageLinks('{DocumentUsageLinkId}')": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get DocumentUsageLink for a given DocumentUsageLinkId",
+        "description": "Get DocumentUsageLink for a given DocumentUsageLinkId",
+        "operationId": "Document.DocUsageLinks.GetDocumentUsageLink",
+        "parameters": [
+          {
+            "name": "DocumentId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "DocumentUsageLinkId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/PTC.DocMgmt.DocumentUsageLink"
+            }
+          }
+        }
+      }
+    },
+    "/Documents('{DocumentId}')/Folder": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get Folder",
+        "description": "Get Folder",
+        "operationId": "Document.Folder.GetFolder",
+        "parameters": [
+          {
+            "name": "DocumentId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/PTC.DataAdmin.Folder"
+            }
+          }
+        }
+      }
+    },
+    "/Documents('{DocumentId}')/Modifier": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get User",
+        "description": "Get User",
+        "operationId": "Document.Modifier.GetUser",
+        "parameters": [
+          {
+            "name": "DocumentId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/PTC.PrincipalMgmt.User"
+            }
+          }
+        }
+      }
+    },
+    "/Documents('{DocumentId}')/Organization": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get Organization",
+        "description": "Get Organization",
+        "operationId": "Document.Organization.GetOrganization",
+        "parameters": [
+          {
+            "name": "DocumentId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/PTC.PrincipalMgmt.Organization"
+            }
+          }
+        }
+      }
+    },
+    "/Documents('{DocumentId}')/PTC.DocMgmt.CheckIn": {
+      "post": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Execute CheckIn",
+        "description": "Execute CheckIn",
+        "operationId": "PTC.DocMgmt.Document.Action_CheckIn_With_CheckOutNote_KeepCheckedOut",
+        "parameters": [
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "CSRF_NONCE",
+            "in": "header",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "DocumentId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/PTC.DocMgmt.CheckIn.Body"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/PTC.DocMgmt.Document"
+            }
+          }
+        }
+      }
+    },
+    "/Documents('{DocumentId}')/PTC.DocMgmt.CheckOut": {
+      "post": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Execute CheckOut",
+        "description": "Execute CheckOut",
+        "operationId": "PTC.DocMgmt.Document.Action_CheckOut_With",
+        "parameters": [
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "CSRF_NONCE",
+            "in": "header",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "DocumentId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/PTC.DocMgmt.CheckOut.Body"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/PTC.DocMgmt.Document"
+            }
+          }
+        }
+      }
+    },
+    "/Documents('{DocumentId}')/PTC.DocMgmt.GetDocStructure": {
+      "post": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get Structure of the Document.",
+        "description": "Get Structure of the Document.",
+        "operationId": "PTC.DocMgmt.Document.Action_GetDocStructure",
+        "parameters": [
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "CSRF_NONCE",
+            "in": "header",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "DocumentId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/PTC.DocMgmt.DocStructure"
+            }
+          }
+        }
+      }
+    },
+    "/Documents('{DocumentId}')/PTC.DocMgmt.Revise": {
+      "post": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Execute Revise",
+        "description": "Execute Revise",
+        "operationId": "PTC.DocMgmt.Document.Action_Revise_With",
+        "parameters": [
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "CSRF_NONCE",
+            "in": "header",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "DocumentId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/PTC.DocMgmt.Revise.Body"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/PTC.DocMgmt.Document"
+            }
+          }
+        }
+      }
+    },
+    "/Documents('{DocumentId}')/PTC.DocMgmt.SetState": {
+      "post": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Execute SetState",
+        "description": "Execute SetState",
+        "operationId": "PTC.DocMgmt.Document.Action_SetState_With",
+        "parameters": [
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "CSRF_NONCE",
+            "in": "header",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "DocumentId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/PTC.DocMgmt.SetState.Body"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/PTC.DocMgmt.Document"
+            }
+          }
+        }
+      }
+    },
+    "/Documents('{DocumentId}')/PTC.DocMgmt.UndoCheckOut": {
+      "post": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Execute UndoCheckOut",
+        "description": "Execute UndoCheckOut",
+        "operationId": "PTC.DocMgmt.Document.Action_UndoCheckOut",
+        "parameters": [
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "CSRF_NONCE",
+            "in": "header",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "DocumentId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/PTC.DocMgmt.Document"
+            }
+          }
+        }
+      }
+    },
+    "/Documents('{DocumentId}')/PTC.DocMgmt.UpdateCommonProperties": {
+      "post": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Execute UpdateCommonProperties",
+        "description": "Execute UpdateCommonProperties",
+        "operationId": "PTC.DocMgmt.Document.Action_UpdateCommonProperties_With",
+        "parameters": [
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "CSRF_NONCE",
+            "in": "header",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "DocumentId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/PTC.DocMgmt.UpdateCommonProperties.Body"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/PTC.DocMgmt.Document"
+            }
+          }
+        }
+      }
+    },
+    "/Documents('{DocumentId}')/PTC.DocMgmt.UploadStage1Action": {
+      "post": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "upload stage 1 bound action",
+        "description": "upload stage 1 bound action",
+        "operationId": "PTC.DocMgmt.Document.Action_UploadStage1Action_With_DelegateName",
+        "parameters": [
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$filter",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$top",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$skip",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$count",
+            "in": "query",
+            "required": false,
+            "type": "boolean",
+            "default": false
+          },
+          {
+            "name": "$orderby",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "CSRF_NONCE",
+            "in": "header",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "DocumentId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/PTC.DocMgmt.UploadStage1Action.Body"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/PTC.CacheDescriptor"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/Documents('{DocumentId}')/PTC.DocMgmt.UploadStage3Action": {
+      "post": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "upload stage 3 bound action",
+        "description": "upload stage 3 bound action",
+        "operationId": "PTC.DocMgmt.Document.Action_UploadStage3Action_With",
+        "parameters": [
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$filter",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$top",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$skip",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$count",
+            "in": "query",
+            "required": false,
+            "type": "boolean",
+            "default": false
+          },
+          {
+            "name": "$orderby",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "CSRF_NONCE",
+            "in": "header",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "DocumentId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/PTC.DocMgmt.UploadStage3Action.Body"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/PTC.ApplicationData"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/Documents('{DocumentId}')/PrimaryContent": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get ContentItem",
+        "description": "Get ContentItem",
+        "operationId": "Document.PrimaryContent.GetContentItem",
+        "parameters": [
+          {
+            "name": "DocumentId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/PTC.ContentItem"
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Delete an existing ContentItem",
+        "description": "Delete an existing ContentItem",
+        "operationId": "Document.PrimaryContent.DeletePTC.ContentItem",
+        "parameters": [
+          {
+            "name": "DocumentId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "CSRF_NONCE",
+            "in": "header",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/Documents('{DocumentId}')/Representations": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get Representation",
+        "description": "Get Representation",
+        "operationId": "Document.Representations.GetRepresentations",
+        "parameters": [
+          {
+            "name": "DocumentId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$filter",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$top",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$skip",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$count",
+            "in": "query",
+            "required": false,
+            "type": "boolean",
+            "default": false
+          },
+          {
+            "name": "$orderby",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/PTC.Visualization.Representation"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/Documents('{DocumentId}')/Representations('{RepresentationId}')": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get Representation for a given RepresentationId",
+        "description": "Get Representation for a given RepresentationId",
+        "operationId": "Document.Representations.GetRepresentation",
+        "parameters": [
+          {
+            "name": "DocumentId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "RepresentationId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/PTC.Visualization.Representation"
+            }
+          }
+        }
+      }
+    },
+    "/Documents('{DocumentId}')/Revisions": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get Document",
+        "description": "Get Document",
+        "operationId": "Document.Revisions.GetDocuments",
+        "parameters": [
+          {
+            "name": "DocumentId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$filter",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$top",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$skip",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$count",
+            "in": "query",
+            "required": false,
+            "type": "boolean",
+            "default": false
+          },
+          {
+            "name": "$orderby",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/PTC.DocMgmt.Document"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/Documents('{DocumentId}')/Revisions('{RevisionsId}')": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get Document for a given RevisionsId",
+        "description": "Get Document for a given RevisionsId",
+        "operationId": "Document.Revisions.GetDocument",
+        "parameters": [
+          {
+            "name": "DocumentId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "RevisionsId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/PTC.DocMgmt.Document"
+            }
+          }
+        }
+      }
+    },
+    "/Documents('{DocumentId}')/SmallThumbnails": {},
+    "/Documents('{DocumentId}')/SmallThumbnails('{ContentItemId}')": {},
+    "/Documents('{DocumentId}')/Thumbnails": {},
+    "/Documents('{DocumentId}')/Thumbnails('{ContentItemId}')": {},
+    "/Documents('{DocumentId}')/Versions": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get Document",
+        "description": "Get Document",
+        "operationId": "Document.Versions.GetDocuments",
+        "parameters": [
+          {
+            "name": "DocumentId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$filter",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$top",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$skip",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$count",
+            "in": "query",
+            "required": false,
+            "type": "boolean",
+            "default": false
+          },
+          {
+            "name": "$orderby",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/PTC.DocMgmt.Document"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/Documents('{DocumentId}')/Versions('{VersionsId}')": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get Document for a given VersionsId",
+        "description": "Get Document for a given VersionsId",
+        "operationId": "Document.Versions.GetDocument",
+        "parameters": [
+          {
+            "name": "DocumentId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "VersionsId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/PTC.DocMgmt.Document"
+            }
+          }
+        }
+      }
+    },
+    "/Documents(@DocumentId)/PTC.DocMgmt.GetLifeCycleTemplate()": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Execute GetLifeCycleTemplate",
+        "description": "Execute GetLifeCycleTemplate",
+        "operationId": "PTC.DocMgmt.Document.Function_GetLifeCycleTemplate",
+        "parameters": [
+          {
+            "name": "@DocumentId",
+            "in": "query",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/PTC.LifeCycleTemplate"
+            }
+          }
+        }
+      }
+    },
+    "/Documents(@DocumentId)/PTC.DocMgmt.GetValidStateTransitions()": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Execute GetValidStateTransitions",
+        "description": "Execute GetValidStateTransitions",
+        "operationId": "PTC.DocMgmt.Document.Function_GetValidStateTransitions",
+        "parameters": [
+          {
+            "name": "@DocumentId",
+            "in": "query",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/PTC.EnumTypeList"
+            }
+          }
+        }
+      }
+    },
+    "/Documents(@DocumentId)/PTC.DocMgmt.IsCheckoutAllowed()": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Execute IsCheckoutAllowed",
+        "description": "Execute IsCheckoutAllowed",
+        "operationId": "PTC.DocMgmt.Document.Function_IsCheckoutAllowed",
+        "parameters": [
+          {
+            "name": "@DocumentId",
+            "in": "query",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/PTC.DocMgmt.Document"
+            }
+          }
+        }
+      }
+    },
+    "/Documents/PTC.DocMgmt.Agenda": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get Documents of type Agenda",
+        "description": "Get Documents of type Agenda",
+        "operationId": "GetAgendas",
+        "parameters": [
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$filter",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$top",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$skip",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$count",
+            "in": "query",
+            "required": false,
+            "type": "boolean",
+            "default": false
+          },
+          {
+            "name": "$orderby",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/PTC.DocMgmt.Agenda"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/Documents/PTC.DocMgmt.BAL_ADMINISTRATIVE_DOC": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get Documents of type BAL_ADMINISTRATIVE_DOC",
+        "description": "Get Documents of type BAL_ADMINISTRATIVE_DOC",
+        "operationId": "GetBAL_ADMINISTRATIVE_DOCs",
+        "parameters": [
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$filter",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$top",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$skip",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$count",
+            "in": "query",
+            "required": false,
+            "type": "boolean",
+            "default": false
+          },
+          {
+            "name": "$orderby",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/PTC.DocMgmt.BAL_ADMINISTRATIVE_DOC"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/Documents/PTC.DocMgmt.BAL_APPROVAL_DOC": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get Documents of type BAL_APPROVAL_DOC",
+        "description": "Get Documents of type BAL_APPROVAL_DOC",
+        "operationId": "GetBAL_APPROVAL_DOCs",
+        "parameters": [
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$filter",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$top",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$skip",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$count",
+            "in": "query",
+            "required": false,
+            "type": "boolean",
+            "default": false
+          },
+          {
+            "name": "$orderby",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/PTC.DocMgmt.BAL_APPROVAL_DOC"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/Documents/PTC.DocMgmt.BAL_ASSET_DOCUMENT": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get Documents of type BAL_ASSET_DOCUMENT",
+        "description": "Get Documents of type BAL_ASSET_DOCUMENT",
+        "operationId": "GetBAL_ASSET_DOCUMENTs",
+        "parameters": [
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$filter",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$top",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$skip",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$count",
+            "in": "query",
+            "required": false,
+            "type": "boolean",
+            "default": false
+          },
+          {
+            "name": "$orderby",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/PTC.DocMgmt.BAL_ASSET_DOCUMENT"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/Documents/PTC.DocMgmt.BAL_CAD_DOC": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get Documents of type BAL_CAD_DOC",
+        "description": "Get Documents of type BAL_CAD_DOC",
+        "operationId": "GetBAL_CAD_DOCs",
+        "parameters": [
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$filter",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$top",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$skip",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$count",
+            "in": "query",
+            "required": false,
+            "type": "boolean",
+            "default": false
+          },
+          {
+            "name": "$orderby",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/PTC.DocMgmt.BAL_CAD_DOC"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/Documents/PTC.DocMgmt.BAL_COLLECTOR_DOC": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get Documents of type BAL_COLLECTOR_DOC",
+        "description": "Get Documents of type BAL_COLLECTOR_DOC",
+        "operationId": "GetBAL_COLLECTOR_DOCs",
+        "parameters": [
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$filter",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$top",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$skip",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$count",
+            "in": "query",
+            "required": false,
+            "type": "boolean",
+            "default": false
+          },
+          {
+            "name": "$orderby",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/PTC.DocMgmt.BAL_COLLECTOR_DOC"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/Documents/PTC.DocMgmt.BAL_CUSTOMER_DOC": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get Documents of type BAL_CUSTOMER_DOC",
+        "description": "Get Documents of type BAL_CUSTOMER_DOC",
+        "operationId": "GetBAL_CUSTOMER_DOCs",
+        "parameters": [
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$filter",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$top",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$skip",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$count",
+            "in": "query",
+            "required": false,
+            "type": "boolean",
+            "default": false
+          },
+          {
+            "name": "$orderby",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/PTC.DocMgmt.BAL_CUSTOMER_DOC"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/Documents/PTC.DocMgmt.BAL_CUSTOMER_RLT_DOC": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get Documents of type BAL_CUSTOMER_RLT_DOC",
+        "description": "Get Documents of type BAL_CUSTOMER_RLT_DOC",
+        "operationId": "GetBAL_CUSTOMER_RLT_DOCs",
+        "parameters": [
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$filter",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$top",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$skip",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$count",
+            "in": "query",
+            "required": false,
+            "type": "boolean",
+            "default": false
+          },
+          {
+            "name": "$orderby",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/PTC.DocMgmt.BAL_CUSTOMER_RLT_DOC"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/Documents/PTC.DocMgmt.BAL_ECAD_DOC": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get Documents of type BAL_ECAD_DOC",
+        "description": "Get Documents of type BAL_ECAD_DOC",
+        "operationId": "GetBAL_ECAD_DOCs",
+        "parameters": [
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$filter",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$top",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$skip",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$count",
+            "in": "query",
+            "required": false,
+            "type": "boolean",
+            "default": false
+          },
+          {
+            "name": "$orderby",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/PTC.DocMgmt.BAL_ECAD_DOC"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/Documents/PTC.DocMgmt.BAL_LABEL_DOC": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get Documents of type BAL_LABEL_DOC",
+        "description": "Get Documents of type BAL_LABEL_DOC",
+        "operationId": "GetBAL_LABEL_DOCs",
+        "parameters": [
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$filter",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$top",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$skip",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$count",
+            "in": "query",
+            "required": false,
+            "type": "boolean",
+            "default": false
+          },
+          {
+            "name": "$orderby",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/PTC.DocMgmt.BAL_LABEL_DOC"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/Documents/PTC.DocMgmt.BAL_LEGACY_DOC": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get Documents of type BAL_LEGACY_DOC",
+        "description": "Get Documents of type BAL_LEGACY_DOC",
+        "operationId": "GetBAL_LEGACY_DOCs",
+        "parameters": [
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$filter",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$top",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$skip",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$count",
+            "in": "query",
+            "required": false,
+            "type": "boolean",
+            "default": false
+          },
+          {
+            "name": "$orderby",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/PTC.DocMgmt.BAL_LEGACY_DOC"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/Documents/PTC.DocMgmt.BAL_LEGAL_DOC": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get Documents of type BAL_LEGAL_DOC",
+        "description": "Get Documents of type BAL_LEGAL_DOC",
+        "operationId": "GetBAL_LEGAL_DOCs",
+        "parameters": [
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$filter",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$top",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$skip",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$count",
+            "in": "query",
+            "required": false,
+            "type": "boolean",
+            "default": false
+          },
+          {
+            "name": "$orderby",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/PTC.DocMgmt.BAL_LEGAL_DOC"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/Documents/PTC.DocMgmt.BAL_MCAD_LEGACY_DOC": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get Documents of type BAL_MCAD_LEGACY_DOC",
+        "description": "Get Documents of type BAL_MCAD_LEGACY_DOC",
+        "operationId": "GetBAL_MCAD_LEGACY_DOCs",
+        "parameters": [
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$filter",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$top",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$skip",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$count",
+            "in": "query",
+            "required": false,
+            "type": "boolean",
+            "default": false
+          },
+          {
+            "name": "$orderby",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/PTC.DocMgmt.BAL_MCAD_LEGACY_DOC"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/Documents/PTC.DocMgmt.BAL_PRODUCTION_DOC": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get Documents of type BAL_PRODUCTION_DOC",
+        "description": "Get Documents of type BAL_PRODUCTION_DOC",
+        "operationId": "GetBAL_PRODUCTION_DOCs",
+        "parameters": [
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$filter",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$top",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$skip",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$count",
+            "in": "query",
+            "required": false,
+            "type": "boolean",
+            "default": false
+          },
+          {
+            "name": "$orderby",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/PTC.DocMgmt.BAL_PRODUCTION_DOC"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/Documents/PTC.DocMgmt.BAL_PROJECT_DOC": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get Documents of type BAL_PROJECT_DOC",
+        "description": "Get Documents of type BAL_PROJECT_DOC",
+        "operationId": "GetBAL_PROJECT_DOCs",
+        "parameters": [
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$filter",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$top",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$skip",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$count",
+            "in": "query",
+            "required": false,
+            "type": "boolean",
+            "default": false
+          },
+          {
+            "name": "$orderby",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/PTC.DocMgmt.BAL_PROJECT_DOC"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/Documents/PTC.DocMgmt.BAL_QUALIFIYING_DOC": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get Documents of type BAL_QUALIFIYING_DOC",
+        "description": "Get Documents of type BAL_QUALIFIYING_DOC",
+        "operationId": "GetBAL_QUALIFIYING_DOCs",
+        "parameters": [
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$filter",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$top",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$skip",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$count",
+            "in": "query",
+            "required": false,
+            "type": "boolean",
+            "default": false
+          },
+          {
+            "name": "$orderby",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/PTC.DocMgmt.BAL_QUALIFIYING_DOC"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/Documents/PTC.DocMgmt.BAL_SOFTWARE_DOC": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get Documents of type BAL_SOFTWARE_DOC",
+        "description": "Get Documents of type BAL_SOFTWARE_DOC",
+        "operationId": "GetBAL_SOFTWARE_DOCs",
+        "parameters": [
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$filter",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$top",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$skip",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$count",
+            "in": "query",
+            "required": false,
+            "type": "boolean",
+            "default": false
+          },
+          {
+            "name": "$orderby",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/PTC.DocMgmt.BAL_SOFTWARE_DOC"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/Documents/PTC.DocMgmt.BAL_SPECIFYING_DOC": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get Documents of type BAL_SPECIFYING_DOC",
+        "description": "Get Documents of type BAL_SPECIFYING_DOC",
+        "operationId": "GetBAL_SPECIFYING_DOCs",
+        "parameters": [
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$filter",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$top",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$skip",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$count",
+            "in": "query",
+            "required": false,
+            "type": "boolean",
+            "default": false
+          },
+          {
+            "name": "$orderby",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/PTC.DocMgmt.BAL_SPECIFYING_DOC"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/Documents/PTC.DocMgmt.BAL_SUPPLIER_DOC": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get Documents of type BAL_SUPPLIER_DOC",
+        "description": "Get Documents of type BAL_SUPPLIER_DOC",
+        "operationId": "GetBAL_SUPPLIER_DOCs",
+        "parameters": [
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$filter",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$top",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$skip",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$count",
+            "in": "query",
+            "required": false,
+            "type": "boolean",
+            "default": false
+          },
+          {
+            "name": "$orderby",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/PTC.DocMgmt.BAL_SUPPLIER_DOC"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/Documents/PTC.DocMgmt.BAL_VIU_DOC": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get Documents of type BAL_VIU_DOC",
+        "description": "Get Documents of type BAL_VIU_DOC",
+        "operationId": "GetBAL_VIU_DOCs",
+        "parameters": [
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$filter",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$top",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$skip",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$count",
+            "in": "query",
+            "required": false,
+            "type": "boolean",
+            "default": false
+          },
+          {
+            "name": "$orderby",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/PTC.DocMgmt.BAL_VIU_DOC"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/Documents/PTC.DocMgmt.General": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get Documents of type General",
+        "description": "Get Documents of type General",
+        "operationId": "GetGenerals",
+        "parameters": [
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$filter",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$top",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$skip",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$count",
+            "in": "query",
+            "required": false,
+            "type": "boolean",
+            "default": false
+          },
+          {
+            "name": "$orderby",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/PTC.DocMgmt.General"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/Documents/PTC.DocMgmt.InterCommData": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get Documents of type InterCommData",
+        "description": "Get Documents of type InterCommData",
+        "operationId": "GetInterCommDatas",
+        "parameters": [
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$filter",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$top",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$skip",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$count",
+            "in": "query",
+            "required": false,
+            "type": "boolean",
+            "default": false
+          },
+          {
+            "name": "$orderby",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/PTC.DocMgmt.InterCommData"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/Documents/PTC.DocMgmt.Minutes": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get Documents of type Minutes",
+        "description": "Get Documents of type Minutes",
+        "operationId": "GetMinutess",
+        "parameters": [
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$filter",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$top",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$skip",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$count",
+            "in": "query",
+            "required": false,
+            "type": "boolean",
+            "default": false
+          },
+          {
+            "name": "$orderby",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/PTC.DocMgmt.Minutes"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/Documents/PTC.DocMgmt.Plan": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get Documents of type Plan",
+        "description": "Get Documents of type Plan",
+        "operationId": "GetPlans",
+        "parameters": [
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$filter",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$top",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$skip",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$count",
+            "in": "query",
+            "required": false,
+            "type": "boolean",
+            "default": false
+          },
+          {
+            "name": "$orderby",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/PTC.DocMgmt.Plan"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/Documents/PTC.DocMgmt.Presentation": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get Documents of type Presentation",
+        "description": "Get Documents of type Presentation",
+        "operationId": "GetPresentations",
+        "parameters": [
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$filter",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$top",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$skip",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$count",
+            "in": "query",
+            "required": false,
+            "type": "boolean",
+            "default": false
+          },
+          {
+            "name": "$orderby",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/PTC.DocMgmt.Presentation"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/Documents/PTC.DocMgmt.ReferenceDocument": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get Documents of type ReferenceDocument",
+        "description": "Get Documents of type ReferenceDocument",
+        "operationId": "GetReferenceDocuments",
+        "parameters": [
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$filter",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$top",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$skip",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$count",
+            "in": "query",
+            "required": false,
+            "type": "boolean",
+            "default": false
+          },
+          {
+            "name": "$orderby",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/PTC.DocMgmt.ReferenceDocument"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/Documents/PTC.DocMgmt.TranslationDocument": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get Documents of type TranslationDocument",
+        "description": "Get Documents of type TranslationDocument",
+        "operationId": "GetTranslationDocuments",
+        "parameters": [
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$filter",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$top",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$skip",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$count",
+            "in": "query",
+            "required": false,
+            "type": "boolean",
+            "default": false
+          },
+          {
+            "name": "$orderby",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/PTC.DocMgmt.TranslationDocument"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/EditDocumentsSecurityLabels": {
+      "post": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Execute EditDocumentsSecurityLabels",
+        "description": "Execute EditDocumentsSecurityLabels",
+        "operationId": "Action_EditDocumentsSecurityLabels",
+        "parameters": [
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$filter",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$top",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$skip",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$count",
+            "in": "query",
+            "required": false,
+            "type": "boolean",
+            "default": false
+          },
+          {
+            "name": "$orderby",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "CSRF_NONCE",
+            "in": "header",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/PTC.DocMgmt.EditDocumentsSecurityLabels.Unbound.Body"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/PTC.DocMgmt.Document"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/ReviseDocuments": {
+      "post": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Execute ReviseDocuments",
+        "description": "Execute ReviseDocuments",
+        "operationId": "Action_ReviseDocuments",
+        "parameters": [
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$filter",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$top",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$skip",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$count",
+            "in": "query",
+            "required": false,
+            "type": "boolean",
+            "default": false
+          },
+          {
+            "name": "$orderby",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "CSRF_NONCE",
+            "in": "header",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/PTC.DocMgmt.ReviseDocuments.Unbound.Body"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/PTC.DocMgmt.Document"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/SetStateDocuments": {
+      "post": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Execute SetStateDocuments",
+        "description": "Execute SetStateDocuments",
+        "operationId": "Action_SetStateDocuments",
+        "parameters": [
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$filter",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$top",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$skip",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$count",
+            "in": "query",
+            "required": false,
+            "type": "boolean",
+            "default": false
+          },
+          {
+            "name": "$orderby",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "CSRF_NONCE",
+            "in": "header",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/PTC.DocMgmt.SetStateDocuments.Unbound.Body"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/PTC.DocMgmt.Document"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/UndoCheckOutDocuments": {
+      "post": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Execute UndoCheckOutDocuments",
+        "description": "Execute UndoCheckOutDocuments",
+        "operationId": "Action_UndoCheckOutDocuments",
+        "parameters": [
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$filter",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$top",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$skip",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$count",
+            "in": "query",
+            "required": false,
+            "type": "boolean",
+            "default": false
+          },
+          {
+            "name": "$orderby",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "CSRF_NONCE",
+            "in": "header",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/PTC.DocMgmt.UndoCheckOutDocuments.Unbound.Body"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/PTC.DocMgmt.Document"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/UpdateDocuments": {
+      "post": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Execute UpdateDocuments",
+        "description": "Execute UpdateDocuments",
+        "operationId": "Action_UpdateDocuments",
+        "parameters": [
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$filter",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$top",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$skip",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$count",
+            "in": "query",
+            "required": false,
+            "type": "boolean",
+            "default": false
+          },
+          {
+            "name": "$orderby",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "CSRF_NONCE",
+            "in": "header",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/PTC.DocMgmt.UpdateDocuments.Unbound.Body"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/PTC.DocMgmt.Document"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

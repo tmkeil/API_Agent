@@ -1,0 +1,1151 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "description": "PTC Data Administration domain",
+    "version": "7",
+    "title": "PTC.DataAdmin"
+  },
+  "host": "plm-dev.neuhausen.balluff.net:443",
+  "basePath": "/Windchill/servlet/odata/v7/DataAdmin",
+  "tags": [
+    {
+      "name": "Service Endpoints"
+    }
+  ],
+  "schemes": [
+    "https"
+  ],
+  "paths": {
+    "/Containers": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get Containers",
+        "description": "Get Containers",
+        "operationId": "GetContainers",
+        "parameters": [
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$filter",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$top",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$skip",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$count",
+            "in": "query",
+            "required": false,
+            "type": "boolean",
+            "default": false
+          },
+          {
+            "name": "$orderby",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/PTC.DataAdmin.Container"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/Containers('{ContainerId}')": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get Container for a given ContainerId",
+        "description": "Get Container for a given ContainerId",
+        "operationId": "GetContainer",
+        "parameters": [
+          {
+            "name": "ContainerId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/PTC.DataAdmin.Container"
+            }
+          }
+        }
+      }
+    },
+    "/Containers('{ContainerId}')/Creator": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get User",
+        "description": "Get User",
+        "operationId": "Container.Creator.GetUser",
+        "parameters": [
+          {
+            "name": "ContainerId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/PTC.PrincipalMgmt.User"
+            }
+          }
+        }
+      }
+    },
+    "/Containers('{ContainerId}')/Folders": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get Folder",
+        "description": "Get Folder",
+        "operationId": "Container.Folders.GetFolders",
+        "parameters": [
+          {
+            "name": "ContainerId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$filter",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$top",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$skip",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$count",
+            "in": "query",
+            "required": false,
+            "type": "boolean",
+            "default": false
+          },
+          {
+            "name": "$orderby",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/PTC.DataAdmin.Folder"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Create Folder",
+        "description": "Create Folder",
+        "operationId": "Container.Folders.PostFolder",
+        "parameters": [
+          {
+            "name": "ContainerId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "CSRF_NONCE",
+            "in": "header",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/Create.PTC.DataAdmin.Folder"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/Containers('{ContainerId}')/Folders('{FolderId}')": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get Folder for a given FolderId",
+        "description": "Get Folder for a given FolderId",
+        "operationId": "Container.Folders.GetFolder",
+        "parameters": [
+          {
+            "name": "ContainerId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "FolderId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/PTC.DataAdmin.Folder"
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Delete an existing Folder",
+        "description": "Delete an existing Folder",
+        "operationId": "Container.Folders.DeletePTC.DataAdmin.Folder",
+        "parameters": [
+          {
+            "name": "ContainerId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "FolderId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "CSRF_NONCE",
+            "in": "header",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Update an existing Folder",
+        "description": "Update an existing Folder",
+        "operationId": "Container.Folders.UpdateFolder",
+        "parameters": [
+          {
+            "name": "ContainerId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "FolderId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "CSRF_NONCE",
+            "in": "header",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/Update.PTC.DataAdmin.Folder"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/Containers('{ContainerId}')/Organization": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get Organization",
+        "description": "Get Organization",
+        "operationId": "Container.Organization.GetOrganization",
+        "parameters": [
+          {
+            "name": "ContainerId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/PTC.PrincipalMgmt.Organization"
+            }
+          }
+        }
+      }
+    },
+    "/Containers(@ContainerId)/PTC.DataAdmin.GetConstraints(EntityName=@EntityName,DriverProperties=@DriverProperties)": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Function to find all the constraints on all properties for a Windchill type",
+        "description": "Function to find all the constraints on all properties for a Windchill type",
+        "operationId": "PTC.DataAdmin.Container.Function_GetConstraints_With_@DriverProperties",
+        "parameters": [
+          {
+            "name": "@ContainerId",
+            "in": "query",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "@EntityName",
+            "in": "query",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "@DriverProperties",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/PTC.DataAdmin.PropertyDetail"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/Containers(@ContainerId)/PTC.DataAdmin.GetConstraints(EntityName=@EntityName,EntityVersion=@EntityVersion,DriverProperties=@DriverProperties)": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Function to find all the constraints on all properties for a given entity name and version",
+        "description": "Function to find all the constraints on all properties for a given entity name and version",
+        "operationId": "PTC.DataAdmin.Container.Function_GetConstraints_With_@EntityVersion_@DriverProperties",
+        "parameters": [
+          {
+            "name": "@ContainerId",
+            "in": "query",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "@EntityName",
+            "in": "query",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "@EntityVersion",
+            "in": "query",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "@DriverProperties",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/PTC.DataAdmin.PropertyDetail"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/Containers(@ContainerId)/PTC.DataAdmin.GetConstraints(EntityName=@EntityName,EntityVersion=@EntityVersion,PropertyName=@PropertyName,DriverProperties=@DriverProperties)": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Function to find all the constraints for a property on a given entity name and version",
+        "description": "Function to find all the constraints for a property on a given entity name and version",
+        "operationId": "PTC.DataAdmin.Container.Function_GetConstraints_With_@EntityVersion_@PropertyName_@DriverProperties",
+        "parameters": [
+          {
+            "name": "@ContainerId",
+            "in": "query",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "@EntityName",
+            "in": "query",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "@EntityVersion",
+            "in": "query",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "@PropertyName",
+            "in": "query",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "@DriverProperties",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/PTC.DataAdmin.PropertyDetail"
+            }
+          }
+        }
+      }
+    },
+    "/Containers(@ContainerId)/PTC.DataAdmin.GetConstraints(EntityName=@EntityName,PropertyName=@PropertyName,DriverProperties=@DriverProperties)": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Function to find all the constraints for a property on a Windchill type",
+        "description": "Function to find all the constraints for a property on a Windchill type",
+        "operationId": "PTC.DataAdmin.Container.Function_GetConstraints_With_@PropertyName_@DriverProperties",
+        "parameters": [
+          {
+            "name": "@ContainerId",
+            "in": "query",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "@EntityName",
+            "in": "query",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "@PropertyName",
+            "in": "query",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "@DriverProperties",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/PTC.DataAdmin.PropertyDetail"
+            }
+          }
+        }
+      }
+    },
+    "/Containers(@ContainerId)/PTC.DataAdmin.GetDriverProperties(EntityName=@EntityName)": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Function to find the Driver Attributes for a Windchill type",
+        "description": "Function to find the Driver Attributes for a Windchill type",
+        "operationId": "PTC.DataAdmin.Container.Function_GetDriverProperties_With",
+        "parameters": [
+          {
+            "name": "@ContainerId",
+            "in": "query",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "@EntityName",
+            "in": "query",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/PTC.DataAdmin.PropertyList"
+            }
+          }
+        }
+      }
+    },
+    "/Containers(@ContainerId)/PTC.DataAdmin.GetDriverProperties(EntityName=@EntityName,EntityVersion=@EntityVersion)": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Function to find the Driver Attributes for a given entity name and version",
+        "description": "Function to find the Driver Attributes for a given entity name and version",
+        "operationId": "PTC.DataAdmin.Container.Function_GetDriverProperties_With_@EntityVersion",
+        "parameters": [
+          {
+            "name": "@ContainerId",
+            "in": "query",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "@EntityName",
+            "in": "query",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "@EntityVersion",
+            "in": "query",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/PTC.DataAdmin.PropertyList"
+            }
+          }
+        }
+      }
+    },
+    "/Containers(@ContainerId)/PTC.DataAdmin.GetPregeneratedValue(EntityName=@EntityName,EntityVersion=@EntityVersion,PropertyName=@PropertyName,DriverProperties=@DriverProperties)": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Function to get a pregenerated value (like Number) before an entity is created",
+        "description": "Function to get a pregenerated value (like Number) before an entity is created",
+        "operationId": "PTC.DataAdmin.Container.Function_GetPregeneratedValue_With_@EntityVersion_@PropertyName_@DriverProperties",
+        "parameters": [
+          {
+            "name": "@ContainerId",
+            "in": "query",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "@EntityName",
+            "in": "query",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "@EntityVersion",
+            "in": "query",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "@PropertyName",
+            "in": "query",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "@DriverProperties",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "/Containers(@ContainerId)/PTC.DataAdmin.GetPregeneratedValue(EntityName=@EntityName,PropertyName=@PropertyName,DriverProperties=@DriverProperties)": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Function to get a pregenerated value (like Number) before an entity is created",
+        "description": "Function to get a pregenerated value (like Number) before an entity is created",
+        "operationId": "PTC.DataAdmin.Container.Function_GetPregeneratedValue_With_@PropertyName_@DriverProperties",
+        "parameters": [
+          {
+            "name": "@ContainerId",
+            "in": "query",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "@EntityName",
+            "in": "query",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "@PropertyName",
+            "in": "query",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "@DriverProperties",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "/Containers/PTC.DataAdmin.LibraryContainer": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get Containers of type LibraryContainer",
+        "description": "Get Containers of type LibraryContainer",
+        "operationId": "GetLibraryContainers",
+        "parameters": [
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$filter",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$top",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$skip",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$count",
+            "in": "query",
+            "required": false,
+            "type": "boolean",
+            "default": false
+          },
+          {
+            "name": "$orderby",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/PTC.DataAdmin.LibraryContainer"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/Containers/PTC.DataAdmin.OrganizationContainer": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get Containers of type OrganizationContainer",
+        "description": "Get Containers of type OrganizationContainer",
+        "operationId": "GetOrganizationContainers",
+        "parameters": [
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$filter",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$top",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$skip",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$count",
+            "in": "query",
+            "required": false,
+            "type": "boolean",
+            "default": false
+          },
+          {
+            "name": "$orderby",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/PTC.DataAdmin.OrganizationContainer"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/Containers/PTC.DataAdmin.ProductContainer": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get Containers of type ProductContainer",
+        "description": "Get Containers of type ProductContainer",
+        "operationId": "GetProductContainers",
+        "parameters": [
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$filter",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$top",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$skip",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$count",
+            "in": "query",
+            "required": false,
+            "type": "boolean",
+            "default": false
+          },
+          {
+            "name": "$orderby",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/PTC.DataAdmin.ProductContainer"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/Containers/PTC.DataAdmin.ProjectContainer": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get Containers of type ProjectContainer",
+        "description": "Get Containers of type ProjectContainer",
+        "operationId": "GetProjectContainers",
+        "parameters": [
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$filter",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$top",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$skip",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$count",
+            "in": "query",
+            "required": false,
+            "type": "boolean",
+            "default": false
+          },
+          {
+            "name": "$orderby",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/PTC.DataAdmin.ProjectContainer"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/Containers/PTC.DataAdmin.Site": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get Containers of type Site",
+        "description": "Get Containers of type Site",
+        "operationId": "GetSites",
+        "parameters": [
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$filter",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$top",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$skip",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$count",
+            "in": "query",
+            "required": false,
+            "type": "boolean",
+            "default": false
+          },
+          {
+            "name": "$orderby",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/PTC.DataAdmin.Site"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

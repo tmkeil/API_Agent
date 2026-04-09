@@ -2,6 +2,14 @@
 
 ---
 
+
+ein eigener AI Agent in deiner Anwendung ist für deinen Lebenslauf deutlich wertvoller. "Habe einen AI Agent gebaut, der über eine selbst entwickelte API Windchill-BOMs erstellt" schlägt "Habe ein Backend exponiert, damit die firmeninterne Copilot-Plattform es nutzt" um Längen.
+
+Und pragmatisch betrachtet: Wenn du das Backend exponierst, hast du keine Kontrolle mehr darüber, wie gut oder schlecht Copilot damit arbeitet. Wenn der Agent in deiner Anwendung läuft, kannst du Prompts, Workflows und Fehlerhandling selbst steuern.
+
+
+
+
 ## Kontext
 
 Das Unternehmen möchte einen AI Agent entwickeln, der Mitarbeiter bei internen Prozessen unterstützt. Der Agent soll auf SAP, ERP und PDM zugreifen, Daten lesen und eintragen, Prozessschritte intelligent überspringen und den Mitarbeiter per Ampelsystem über den Bearbeitungsstand informieren.

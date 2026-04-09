@@ -1,0 +1,6462 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "description": "PTC Factory domain",
+    "version": "6",
+    "title": "PTC.Factory"
+  },
+  "host": "plm-dev.neuhausen.balluff.net:443",
+  "basePath": "/Windchill/servlet/odata/v6/Factory",
+  "tags": [
+    {
+      "name": "Service Endpoints"
+    }
+  ],
+  "schemes": [
+    "https"
+  ],
+  "paths": {
+    "/CheckInDocuments": {
+      "post": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Execute CheckInDocuments",
+        "description": "Execute CheckInDocuments",
+        "operationId": "Action_CheckInDocuments",
+        "parameters": [
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$filter",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$top",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$skip",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$count",
+            "in": "query",
+            "required": false,
+            "type": "boolean",
+            "default": false
+          },
+          {
+            "name": "$orderby",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "CSRF_NONCE",
+            "in": "header",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/PTC.Factory.CheckInDocuments.Unbound.Body"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/PTC.Factory.Document"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/CheckInStandardControlCharacteristics": {
+      "post": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Execute CheckInStandardControlCharacteristics",
+        "description": "Execute CheckInStandardControlCharacteristics",
+        "operationId": "Action_CheckInStandardControlCharacteristics",
+        "parameters": [
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$filter",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$top",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$skip",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$count",
+            "in": "query",
+            "required": false,
+            "type": "boolean",
+            "default": false
+          },
+          {
+            "name": "$orderby",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "CSRF_NONCE",
+            "in": "header",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/PTC.Factory.CheckInStandardControlCharacteristics.Unbound.Body"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/PTC.Factory.StandardControlCharacteristic"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/CheckInStandardOperations": {
+      "post": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Execute CheckInStandardOperations",
+        "description": "Execute CheckInStandardOperations",
+        "operationId": "Action_CheckInStandardOperations",
+        "parameters": [
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$filter",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$top",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$skip",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$count",
+            "in": "query",
+            "required": false,
+            "type": "boolean",
+            "default": false
+          },
+          {
+            "name": "$orderby",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "CSRF_NONCE",
+            "in": "header",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/PTC.Factory.CheckInStandardOperations.Unbound.Body"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/PTC.Factory.StandardOperation"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/CheckInStandardProcedures": {
+      "post": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Execute CheckInStandardProcedures",
+        "description": "Execute CheckInStandardProcedures",
+        "operationId": "Action_CheckInStandardProcedures",
+        "parameters": [
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$filter",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$top",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$skip",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$count",
+            "in": "query",
+            "required": false,
+            "type": "boolean",
+            "default": false
+          },
+          {
+            "name": "$orderby",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "CSRF_NONCE",
+            "in": "header",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/PTC.Factory.CheckInStandardProcedures.Unbound.Body"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/PTC.Factory.StandardProcedure"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/CheckOutDocuments": {
+      "post": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Execute CheckOutDocuments",
+        "description": "Execute CheckOutDocuments",
+        "operationId": "Action_CheckOutDocuments",
+        "parameters": [
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$filter",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$top",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$skip",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$count",
+            "in": "query",
+            "required": false,
+            "type": "boolean",
+            "default": false
+          },
+          {
+            "name": "$orderby",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "CSRF_NONCE",
+            "in": "header",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/PTC.Factory.CheckOutDocuments.Unbound.Body"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/PTC.Factory.Document"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/CheckOutStandardControlCharacteristics": {
+      "post": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Execute CheckOutStandardControlCharacteristics",
+        "description": "Execute CheckOutStandardControlCharacteristics",
+        "operationId": "Action_CheckOutStandardControlCharacteristics",
+        "parameters": [
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$filter",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$top",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$skip",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$count",
+            "in": "query",
+            "required": false,
+            "type": "boolean",
+            "default": false
+          },
+          {
+            "name": "$orderby",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "CSRF_NONCE",
+            "in": "header",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/PTC.Factory.CheckOutStandardControlCharacteristics.Unbound.Body"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/PTC.Factory.StandardControlCharacteristic"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/CheckOutStandardOperations": {
+      "post": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Execute CheckOutStandardOperations",
+        "description": "Execute CheckOutStandardOperations",
+        "operationId": "Action_CheckOutStandardOperations",
+        "parameters": [
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$filter",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$top",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$skip",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$count",
+            "in": "query",
+            "required": false,
+            "type": "boolean",
+            "default": false
+          },
+          {
+            "name": "$orderby",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "CSRF_NONCE",
+            "in": "header",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/PTC.Factory.CheckOutStandardOperations.Unbound.Body"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/PTC.Factory.StandardOperation"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/CheckOutStandardProcedures": {
+      "post": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Execute CheckOutStandardProcedures",
+        "description": "Execute CheckOutStandardProcedures",
+        "operationId": "Action_CheckOutStandardProcedures",
+        "parameters": [
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$filter",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$top",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$skip",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$count",
+            "in": "query",
+            "required": false,
+            "type": "boolean",
+            "default": false
+          },
+          {
+            "name": "$orderby",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "CSRF_NONCE",
+            "in": "header",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/PTC.Factory.CheckOutStandardProcedures.Unbound.Body"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/PTC.Factory.StandardProcedure"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/Documents": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get Documents",
+        "description": "Get Documents",
+        "operationId": "GetDocuments",
+        "parameters": [
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$filter",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$top",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$skip",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$count",
+            "in": "query",
+            "required": false,
+            "type": "boolean",
+            "default": false
+          },
+          {
+            "name": "$orderby",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/PTC.Factory.Document"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/Documents('{DocumentId}')": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get Document for a given DocumentId",
+        "description": "Get Document for a given DocumentId",
+        "operationId": "GetDocument",
+        "parameters": [
+          {
+            "name": "DocumentId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/PTC.Factory.Document"
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "DeleteDocument",
+        "description": "DeleteDocument",
+        "operationId": "DeleteDocument",
+        "parameters": [
+          {
+            "name": "DocumentId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "CSRF_NONCE",
+            "in": "header",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Update an existing Document",
+        "description": "Update an existing Document",
+        "operationId": "UpdateDocument",
+        "parameters": [
+          {
+            "name": "DocumentId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "CSRF_NONCE",
+            "in": "header",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/Update.PTC.Factory.Document"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/Documents('{DocumentId}')/Context": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get Container",
+        "description": "Get Container",
+        "operationId": "Document.Context.GetContainer",
+        "parameters": [
+          {
+            "name": "DocumentId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/PTC.DataAdmin.Container"
+            }
+          }
+        }
+      }
+    },
+    "/Documents('{DocumentId}')/Creator": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get User",
+        "description": "Get User",
+        "operationId": "Document.Creator.GetUser",
+        "parameters": [
+          {
+            "name": "DocumentId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/PTC.PrincipalMgmt.User"
+            }
+          }
+        }
+      }
+    },
+    "/Documents('{DocumentId}')/Modifier": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get User",
+        "description": "Get User",
+        "operationId": "Document.Modifier.GetUser",
+        "parameters": [
+          {
+            "name": "DocumentId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/PTC.PrincipalMgmt.User"
+            }
+          }
+        }
+      }
+    },
+    "/Documents('{DocumentId}')/Representations": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get Representation",
+        "description": "Get Representation",
+        "operationId": "Document.Representations.GetRepresentations",
+        "parameters": [
+          {
+            "name": "DocumentId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$filter",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$top",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$skip",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$count",
+            "in": "query",
+            "required": false,
+            "type": "boolean",
+            "default": false
+          },
+          {
+            "name": "$orderby",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/PTC.Visualization.Representation"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/Documents('{DocumentId}')/Representations('{RepresentationId}')": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get Representation for a given RepresentationId",
+        "description": "Get Representation for a given RepresentationId",
+        "operationId": "Document.Representations.GetRepresentation",
+        "parameters": [
+          {
+            "name": "DocumentId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "RepresentationId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/PTC.Visualization.Representation"
+            }
+          }
+        }
+      }
+    },
+    "/Documents('{DocumentId}')/Revisions": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get Document",
+        "description": "Get Document",
+        "operationId": "Document.Revisions.GetDocuments",
+        "parameters": [
+          {
+            "name": "DocumentId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$filter",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$top",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$skip",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$count",
+            "in": "query",
+            "required": false,
+            "type": "boolean",
+            "default": false
+          },
+          {
+            "name": "$orderby",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/PTC.Factory.Document"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/Documents('{DocumentId}')/Revisions('{RevisionsId}')": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get Document for a given RevisionsId",
+        "description": "Get Document for a given RevisionsId",
+        "operationId": "Document.Revisions.GetDocument",
+        "parameters": [
+          {
+            "name": "DocumentId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "RevisionsId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/PTC.Factory.Document"
+            }
+          }
+        }
+      }
+    },
+    "/Documents('{DocumentId}')/Versions": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get Document",
+        "description": "Get Document",
+        "operationId": "Document.Versions.GetDocuments",
+        "parameters": [
+          {
+            "name": "DocumentId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$filter",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$top",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$skip",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$count",
+            "in": "query",
+            "required": false,
+            "type": "boolean",
+            "default": false
+          },
+          {
+            "name": "$orderby",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/PTC.Factory.Document"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/Documents('{DocumentId}')/Versions('{VersionsId}')": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get Document for a given VersionsId",
+        "description": "Get Document for a given VersionsId",
+        "operationId": "Document.Versions.GetDocument",
+        "parameters": [
+          {
+            "name": "DocumentId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "VersionsId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/PTC.Factory.Document"
+            }
+          }
+        }
+      }
+    },
+    "/ReferenceDocuments": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get ReferenceDocuments",
+        "description": "Get ReferenceDocuments",
+        "operationId": "GetReferenceDocuments",
+        "parameters": [
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$filter",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$top",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$skip",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$count",
+            "in": "query",
+            "required": false,
+            "type": "boolean",
+            "default": false
+          },
+          {
+            "name": "$orderby",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/PTC.Factory.ReferenceDocument"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/ReferenceDocuments('{ReferenceDocumentId}')": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get ReferenceDocument for a given ReferenceDocumentId",
+        "description": "Get ReferenceDocument for a given ReferenceDocumentId",
+        "operationId": "GetReferenceDocument",
+        "parameters": [
+          {
+            "name": "ReferenceDocumentId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/PTC.Factory.ReferenceDocument"
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "DeleteReferenceDocument",
+        "description": "DeleteReferenceDocument",
+        "operationId": "DeleteReferenceDocument",
+        "parameters": [
+          {
+            "name": "ReferenceDocumentId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "CSRF_NONCE",
+            "in": "header",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Update an existing ReferenceDocument",
+        "description": "Update an existing ReferenceDocument",
+        "operationId": "UpdateReferenceDocument",
+        "parameters": [
+          {
+            "name": "ReferenceDocumentId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "CSRF_NONCE",
+            "in": "header",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/Update.PTC.Factory.ReferenceDocument"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/ReferenceDocuments('{ReferenceDocumentId}')/RefDocuments": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get Document",
+        "description": "Get Document",
+        "operationId": "ReferenceDocument.RefDocuments.GetDocuments",
+        "parameters": [
+          {
+            "name": "ReferenceDocumentId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$filter",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$top",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$skip",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$count",
+            "in": "query",
+            "required": false,
+            "type": "boolean",
+            "default": false
+          },
+          {
+            "name": "$orderby",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/PTC.DocMgmt.Document"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/ReferenceDocuments('{ReferenceDocumentId}')/RefDocuments('{DocumentId}')": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get Document for a given DocumentId",
+        "description": "Get Document for a given DocumentId",
+        "operationId": "ReferenceDocument.RefDocuments.GetDocument",
+        "parameters": [
+          {
+            "name": "ReferenceDocumentId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "DocumentId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/PTC.DocMgmt.Document"
+            }
+          }
+        }
+      }
+    },
+    "/Resources": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get Resources",
+        "description": "Get Resources",
+        "operationId": "GetResources",
+        "parameters": [
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$filter",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$top",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$skip",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$count",
+            "in": "query",
+            "required": false,
+            "type": "boolean",
+            "default": false
+          },
+          {
+            "name": "$orderby",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/PTC.Factory.Resource"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/Resources('{ResourceId}')": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get Resource for a given ResourceId",
+        "description": "Get Resource for a given ResourceId",
+        "operationId": "GetResource",
+        "parameters": [
+          {
+            "name": "ResourceId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/PTC.Factory.Resource"
+            }
+          }
+        }
+      }
+    },
+    "/Resources('{ResourceId}')/Creator": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get User",
+        "description": "Get User",
+        "operationId": "Resource.Creator.GetUser",
+        "parameters": [
+          {
+            "name": "ResourceId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/PTC.PrincipalMgmt.User"
+            }
+          }
+        }
+      }
+    },
+    "/Resources('{ResourceId}')/Modifier": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get User",
+        "description": "Get User",
+        "operationId": "Resource.Modifier.GetUser",
+        "parameters": [
+          {
+            "name": "ResourceId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/PTC.PrincipalMgmt.User"
+            }
+          }
+        }
+      }
+    },
+    "/ReviseDocuments": {
+      "post": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Execute ReviseDocuments",
+        "description": "Execute ReviseDocuments",
+        "operationId": "Action_ReviseDocuments",
+        "parameters": [
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$filter",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$top",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$skip",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$count",
+            "in": "query",
+            "required": false,
+            "type": "boolean",
+            "default": false
+          },
+          {
+            "name": "$orderby",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "CSRF_NONCE",
+            "in": "header",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/PTC.Factory.ReviseDocuments.Unbound.Body"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/PTC.Factory.Document"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/ReviseStandardControlCharacteristics": {
+      "post": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Execute ReviseStandardControlCharacteristics",
+        "description": "Execute ReviseStandardControlCharacteristics",
+        "operationId": "Action_ReviseStandardControlCharacteristics",
+        "parameters": [
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$filter",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$top",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$skip",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$count",
+            "in": "query",
+            "required": false,
+            "type": "boolean",
+            "default": false
+          },
+          {
+            "name": "$orderby",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "CSRF_NONCE",
+            "in": "header",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/PTC.Factory.ReviseStandardControlCharacteristics.Unbound.Body"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/PTC.Factory.StandardControlCharacteristic"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/ReviseStandardOperations": {
+      "post": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Execute ReviseStandardOperations",
+        "description": "Execute ReviseStandardOperations",
+        "operationId": "Action_ReviseStandardOperations",
+        "parameters": [
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$filter",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$top",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$skip",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$count",
+            "in": "query",
+            "required": false,
+            "type": "boolean",
+            "default": false
+          },
+          {
+            "name": "$orderby",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "CSRF_NONCE",
+            "in": "header",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/PTC.Factory.ReviseStandardOperations.Unbound.Body"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/PTC.Factory.StandardOperation"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/ReviseStandardProcedures": {
+      "post": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Execute ReviseStandardProcedures",
+        "description": "Execute ReviseStandardProcedures",
+        "operationId": "Action_ReviseStandardProcedures",
+        "parameters": [
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$filter",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$top",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$skip",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$count",
+            "in": "query",
+            "required": false,
+            "type": "boolean",
+            "default": false
+          },
+          {
+            "name": "$orderby",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "CSRF_NONCE",
+            "in": "header",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/PTC.Factory.ReviseStandardProcedures.Unbound.Body"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/PTC.Factory.StandardProcedure"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/SetStateDocuments": {
+      "post": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Execute SetStateDocuments",
+        "description": "Execute SetStateDocuments",
+        "operationId": "Action_SetStateDocuments",
+        "parameters": [
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$filter",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$top",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$skip",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$count",
+            "in": "query",
+            "required": false,
+            "type": "boolean",
+            "default": false
+          },
+          {
+            "name": "$orderby",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "CSRF_NONCE",
+            "in": "header",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/PTC.Factory.SetStateDocuments.Unbound.Body"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/PTC.Factory.Document"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/SetStateStandardControlCharacteristics": {
+      "post": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Execute SetStateStandardControlCharacteristics",
+        "description": "Execute SetStateStandardControlCharacteristics",
+        "operationId": "Action_SetStateStandardControlCharacteristics",
+        "parameters": [
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$filter",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$top",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$skip",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$count",
+            "in": "query",
+            "required": false,
+            "type": "boolean",
+            "default": false
+          },
+          {
+            "name": "$orderby",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "CSRF_NONCE",
+            "in": "header",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/PTC.Factory.SetStateStandardControlCharacteristics.Unbound.Body"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/PTC.Factory.StandardControlCharacteristic"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/SetStateStandardOperations": {
+      "post": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Execute SetStateStandardOperations",
+        "description": "Execute SetStateStandardOperations",
+        "operationId": "Action_SetStateStandardOperations",
+        "parameters": [
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$filter",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$top",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$skip",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$count",
+            "in": "query",
+            "required": false,
+            "type": "boolean",
+            "default": false
+          },
+          {
+            "name": "$orderby",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "CSRF_NONCE",
+            "in": "header",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/PTC.Factory.SetStateStandardOperations.Unbound.Body"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/PTC.Factory.StandardOperation"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/SetStateStandardProcedures": {
+      "post": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Execute SetStateStandardProcedures",
+        "description": "Execute SetStateStandardProcedures",
+        "operationId": "Action_SetStateStandardProcedures",
+        "parameters": [
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$filter",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$top",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$skip",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$count",
+            "in": "query",
+            "required": false,
+            "type": "boolean",
+            "default": false
+          },
+          {
+            "name": "$orderby",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "CSRF_NONCE",
+            "in": "header",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/PTC.Factory.SetStateStandardProcedures.Unbound.Body"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/PTC.Factory.StandardProcedure"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/StandardControlCharacteristics": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get StandardControlCharacteristics",
+        "description": "Get StandardControlCharacteristics",
+        "operationId": "GetStandardControlCharacteristics",
+        "parameters": [
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$filter",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$top",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$skip",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$count",
+            "in": "query",
+            "required": false,
+            "type": "boolean",
+            "default": false
+          },
+          {
+            "name": "$orderby",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/PTC.Factory.StandardControlCharacteristic"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/StandardControlCharacteristics('{StandardControlCharacteristicId}')": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get StandardControlCharacteristic for a given StandardControlCharacteristicId",
+        "description": "Get StandardControlCharacteristic for a given StandardControlCharacteristicId",
+        "operationId": "GetStandardControlCharacteristic",
+        "parameters": [
+          {
+            "name": "StandardControlCharacteristicId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/PTC.Factory.StandardControlCharacteristic"
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Update an existing StandardControlCharacteristic",
+        "description": "Update an existing StandardControlCharacteristic",
+        "operationId": "UpdateStandardControlCharacteristic",
+        "parameters": [
+          {
+            "name": "StandardControlCharacteristicId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "CSRF_NONCE",
+            "in": "header",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/Update.PTC.Factory.StandardControlCharacteristic"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/StandardControlCharacteristics('{StandardControlCharacteristicId}')/Context": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get Container",
+        "description": "Get Container",
+        "operationId": "StandardControlCharacteristic.Context.GetContainer",
+        "parameters": [
+          {
+            "name": "StandardControlCharacteristicId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/PTC.DataAdmin.Container"
+            }
+          }
+        }
+      }
+    },
+    "/StandardControlCharacteristics('{StandardControlCharacteristicId}')/Creator": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get User",
+        "description": "Get User",
+        "operationId": "StandardControlCharacteristic.Creator.GetUser",
+        "parameters": [
+          {
+            "name": "StandardControlCharacteristicId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/PTC.PrincipalMgmt.User"
+            }
+          }
+        }
+      }
+    },
+    "/StandardControlCharacteristics('{StandardControlCharacteristicId}')/Modifier": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get User",
+        "description": "Get User",
+        "operationId": "StandardControlCharacteristic.Modifier.GetUser",
+        "parameters": [
+          {
+            "name": "StandardControlCharacteristicId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/PTC.PrincipalMgmt.User"
+            }
+          }
+        }
+      }
+    },
+    "/StandardControlCharacteristics('{StandardControlCharacteristicId}')/PTC.Factory.CheckIn": {
+      "post": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Execute CheckIn",
+        "description": "Execute CheckIn",
+        "operationId": "PTC.Factory.StandardControlCharacteristic.Action_CheckIn_With_CheckOutNote_KeepCheckedOut",
+        "parameters": [
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "CSRF_NONCE",
+            "in": "header",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "StandardControlCharacteristicId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/PTC.Factory.CheckIn.Body"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/PTC.Factory.StandardControlCharacteristic"
+            }
+          }
+        }
+      }
+    },
+    "/StandardControlCharacteristics('{StandardControlCharacteristicId}')/PTC.Factory.CheckOut": {
+      "post": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Execute CheckOut",
+        "description": "Execute CheckOut",
+        "operationId": "PTC.Factory.StandardControlCharacteristic.Action_CheckOut_With",
+        "parameters": [
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "CSRF_NONCE",
+            "in": "header",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "StandardControlCharacteristicId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/PTC.Factory.CheckOut.Body"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/PTC.Factory.StandardControlCharacteristic"
+            }
+          }
+        }
+      }
+    },
+    "/StandardControlCharacteristics('{StandardControlCharacteristicId}')/PTC.Factory.Revise": {
+      "post": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Execute Revise",
+        "description": "Execute Revise",
+        "operationId": "PTC.Factory.StandardControlCharacteristic.Action_Revise_With",
+        "parameters": [
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "CSRF_NONCE",
+            "in": "header",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "StandardControlCharacteristicId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/PTC.Factory.Revise.Body"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/PTC.Factory.StandardControlCharacteristic"
+            }
+          }
+        }
+      }
+    },
+    "/StandardControlCharacteristics('{StandardControlCharacteristicId}')/PTC.Factory.SetState": {
+      "post": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Execute SetState",
+        "description": "Execute SetState",
+        "operationId": "PTC.Factory.StandardControlCharacteristic.Action_SetState_With",
+        "parameters": [
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "CSRF_NONCE",
+            "in": "header",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "StandardControlCharacteristicId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/PTC.Factory.SetState.Body"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/PTC.Factory.StandardControlCharacteristic"
+            }
+          }
+        }
+      }
+    },
+    "/StandardControlCharacteristics('{StandardControlCharacteristicId}')/PTC.Factory.UndoCheckOut": {
+      "post": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Execute UndoCheckOut",
+        "description": "Execute UndoCheckOut",
+        "operationId": "PTC.Factory.StandardControlCharacteristic.Action_UndoCheckOut",
+        "parameters": [
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "CSRF_NONCE",
+            "in": "header",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "StandardControlCharacteristicId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/PTC.Factory.StandardControlCharacteristic"
+            }
+          }
+        }
+      }
+    },
+    "/StandardControlCharacteristics('{StandardControlCharacteristicId}')/PTC.Factory.updateSCCRelatedLinks": {
+      "post": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "An action to create or delete links between Standard Control Characteristic to described by documents, reference documents, standard procedures or tools",
+        "description": "An action to create or delete links between Standard Control Characteristic to described by documents, reference documents, standard procedures or tools",
+        "operationId": "PTC.Factory.StandardControlCharacteristic.Action_updateSCCRelatedLinks_With_UpdateRequests",
+        "parameters": [
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "CSRF_NONCE",
+            "in": "header",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "StandardControlCharacteristicId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/PTC.Factory.updateSCCRelatedLinks.Body"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/PTC.Factory.StandardControlCharacteristic"
+            }
+          }
+        }
+      }
+    },
+    "/StandardControlCharacteristics('{StandardControlCharacteristicId}')/Revisions": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get StandardControlCharacteristic",
+        "description": "Get StandardControlCharacteristic",
+        "operationId": "StandardControlCharacteristic.Revisions.GetStandardControlCharacteristics",
+        "parameters": [
+          {
+            "name": "StandardControlCharacteristicId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$filter",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$top",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$skip",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$count",
+            "in": "query",
+            "required": false,
+            "type": "boolean",
+            "default": false
+          },
+          {
+            "name": "$orderby",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/PTC.Factory.StandardControlCharacteristic"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/StandardControlCharacteristics('{StandardControlCharacteristicId}')/Revisions('{RevisionsId}')": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get StandardControlCharacteristic for a given RevisionsId",
+        "description": "Get StandardControlCharacteristic for a given RevisionsId",
+        "operationId": "StandardControlCharacteristic.Revisions.GetStandardControlCharacteristic",
+        "parameters": [
+          {
+            "name": "StandardControlCharacteristicId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "RevisionsId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/PTC.Factory.StandardControlCharacteristic"
+            }
+          }
+        }
+      }
+    },
+    "/StandardControlCharacteristics('{StandardControlCharacteristicId}')/SCCDDLinks": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get SCCDescribedByDocument",
+        "description": "Get SCCDescribedByDocument",
+        "operationId": "StandardControlCharacteristic.SCCDDLinks.GetSCCDescribedByDocuments",
+        "parameters": [
+          {
+            "name": "StandardControlCharacteristicId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$filter",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$top",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$skip",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$count",
+            "in": "query",
+            "required": false,
+            "type": "boolean",
+            "default": false
+          },
+          {
+            "name": "$orderby",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/PTC.Factory.SCCDescribedByDocument"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/StandardControlCharacteristics('{StandardControlCharacteristicId}')/SCCDDLinks('{SCCDescribedByDocumentId}')": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get SCCDescribedByDocument for a given SCCDescribedByDocumentId",
+        "description": "Get SCCDescribedByDocument for a given SCCDescribedByDocumentId",
+        "operationId": "StandardControlCharacteristic.SCCDDLinks.GetSCCDescribedByDocument",
+        "parameters": [
+          {
+            "name": "StandardControlCharacteristicId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "SCCDescribedByDocumentId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/PTC.Factory.SCCDescribedByDocument"
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Delete an existing SCCDescribedByDocument",
+        "description": "Delete an existing SCCDescribedByDocument",
+        "operationId": "StandardControlCharacteristic.SCCDDLinks.DeletePTC.Factory.SCCDescribedByDocument",
+        "parameters": [
+          {
+            "name": "StandardControlCharacteristicId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "SCCDescribedByDocumentId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "CSRF_NONCE",
+            "in": "header",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Update an existing SCCDescribedByDocument",
+        "description": "Update an existing SCCDescribedByDocument",
+        "operationId": "StandardControlCharacteristic.SCCDDLinks.UpdateSCCDescribedByDocument",
+        "parameters": [
+          {
+            "name": "StandardControlCharacteristicId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "SCCDescribedByDocumentId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "CSRF_NONCE",
+            "in": "header",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/Update.PTC.Factory.SCCDescribedByDocument"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/StandardControlCharacteristics('{StandardControlCharacteristicId}')/SCCDRLinks": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get SCCReferenceDocument",
+        "description": "Get SCCReferenceDocument",
+        "operationId": "StandardControlCharacteristic.SCCDRLinks.GetSCCReferenceDocuments",
+        "parameters": [
+          {
+            "name": "StandardControlCharacteristicId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$filter",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$top",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$skip",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$count",
+            "in": "query",
+            "required": false,
+            "type": "boolean",
+            "default": false
+          },
+          {
+            "name": "$orderby",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/PTC.Factory.SCCReferenceDocument"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/StandardControlCharacteristics('{StandardControlCharacteristicId}')/SCCDRLinks('{SCCReferenceDocumentId}')": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get SCCReferenceDocument for a given SCCReferenceDocumentId",
+        "description": "Get SCCReferenceDocument for a given SCCReferenceDocumentId",
+        "operationId": "StandardControlCharacteristic.SCCDRLinks.GetSCCReferenceDocument",
+        "parameters": [
+          {
+            "name": "StandardControlCharacteristicId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "SCCReferenceDocumentId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/PTC.Factory.SCCReferenceDocument"
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Delete an existing SCCReferenceDocument",
+        "description": "Delete an existing SCCReferenceDocument",
+        "operationId": "StandardControlCharacteristic.SCCDRLinks.DeletePTC.Factory.SCCReferenceDocument",
+        "parameters": [
+          {
+            "name": "StandardControlCharacteristicId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "SCCReferenceDocumentId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "CSRF_NONCE",
+            "in": "header",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Update an existing SCCReferenceDocument",
+        "description": "Update an existing SCCReferenceDocument",
+        "operationId": "StandardControlCharacteristic.SCCDRLinks.UpdateSCCReferenceDocument",
+        "parameters": [
+          {
+            "name": "StandardControlCharacteristicId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "SCCReferenceDocumentId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "CSRF_NONCE",
+            "in": "header",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/Update.PTC.Factory.SCCReferenceDocument"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/StandardControlCharacteristics('{StandardControlCharacteristicId}')/SCCResourceLinks": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get SCCResourceUsage",
+        "description": "Get SCCResourceUsage",
+        "operationId": "StandardControlCharacteristic.SCCResourceLinks.GetSCCResourceUsages",
+        "parameters": [
+          {
+            "name": "StandardControlCharacteristicId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$filter",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$top",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$skip",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$count",
+            "in": "query",
+            "required": false,
+            "type": "boolean",
+            "default": false
+          },
+          {
+            "name": "$orderby",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/PTC.Factory.SCCResourceUsage"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/StandardControlCharacteristics('{StandardControlCharacteristicId}')/SCCResourceLinks('{SCCResourceUsageId}')": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get SCCResourceUsage for a given SCCResourceUsageId",
+        "description": "Get SCCResourceUsage for a given SCCResourceUsageId",
+        "operationId": "StandardControlCharacteristic.SCCResourceLinks.GetSCCResourceUsage",
+        "parameters": [
+          {
+            "name": "StandardControlCharacteristicId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "SCCResourceUsageId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/PTC.Factory.SCCResourceUsage"
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Delete an existing SCCResourceUsage",
+        "description": "Delete an existing SCCResourceUsage",
+        "operationId": "StandardControlCharacteristic.SCCResourceLinks.DeletePTC.Factory.SCCResourceUsage",
+        "parameters": [
+          {
+            "name": "StandardControlCharacteristicId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "SCCResourceUsageId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "CSRF_NONCE",
+            "in": "header",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Update an existing SCCResourceUsage",
+        "description": "Update an existing SCCResourceUsage",
+        "operationId": "StandardControlCharacteristic.SCCResourceLinks.UpdateSCCResourceUsage",
+        "parameters": [
+          {
+            "name": "StandardControlCharacteristicId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "SCCResourceUsageId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "CSRF_NONCE",
+            "in": "header",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/Update.PTC.Factory.SCCResourceUsage"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/StandardControlCharacteristics('{StandardControlCharacteristicId}')/SCCSPLinks": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get SCCStandardProcedureUsage",
+        "description": "Get SCCStandardProcedureUsage",
+        "operationId": "StandardControlCharacteristic.SCCSPLinks.GetSCCStandardProcedureUsages",
+        "parameters": [
+          {
+            "name": "StandardControlCharacteristicId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$filter",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$top",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$skip",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$count",
+            "in": "query",
+            "required": false,
+            "type": "boolean",
+            "default": false
+          },
+          {
+            "name": "$orderby",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/PTC.Factory.SCCStandardProcedureUsage"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/StandardControlCharacteristics('{StandardControlCharacteristicId}')/SCCSPLinks('{SCCStandardProcedureUsageId}')": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get SCCStandardProcedureUsage for a given SCCStandardProcedureUsageId",
+        "description": "Get SCCStandardProcedureUsage for a given SCCStandardProcedureUsageId",
+        "operationId": "StandardControlCharacteristic.SCCSPLinks.GetSCCStandardProcedureUsage",
+        "parameters": [
+          {
+            "name": "StandardControlCharacteristicId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "SCCStandardProcedureUsageId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/PTC.Factory.SCCStandardProcedureUsage"
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Delete an existing SCCStandardProcedureUsage",
+        "description": "Delete an existing SCCStandardProcedureUsage",
+        "operationId": "StandardControlCharacteristic.SCCSPLinks.DeletePTC.Factory.SCCStandardProcedureUsage",
+        "parameters": [
+          {
+            "name": "StandardControlCharacteristicId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "SCCStandardProcedureUsageId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "CSRF_NONCE",
+            "in": "header",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Update an existing SCCStandardProcedureUsage",
+        "description": "Update an existing SCCStandardProcedureUsage",
+        "operationId": "StandardControlCharacteristic.SCCSPLinks.UpdateSCCStandardProcedureUsage",
+        "parameters": [
+          {
+            "name": "StandardControlCharacteristicId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "SCCStandardProcedureUsageId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "CSRF_NONCE",
+            "in": "header",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/Update.PTC.Factory.SCCStandardProcedureUsage"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/StandardControlCharacteristics('{StandardControlCharacteristicId}')/Versions": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get StandardControlCharacteristic",
+        "description": "Get StandardControlCharacteristic",
+        "operationId": "StandardControlCharacteristic.Versions.GetStandardControlCharacteristics",
+        "parameters": [
+          {
+            "name": "StandardControlCharacteristicId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$filter",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$top",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$skip",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$count",
+            "in": "query",
+            "required": false,
+            "type": "boolean",
+            "default": false
+          },
+          {
+            "name": "$orderby",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/PTC.Factory.StandardControlCharacteristic"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/StandardControlCharacteristics('{StandardControlCharacteristicId}')/Versions('{VersionsId}')": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get StandardControlCharacteristic for a given VersionsId",
+        "description": "Get StandardControlCharacteristic for a given VersionsId",
+        "operationId": "StandardControlCharacteristic.Versions.GetStandardControlCharacteristic",
+        "parameters": [
+          {
+            "name": "StandardControlCharacteristicId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "VersionsId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/PTC.Factory.StandardControlCharacteristic"
+            }
+          }
+        }
+      }
+    },
+    "/StandardControlCharacteristics(@StandardControlCharacteristicId)/PTC.Factory.GetLifeCycleTemplate()": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Execute GetLifeCycleTemplate",
+        "description": "Execute GetLifeCycleTemplate",
+        "operationId": "PTC.Factory.StandardControlCharacteristic.Function_GetLifeCycleTemplate",
+        "parameters": [
+          {
+            "name": "@StandardControlCharacteristicId",
+            "in": "query",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/PTC.LifeCycleTemplate"
+            }
+          }
+        }
+      }
+    },
+    "/StandardControlCharacteristics(@StandardControlCharacteristicId)/PTC.Factory.GetValidStateTransitions()": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Execute GetValidStateTransitions",
+        "description": "Execute GetValidStateTransitions",
+        "operationId": "PTC.Factory.StandardControlCharacteristic.Function_GetValidStateTransitions",
+        "parameters": [
+          {
+            "name": "@StandardControlCharacteristicId",
+            "in": "query",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/PTC.EnumTypeList"
+            }
+          }
+        }
+      }
+    },
+    "/StandardControlCharacteristics(@StandardControlCharacteristicId)/PTC.Factory.IsCheckoutAllowed()": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Execute IsCheckoutAllowed",
+        "description": "Execute IsCheckoutAllowed",
+        "operationId": "PTC.Factory.StandardControlCharacteristic.Function_IsCheckoutAllowed",
+        "parameters": [
+          {
+            "name": "@StandardControlCharacteristicId",
+            "in": "query",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/PTC.Factory.StandardControlCharacteristic"
+            }
+          }
+        }
+      }
+    },
+    "/StandardOperations": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get StandardOperations",
+        "description": "Get StandardOperations",
+        "operationId": "GetStandardOperations",
+        "parameters": [
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$filter",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$top",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$skip",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$count",
+            "in": "query",
+            "required": false,
+            "type": "boolean",
+            "default": false
+          },
+          {
+            "name": "$orderby",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/PTC.Factory.StandardOperation"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/StandardOperations('{StandardOperationId}')": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get StandardOperation for a given StandardOperationId",
+        "description": "Get StandardOperation for a given StandardOperationId",
+        "operationId": "GetStandardOperation",
+        "parameters": [
+          {
+            "name": "StandardOperationId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/PTC.Factory.StandardOperation"
+            }
+          }
+        }
+      }
+    },
+    "/StandardOperations('{StandardOperationId}')/Context": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get Container",
+        "description": "Get Container",
+        "operationId": "StandardOperation.Context.GetContainer",
+        "parameters": [
+          {
+            "name": "StandardOperationId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/PTC.DataAdmin.Container"
+            }
+          }
+        }
+      }
+    },
+    "/StandardOperations('{StandardOperationId}')/Creator": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get User",
+        "description": "Get User",
+        "operationId": "StandardOperation.Creator.GetUser",
+        "parameters": [
+          {
+            "name": "StandardOperationId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/PTC.PrincipalMgmt.User"
+            }
+          }
+        }
+      }
+    },
+    "/StandardOperations('{StandardOperationId}')/Modifier": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get User",
+        "description": "Get User",
+        "operationId": "StandardOperation.Modifier.GetUser",
+        "parameters": [
+          {
+            "name": "StandardOperationId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/PTC.PrincipalMgmt.User"
+            }
+          }
+        }
+      }
+    },
+    "/StandardOperations('{StandardOperationId}')/PTC.Factory.CheckIn": {
+      "post": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Execute CheckIn",
+        "description": "Execute CheckIn",
+        "operationId": "PTC.Factory.StandardOperation.Action_CheckIn_With_CheckOutNote_KeepCheckedOut",
+        "parameters": [
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "CSRF_NONCE",
+            "in": "header",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "StandardOperationId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/PTC.Factory.CheckIn.Body"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/PTC.Factory.StandardOperation"
+            }
+          }
+        }
+      }
+    },
+    "/StandardOperations('{StandardOperationId}')/PTC.Factory.CheckOut": {
+      "post": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Execute CheckOut",
+        "description": "Execute CheckOut",
+        "operationId": "PTC.Factory.StandardOperation.Action_CheckOut_With",
+        "parameters": [
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "CSRF_NONCE",
+            "in": "header",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "StandardOperationId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/PTC.Factory.CheckOut.Body"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/PTC.Factory.StandardOperation"
+            }
+          }
+        }
+      }
+    },
+    "/StandardOperations('{StandardOperationId}')/PTC.Factory.Revise": {
+      "post": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Execute Revise",
+        "description": "Execute Revise",
+        "operationId": "PTC.Factory.StandardOperation.Action_Revise_With",
+        "parameters": [
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "CSRF_NONCE",
+            "in": "header",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "StandardOperationId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/PTC.Factory.Revise.Body"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/PTC.Factory.StandardOperation"
+            }
+          }
+        }
+      }
+    },
+    "/StandardOperations('{StandardOperationId}')/PTC.Factory.SetState": {
+      "post": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Execute SetState",
+        "description": "Execute SetState",
+        "operationId": "PTC.Factory.StandardOperation.Action_SetState_With",
+        "parameters": [
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "CSRF_NONCE",
+            "in": "header",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "StandardOperationId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/PTC.Factory.SetState.Body"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/PTC.Factory.StandardOperation"
+            }
+          }
+        }
+      }
+    },
+    "/StandardOperations('{StandardOperationId}')/PTC.Factory.UndoCheckOut": {
+      "post": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Execute UndoCheckOut",
+        "description": "Execute UndoCheckOut",
+        "operationId": "PTC.Factory.StandardOperation.Action_UndoCheckOut",
+        "parameters": [
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "CSRF_NONCE",
+            "in": "header",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "StandardOperationId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/PTC.Factory.StandardOperation"
+            }
+          }
+        }
+      }
+    },
+    "/StandardOperations('{StandardOperationId}')/PTC.Factory.updateSOPRelatedLinks": {
+      "post": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "An action to create or delete links between Standard Operation - Standard Control Characteristic link to described by documents, reference documents, standard procedures and tools; This action also update properties of the used Standard Control Characteristic",
+        "description": "An action to create or delete links between Standard Operation - Standard Control Characteristic link to described by documents, reference documents, standard procedures and tools; This action also update properties of the used Standard Control Characteristic",
+        "operationId": "PTC.Factory.StandardOperation.Action_updateSOPRelatedLinks_With_UpdateRequests",
+        "parameters": [
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "CSRF_NONCE",
+            "in": "header",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "StandardOperationId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/PTC.Factory.updateSOPRelatedLinks.Body"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/PTC.Factory.StandardOperation"
+            }
+          }
+        }
+      }
+    },
+    "/StandardOperations('{StandardOperationId}')/Revisions": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get StandardOperation",
+        "description": "Get StandardOperation",
+        "operationId": "StandardOperation.Revisions.GetStandardOperations",
+        "parameters": [
+          {
+            "name": "StandardOperationId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$filter",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$top",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$skip",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$count",
+            "in": "query",
+            "required": false,
+            "type": "boolean",
+            "default": false
+          },
+          {
+            "name": "$orderby",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/PTC.Factory.StandardOperation"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/StandardOperations('{StandardOperationId}')/Revisions('{RevisionsId}')": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get StandardOperation for a given RevisionsId",
+        "description": "Get StandardOperation for a given RevisionsId",
+        "operationId": "StandardOperation.Revisions.GetStandardOperation",
+        "parameters": [
+          {
+            "name": "StandardOperationId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "RevisionsId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/PTC.Factory.StandardOperation"
+            }
+          }
+        }
+      }
+    },
+    "/StandardOperations('{StandardOperationId}')/SOPSCCLinks": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get SOPToSCCLink",
+        "description": "Get SOPToSCCLink",
+        "operationId": "StandardOperation.SOPSCCLinks.GetSOPToSCCLinks",
+        "parameters": [
+          {
+            "name": "StandardOperationId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$filter",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$top",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$skip",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$count",
+            "in": "query",
+            "required": false,
+            "type": "boolean",
+            "default": false
+          },
+          {
+            "name": "$orderby",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/PTC.Factory.SOPToSCCLink"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/StandardOperations('{StandardOperationId}')/SOPSCCLinks('{SOPToSCCLinkId}')": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get SOPToSCCLink for a given SOPToSCCLinkId",
+        "description": "Get SOPToSCCLink for a given SOPToSCCLinkId",
+        "operationId": "StandardOperation.SOPSCCLinks.GetSOPToSCCLink",
+        "parameters": [
+          {
+            "name": "StandardOperationId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "SOPToSCCLinkId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/PTC.Factory.SOPToSCCLink"
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Delete an existing SOPToSCCLink",
+        "description": "Delete an existing SOPToSCCLink",
+        "operationId": "StandardOperation.SOPSCCLinks.DeletePTC.Factory.SOPToSCCLink",
+        "parameters": [
+          {
+            "name": "StandardOperationId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "SOPToSCCLinkId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "CSRF_NONCE",
+            "in": "header",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Update an existing SOPToSCCLink",
+        "description": "Update an existing SOPToSCCLink",
+        "operationId": "StandardOperation.SOPSCCLinks.UpdateSOPToSCCLink",
+        "parameters": [
+          {
+            "name": "StandardOperationId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "SOPToSCCLinkId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "CSRF_NONCE",
+            "in": "header",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/Update.PTC.Factory.SOPToSCCLink"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/StandardOperations('{StandardOperationId}')/Versions": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get StandardOperation",
+        "description": "Get StandardOperation",
+        "operationId": "StandardOperation.Versions.GetStandardOperations",
+        "parameters": [
+          {
+            "name": "StandardOperationId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$filter",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$top",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$skip",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$count",
+            "in": "query",
+            "required": false,
+            "type": "boolean",
+            "default": false
+          },
+          {
+            "name": "$orderby",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/PTC.Factory.StandardOperation"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/StandardOperations('{StandardOperationId}')/Versions('{VersionsId}')": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get StandardOperation for a given VersionsId",
+        "description": "Get StandardOperation for a given VersionsId",
+        "operationId": "StandardOperation.Versions.GetStandardOperation",
+        "parameters": [
+          {
+            "name": "StandardOperationId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "VersionsId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/PTC.Factory.StandardOperation"
+            }
+          }
+        }
+      }
+    },
+    "/StandardOperations(@StandardOperationId)/PTC.Factory.GetLifeCycleTemplate()": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Execute GetLifeCycleTemplate",
+        "description": "Execute GetLifeCycleTemplate",
+        "operationId": "PTC.Factory.StandardOperation.Function_GetLifeCycleTemplate",
+        "parameters": [
+          {
+            "name": "@StandardOperationId",
+            "in": "query",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/PTC.LifeCycleTemplate"
+            }
+          }
+        }
+      }
+    },
+    "/StandardOperations(@StandardOperationId)/PTC.Factory.GetValidStateTransitions()": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Execute GetValidStateTransitions",
+        "description": "Execute GetValidStateTransitions",
+        "operationId": "PTC.Factory.StandardOperation.Function_GetValidStateTransitions",
+        "parameters": [
+          {
+            "name": "@StandardOperationId",
+            "in": "query",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/PTC.EnumTypeList"
+            }
+          }
+        }
+      }
+    },
+    "/StandardOperations(@StandardOperationId)/PTC.Factory.IsCheckoutAllowed()": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Execute IsCheckoutAllowed",
+        "description": "Execute IsCheckoutAllowed",
+        "operationId": "PTC.Factory.StandardOperation.Function_IsCheckoutAllowed",
+        "parameters": [
+          {
+            "name": "@StandardOperationId",
+            "in": "query",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/PTC.Factory.StandardOperation"
+            }
+          }
+        }
+      }
+    },
+    "/StandardOperations(@StandardOperationId)/PTC.Factory.getSOPDetails(NavName=@NavName)": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "A function to query Standard Operation to Standard Control Characteristic links and expand the query to described by documents, reference documents, standard procedures and tools associated with Standard Operation - Standard Control Characteristic links",
+        "description": "A function to query Standard Operation to Standard Control Characteristic links and expand the query to described by documents, reference documents, standard procedures and tools associated with Standard Operation - Standard Control Characteristic links",
+        "operationId": "PTC.Factory.StandardOperation.Function_getSOPDetails_With",
+        "parameters": [
+          {
+            "name": "@StandardOperationId",
+            "in": "query",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "@NavName",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/PTC.Factory.StandardOperation"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/StandardProcedures": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get StandardProcedures",
+        "description": "Get StandardProcedures",
+        "operationId": "GetStandardProcedures",
+        "parameters": [
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$filter",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$top",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$skip",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$count",
+            "in": "query",
+            "required": false,
+            "type": "boolean",
+            "default": false
+          },
+          {
+            "name": "$orderby",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/PTC.Factory.StandardProcedure"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/StandardProcedures('{StandardProcedureId}')": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get StandardProcedure for a given StandardProcedureId",
+        "description": "Get StandardProcedure for a given StandardProcedureId",
+        "operationId": "GetStandardProcedure",
+        "parameters": [
+          {
+            "name": "StandardProcedureId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/PTC.Factory.StandardProcedure"
+            }
+          }
+        }
+      }
+    },
+    "/StandardProcedures('{StandardProcedureId}')/Context": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get Container",
+        "description": "Get Container",
+        "operationId": "StandardProcedure.Context.GetContainer",
+        "parameters": [
+          {
+            "name": "StandardProcedureId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/PTC.DataAdmin.Container"
+            }
+          }
+        }
+      }
+    },
+    "/StandardProcedures('{StandardProcedureId}')/Creator": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get User",
+        "description": "Get User",
+        "operationId": "StandardProcedure.Creator.GetUser",
+        "parameters": [
+          {
+            "name": "StandardProcedureId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/PTC.PrincipalMgmt.User"
+            }
+          }
+        }
+      }
+    },
+    "/StandardProcedures('{StandardProcedureId}')/Modifier": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get User",
+        "description": "Get User",
+        "operationId": "StandardProcedure.Modifier.GetUser",
+        "parameters": [
+          {
+            "name": "StandardProcedureId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/PTC.PrincipalMgmt.User"
+            }
+          }
+        }
+      }
+    },
+    "/StandardProcedures('{StandardProcedureId}')/PTC.Factory.CheckIn": {
+      "post": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Execute CheckIn",
+        "description": "Execute CheckIn",
+        "operationId": "PTC.Factory.StandardProcedure.Action_CheckIn_With_CheckOutNote_KeepCheckedOut",
+        "parameters": [
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "CSRF_NONCE",
+            "in": "header",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "StandardProcedureId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/PTC.Factory.CheckIn.Body"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/PTC.Factory.StandardProcedure"
+            }
+          }
+        }
+      }
+    },
+    "/StandardProcedures('{StandardProcedureId}')/PTC.Factory.CheckOut": {
+      "post": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Execute CheckOut",
+        "description": "Execute CheckOut",
+        "operationId": "PTC.Factory.StandardProcedure.Action_CheckOut_With",
+        "parameters": [
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "CSRF_NONCE",
+            "in": "header",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "StandardProcedureId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/PTC.Factory.CheckOut.Body"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/PTC.Factory.StandardProcedure"
+            }
+          }
+        }
+      }
+    },
+    "/StandardProcedures('{StandardProcedureId}')/PTC.Factory.Revise": {
+      "post": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Execute Revise",
+        "description": "Execute Revise",
+        "operationId": "PTC.Factory.StandardProcedure.Action_Revise_With",
+        "parameters": [
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "CSRF_NONCE",
+            "in": "header",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "StandardProcedureId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/PTC.Factory.Revise.Body"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/PTC.Factory.StandardProcedure"
+            }
+          }
+        }
+      }
+    },
+    "/StandardProcedures('{StandardProcedureId}')/PTC.Factory.SetState": {
+      "post": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Execute SetState",
+        "description": "Execute SetState",
+        "operationId": "PTC.Factory.StandardProcedure.Action_SetState_With",
+        "parameters": [
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "CSRF_NONCE",
+            "in": "header",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "StandardProcedureId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/PTC.Factory.SetState.Body"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/PTC.Factory.StandardProcedure"
+            }
+          }
+        }
+      }
+    },
+    "/StandardProcedures('{StandardProcedureId}')/PTC.Factory.UndoCheckOut": {
+      "post": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Execute UndoCheckOut",
+        "description": "Execute UndoCheckOut",
+        "operationId": "PTC.Factory.StandardProcedure.Action_UndoCheckOut",
+        "parameters": [
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "CSRF_NONCE",
+            "in": "header",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "StandardProcedureId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/PTC.Factory.StandardProcedure"
+            }
+          }
+        }
+      }
+    },
+    "/StandardProcedures('{StandardProcedureId}')/Revisions": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get StandardProcedure",
+        "description": "Get StandardProcedure",
+        "operationId": "StandardProcedure.Revisions.GetStandardProcedures",
+        "parameters": [
+          {
+            "name": "StandardProcedureId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$filter",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$top",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$skip",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$count",
+            "in": "query",
+            "required": false,
+            "type": "boolean",
+            "default": false
+          },
+          {
+            "name": "$orderby",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/PTC.Factory.StandardProcedure"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/StandardProcedures('{StandardProcedureId}')/Revisions('{RevisionsId}')": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get StandardProcedure for a given RevisionsId",
+        "description": "Get StandardProcedure for a given RevisionsId",
+        "operationId": "StandardProcedure.Revisions.GetStandardProcedure",
+        "parameters": [
+          {
+            "name": "StandardProcedureId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "RevisionsId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/PTC.Factory.StandardProcedure"
+            }
+          }
+        }
+      }
+    },
+    "/StandardProcedures('{StandardProcedureId}')/Versions": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get StandardProcedure",
+        "description": "Get StandardProcedure",
+        "operationId": "StandardProcedure.Versions.GetStandardProcedures",
+        "parameters": [
+          {
+            "name": "StandardProcedureId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$filter",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$top",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$skip",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$count",
+            "in": "query",
+            "required": false,
+            "type": "boolean",
+            "default": false
+          },
+          {
+            "name": "$orderby",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/PTC.Factory.StandardProcedure"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/StandardProcedures('{StandardProcedureId}')/Versions('{VersionsId}')": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Get StandardProcedure for a given VersionsId",
+        "description": "Get StandardProcedure for a given VersionsId",
+        "operationId": "StandardProcedure.Versions.GetStandardProcedure",
+        "parameters": [
+          {
+            "name": "StandardProcedureId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "VersionsId",
+            "in": "path",
+            "description": "The identification key for the item to get",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/PTC.Factory.StandardProcedure"
+            }
+          }
+        }
+      }
+    },
+    "/StandardProcedures(@StandardProcedureId)/PTC.Factory.GetLifeCycleTemplate()": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Execute GetLifeCycleTemplate",
+        "description": "Execute GetLifeCycleTemplate",
+        "operationId": "PTC.Factory.StandardProcedure.Function_GetLifeCycleTemplate",
+        "parameters": [
+          {
+            "name": "@StandardProcedureId",
+            "in": "query",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/PTC.LifeCycleTemplate"
+            }
+          }
+        }
+      }
+    },
+    "/StandardProcedures(@StandardProcedureId)/PTC.Factory.GetValidStateTransitions()": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Execute GetValidStateTransitions",
+        "description": "Execute GetValidStateTransitions",
+        "operationId": "PTC.Factory.StandardProcedure.Function_GetValidStateTransitions",
+        "parameters": [
+          {
+            "name": "@StandardProcedureId",
+            "in": "query",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/PTC.EnumTypeList"
+            }
+          }
+        }
+      }
+    },
+    "/StandardProcedures(@StandardProcedureId)/PTC.Factory.IsCheckoutAllowed()": {
+      "get": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Execute IsCheckoutAllowed",
+        "description": "Execute IsCheckoutAllowed",
+        "operationId": "PTC.Factory.StandardProcedure.Function_IsCheckoutAllowed",
+        "parameters": [
+          {
+            "name": "@StandardProcedureId",
+            "in": "query",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/PTC.Factory.StandardProcedure"
+            }
+          }
+        }
+      }
+    },
+    "/UndoCheckOutDocuments": {
+      "post": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Execute UndoCheckOutDocuments",
+        "description": "Execute UndoCheckOutDocuments",
+        "operationId": "Action_UndoCheckOutDocuments",
+        "parameters": [
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$filter",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$top",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$skip",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$count",
+            "in": "query",
+            "required": false,
+            "type": "boolean",
+            "default": false
+          },
+          {
+            "name": "$orderby",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "CSRF_NONCE",
+            "in": "header",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/PTC.Factory.UndoCheckOutDocuments.Unbound.Body"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/PTC.Factory.Document"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/UndoCheckOutStandardControlCharacteristics": {
+      "post": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Execute UndoCheckOutStandardControlCharacteristics",
+        "description": "Execute UndoCheckOutStandardControlCharacteristics",
+        "operationId": "Action_UndoCheckOutStandardControlCharacteristics",
+        "parameters": [
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$filter",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$top",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$skip",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$count",
+            "in": "query",
+            "required": false,
+            "type": "boolean",
+            "default": false
+          },
+          {
+            "name": "$orderby",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "CSRF_NONCE",
+            "in": "header",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/PTC.Factory.UndoCheckOutStandardControlCharacteristics.Unbound.Body"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/PTC.Factory.StandardControlCharacteristic"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/UndoCheckOutStandardOperations": {
+      "post": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Execute UndoCheckOutStandardOperations",
+        "description": "Execute UndoCheckOutStandardOperations",
+        "operationId": "Action_UndoCheckOutStandardOperations",
+        "parameters": [
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$filter",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$top",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$skip",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$count",
+            "in": "query",
+            "required": false,
+            "type": "boolean",
+            "default": false
+          },
+          {
+            "name": "$orderby",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "CSRF_NONCE",
+            "in": "header",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/PTC.Factory.UndoCheckOutStandardOperations.Unbound.Body"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/PTC.Factory.StandardOperation"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/UndoCheckOutStandardProcedures": {
+      "post": {
+        "tags": [
+          "Service Endpoints"
+        ],
+        "summary": "Execute UndoCheckOutStandardProcedures",
+        "description": "Execute UndoCheckOutStandardProcedures",
+        "operationId": "Action_UndoCheckOutStandardProcedures",
+        "parameters": [
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$filter",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$top",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$skip",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "$count",
+            "in": "query",
+            "required": false,
+            "type": "boolean",
+            "default": false
+          },
+          {
+            "name": "$orderby",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "CSRF_NONCE",
+            "in": "header",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/PTC.Factory.UndoCheckOutStandardProcedures.Unbound.Body"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/PTC.Factory.StandardProcedure"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

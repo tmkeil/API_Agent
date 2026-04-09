@@ -247,7 +247,7 @@ def get_contexts(client: WRSClient) -> list[str]:
     Holt nur EINE Seite (max_pages=1) — 500 Records genuegen,
     um die gaengigen Kontexte abzudecken.
     """
-    url = f"{client.odata_base}/ProdMgmt/Parts"
+    url = f"{client._odata_url('ProdMgmt')}/Parts"
     contexts: set[str] = set()
 
     # NUR 1 Seite holen — kein Paging durch die ganze DB!

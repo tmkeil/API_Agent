@@ -37,7 +37,7 @@ class WhereUsedMixin:
         seen: set[str] = set()
 
         # Strategie 1: GetWhereUsed Action
-        url = f"{self.odata_base}/ProdMgmt/Parts('{part_id}')/PTC.ProdMgmt.GetWhereUsed"
+        url = f"{self._odata_url('ProdMgmt')}/Parts('{part_id}')/PTC.ProdMgmt.GetWhereUsed"
         resp = self._get(url, suppress_errors=True)
         if resp and resp.status_code == 200:
             data = resp.json()
@@ -52,7 +52,7 @@ class WhereUsedMixin:
                 return results
 
         # Strategie 2: UsedBy Navigation Property
-        url = f"{self.odata_base}/ProdMgmt/Parts('{part_id}')/UsedBy"
+        url = f"{self._odata_url('ProdMgmt')}/Parts('{part_id}')/UsedBy"
         items = self._get_all_pages(url, return_none_on_error=True)
         if items:
             for link in items:
@@ -69,7 +69,7 @@ class WhereUsedMixin:
                 return results
 
         # Strategie 3: UsageLinks mit $filter auf Uses Part
-        url = f"{self.odata_base}/ProdMgmt/Parts('{part_id}')/UsageLinks"
+        url = f"{self._odata_url('ProdMgmt')}/Parts('{part_id}')/UsageLinks"
         items = self._get_all_pages(url, {"$expand": "Uses"}, return_none_on_error=True)
         if items:
             for link in items:

@@ -503,3 +503,13 @@ class ClassificationNode(BaseModel):
 class ClassificationNodeListResponse(BaseModel):
     """Response fuer Classification-Node-Listing."""
     nodes: list[ClassificationNode] = []
+
+
+# ── Balluff BOM Export ───────────────────────────────────────
+
+class BalluffBomExportResponse(BaseModel):
+    """Response fuer den Balluff BOM Export (flache Tabelle)."""
+    columns: list[str] = []
+    rows: list[dict[str, str]] = []
+    partNumber: str = ""
+    rowCount: int = 0

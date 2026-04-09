@@ -157,7 +157,9 @@ class WRSClientBase:
         Raises:
             WRSError: Keine Verbindung oder Authentifizierung fehlgeschlagen.
         """
-        prod_mgmt_url = self._odata_url("ProdMgmt")
+        # Auth-Probe: odata_base (v6) statt domain-spezifischer Version,
+        # da nicht alle Systeme dieselbe Version unterstuetzen.
+        prod_mgmt_url = f"{self.odata_base}/ProdMgmt"
         logger.info("Connecting to %s", prod_mgmt_url)
 
         # Schritt 1: Verbindungstest mit explizitem Basic-Auth
@@ -263,7 +265,7 @@ class WRSClientBase:
         (Login-Seite nochmal), was kein echter Erfolg ist.
         """
         try:
-            resp = self._raw_get(self._odata_url("ProdMgmt"), timeout=15)
+            resp = self._raw_get(f"{self.odata_base}/ProdMgmt", timeout=15)
         except (httpx.ConnectError, httpx.TimeoutException, httpx.NetworkError) as e:
             logger.error(
                 "Verify-Auth Verbindung fehlgeschlagen: %s — %s",

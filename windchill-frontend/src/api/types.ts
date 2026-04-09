@@ -428,3 +428,12 @@ export interface AdvancedSearchRequest {
   attributes?: Record<string, string>
   limit?: number
 }
+
+// ── Balluff BOM Export ──────────────────────────────────────
+
+export interface BalluffBomExportResponse {
+  columns: string[]
+  rows: Record<string, string>[]
+  partNumber: string
+  rowCount: number
+}

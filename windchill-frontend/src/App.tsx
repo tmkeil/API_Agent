@@ -6,6 +6,7 @@ import LoginPage from './pages/LoginPage'
 import DashboardPage from './pages/DashboardPage'
 import DetailPage from './pages/DetailPage'
 import CreatePartPage from './pages/CreatePartPage'
+import BomExportPage from './pages/BomExportPage'
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth()
@@ -41,8 +42,7 @@ function AppRoutes() {
             <Layout>
               <Routes>
                 <Route path="/" element={<DashboardPage />} />
-                <Route path="/create/part" element={<CreatePartPage />} />
-                <Route path="/detail/:typeKey/:code" element={<DetailPage />} />
+                <Route path="/create/part" element={<CreatePartPage />} />              <Route path="/export/balluff" element={<BomExportPage />} />                <Route path="/detail/:typeKey/:code" element={<DetailPage />} />
                 <Route path="*" element={<NotFoundPage />} />
               </Routes>
             </Layout>

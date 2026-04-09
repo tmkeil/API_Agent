@@ -1,6 +1,7 @@
 import type {
   AddBomChildRequest,
   AdvancedSearchRequest,
+  BalluffBomExportResponse,
   BomNodeResponse,
   BomTreeNode,
   BomViewConfig,
@@ -341,6 +342,17 @@ export async function exportBom(
     method: 'POST',
     body: JSON.stringify({ mode, partNumber, tree }),
   })
+}
+
+// Balluff BOM Export (flat table)
+export async function fetchBalluffBomExport(
+  partNumber: string,
+  signal?: AbortSignal,
+): Promise<BalluffBomExportResponse> {
+  return request<BalluffBomExportResponse>(
+    `${BASE}/export/balluff/${encodeURIComponent(partNumber)}`,
+    { signal },
+  )
 }
 
 // ── Write Operations ────────────────────────────────────────

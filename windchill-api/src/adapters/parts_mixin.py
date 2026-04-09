@@ -144,12 +144,25 @@ class PartsMixin:
 
     # ── Part Subtypes (Soft Types) ──────────────────────────
 
+    # Bekannte Balluff Part-Subtypes. Die Stichprobe ($top=200) findet
+    # nicht immer alle Subtypes, daher werden fehlende hier ergaenzt.
+    _KNOWN_SUBTYPES: list[tuple[str, str]] = [
+        ("BALMECHATRONICPART",  "PTC.ProdMgmt.BALMECHATRONICPART"),
+        ("BALAUXPART",          "PTC.ProdMgmt.BALAUXPART"),
+        ("BALENCDOCPART",       "PTC.ProdMgmt.BALENCDOCPART"),
+        ("BALEQUIPMENTPART",    "PTC.ProdMgmt.BALEQUIPMENTPART"),
+        ("BALPACKAGEPART",      "PTC.ProdMgmt.BALPACKAGEPART"),
+        ("BALPRODUCTPART",      "PTC.ProdMgmt.BALPRODUCTPART"),
+        ("BALCOLLECTIONPART",   "PTC.ProdMgmt.BALCOLLECTIONPART"),
+        ("BALRAWMATERIAL",      "PTC.ProdMgmt.BALRAWMATERIAL"),
+    ]
+
     def get_part_subtypes(self: "WRSClientBase") -> list[dict]:
         """Verfuegbare Part-Subtypes aus bestehenden Parts ermitteln.
 
         Laedt eine Stichprobe existierender Parts und sammelt die
-        distinct ``@odata.type``-Werte. Diese sind immer in der
-        OData-Response enthalten (z.B. ``#PTC.ProdMgmt.BALMECHATRONICPART``).
+        distinct ``@odata.type``-Werte. Fehlende bekannte Subtypes
+        werden aus ``_KNOWN_SUBTYPES`` ergaenzt.
 
         Returns:
             Liste von Dicts: [{"name": "BALMECHATRONICPART",
@@ -162,27 +175,34 @@ class PartsMixin:
             items = self._get_all_pages(url, params, return_none_on_error=True)
             if not items:
                 logger.warning("get_part_subtypes: Keine Parts geladen")
-                return []
+                items = []
         except Exception:
             logger.warning("get_part_subtypes request failed", exc_info=True)
-            return []
+            items = []
 
         # Distinct @odata.type sammeln
         type_set: set[str] = set()
         for item in items:
             odata_type = item.get("@odata.type", "")
             if odata_type:
-                type_set.add(odata_type)
+                type_set.add(odata_type.lstrip("#"))
 
         subtypes: list[dict] = []
         for raw_type in sorted(type_set):
-            # "#PTC.ProdMgmt.BALMECHATRONICPART" → name="BALMECHATRONICPART", odataType="PTC.ProdMgmt.BALMECHATRONICPART"
-            clean = raw_type.lstrip("#")
-            name = clean.rsplit(".", 1)[-1] if "." in clean else clean
-            subtypes.append({"name": name, "odataType": clean})
+            name = raw_type.rsplit(".", 1)[-1] if "." in raw_type else raw_type
+            subtypes.append({"name": name, "odataType": raw_type})
 
-        logger.info("Found %d Part subtypes from %d parts: %s",
-                    len(subtypes), len(items),
+        # Bekannte Subtypes ergaenzen, falls die Stichprobe sie nicht enthielt
+        found_names = {s["name"] for s in subtypes}
+        for name, odata_type in self._KNOWN_SUBTYPES:
+            if name not in found_names:
+                subtypes.append({"name": name, "odataType": odata_type})
+
+        subtypes.sort(key=lambda s: s["name"])
+
+        logger.info("Found %d Part subtypes (%d from API, %d known fallback): %s",
+                    len(subtypes), len(type_set),
+                    len(subtypes) - len(type_set),
                     [s["name"] for s in subtypes])
         return subtypes
 

@@ -109,12 +109,14 @@ def _build_part_body(attrs: dict[str, Any]) -> tuple[dict[str, Any], dict[str, A
     phantom = attrs.get("PhantomManufacturingPart", "no").lower() in ("yes", "true")
     create_body["PhantomManufacturingPart"] = phantom
 
-    # AssemblyMode (in offizieller Doku enthalten)
-    assembly = attrs.get("AssemblyMode", "separable")
-    create_body["AssemblyMode"] = {
-        "Value": assembly.lower(),
-        "Display": assembly.capitalize(),
-    }
+    # AssemblyMode — muss per PATCH gesetzt werden (Windchill lehnt es
+    # im POST-Body bei manchen Subtypes mit "cannot be changed" ab)
+    assembly = attrs.get("AssemblyMode", "")
+    if assembly:
+        patch_body["AssemblyMode"] = {
+            "Value": assembly.lower(),
+            "Display": assembly.capitalize(),
+        }
 
     # ── PATCH-Body: Alles andere nach Create setzen ──
 
@@ -159,11 +161,10 @@ def _build_part_body(attrs: dict[str, Any]) -> tuple[dict[str, Any], dict[str, A
         patch_body["BALCPORDERPREFIX"] = product_family
 
     # Classification (IBA: BALCLASSIFICATIONBINDINGWTPART)
-    # Muss via PATCH gesetzt werden, nicht im POST-Body (v7 lehnt es als
-    # unbekannte Property ab).
+    # Pflichtfeld bei Balluff — im POST-Body senden (v6 akzeptiert es).
     classification = attrs.get("Classification", "")
     if classification:
-        patch_body["BALCLASSIFICATIONBINDINGWTPART"] = {
+        create_body["BALCLASSIFICATIONBINDINGWTPART"] = {
             "ClfNodeInternalName": classification,
         }
 

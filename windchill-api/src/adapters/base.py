@@ -130,9 +130,10 @@ class WRSClientBase:
         # Auth-Modus: wird in _connect() gesetzt
         self._uses_basic_auth = False
 
-        # Domain-Versionen: Startet mit neuesten, wird in _connect()
-        # ggf. auf safe zurueckgestuft falls System 404 liefert.
-        self._domain_versions: dict[str, str] = dict(DOMAIN_VERSIONS_LATEST)
+        # Domain-Versionen: Konservativ (v6) als Standard — v7 hat
+        # Breaking Changes bei POST-Properties (AssemblyMode, Classification).
+        # Spaeter koennen neuere Versionen per Config aktiviert werden.
+        self._domain_versions: dict[str, str] = dict(DOMAIN_VERSIONS_SAFE)
 
         # OData-Discovery (werden pro Client-Instanz gefuellt)
         self._bom_nav_strategy: Optional[tuple[str, bool]] = None
@@ -322,11 +323,9 @@ class WRSClientBase:
     def _discover_api_versions(self) -> None:
         """Erkennt welche OData-API-Versionen das Zielsystem unterstuetzt.
 
-        Sendet einen Probe-Request gegen ProdMgmt mit der neuesten
-        Version (v7). Wenn 404 → System hat aeltere Versionen →
-        Fallback auf DOMAIN_VERSIONS_SAFE (v6 fuer die meisten Domains).
-
-        Wird einmalig pro Client-Instanz in _connect() aufgerufen.
+        Probt die neueste ProdMgmt-Version. Ergebnis wird nur geloggt,
+        NICHT automatisch aktiviert — v7 hat Breaking Changes bei
+        Schreiboperationen (POST-Properties AssemblyMode, Classification).
         """
         probe_url = (
             f"{self.base_url}/servlet/odata/"
@@ -335,19 +334,18 @@ class WRSClientBase:
         try:
             resp = self._raw_get(probe_url, timeout=10)
         except Exception:
-            logger.warning("Version-Discovery fehlgeschlagen, behalte neueste Versionen")
+            logger.info("Version-Discovery fehlgeschlagen — bleibe bei v6")
             return
 
         if resp.status_code == 404:
             logger.info(
-                "System unterstuetzt %s nicht fuer ProdMgmt (404) "
-                "— Fallback auf konservative Versionen (v6)",
+                "System unterstuetzt ProdMgmt %s nicht (404) — verwende v6",
                 DOMAIN_VERSIONS_LATEST["ProdMgmt"],
             )
-            self._domain_versions = dict(DOMAIN_VERSIONS_SAFE)
         else:
             logger.info(
-                "System unterstuetzt ProdMgmt %s (status=%d)",
+                "System unterstuetzt ProdMgmt %s (status=%d) — "
+                "verwende trotzdem v6 (v7 hat Breaking Changes bei POST)",
                 DOMAIN_VERSIONS_LATEST["ProdMgmt"], resp.status_code,
             )
 

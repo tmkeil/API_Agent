@@ -27,12 +27,29 @@ logger = logging.getLogger(__name__)
 # Domain → OData-Version (aus interner Swagger-Spec)
 # ═════════════════════════════════════════════════════════════
 
-DOMAIN_VERSIONS: dict[str, str] = {
+# Neueste bekannte Versionen (aus Dev-System Swagger-Spec).
+# Wird pro Client-Instanz ggf. auf v6 zurueckgestuft falls das
+# Zielsystem die neueren Versionen nicht unterstuetzt.
+DOMAIN_VERSIONS_LATEST: dict[str, str] = {
     "ProdMgmt":          "v7",
     "DataAdmin":         "v7",
     "DocMgmt":           "v7",
     "ChangeMgmt":        "v8",
     "CADDocumentMgmt":   "v5",
+    "Reporting":         "v4",
+    "Workflow":          "v5",
+    "ViewMgmt":          "v3",
+    "Factory":           "v6",
+    "BalluffCustom":     "v1",
+}
+
+# Konservative Fallback-Versionen (funktioniert auf allen Systemen)
+DOMAIN_VERSIONS_SAFE: dict[str, str] = {
+    "ProdMgmt":          "v6",
+    "DataAdmin":         "v6",
+    "DocMgmt":           "v6",
+    "ChangeMgmt":        "v6",
+    "CADDocumentMgmt":   "v4",
     "Reporting":         "v4",
     "Workflow":          "v5",
     "ViewMgmt":          "v3",
@@ -113,6 +130,10 @@ class WRSClientBase:
         # Auth-Modus: wird in _connect() gesetzt
         self._uses_basic_auth = False
 
+        # Domain-Versionen: Startet mit neuesten, wird in _connect()
+        # ggf. auf safe zurueckgestuft falls System 404 liefert.
+        self._domain_versions: dict[str, str] = dict(DOMAIN_VERSIONS_LATEST)
+
         # OData-Discovery (werden pro Client-Instanz gefuellt)
         self._bom_nav_strategy: Optional[tuple[str, bool]] = None
         self._bom_use_legacy: bool = False
@@ -130,12 +151,12 @@ class WRSClientBase:
     def _odata_url(self, domain: str) -> str:
         """OData-Base-URL fuer eine bestimmte Domain zurueckgeben.
 
-        Verwendet die korrekte API-Version pro Domain gemaess der
-        internen Swagger-Spezifikation.
+        Verwendet die pro Instanz erkannte API-Version (neueste oder safe
+        Fallback, je nach _discover_api_versions()-Ergebnis).
 
         Beispiel: _odata_url("ProdMgmt") → ".../servlet/odata/v7/ProdMgmt"
         """
-        version = DOMAIN_VERSIONS.get(domain)
+        version = self._domain_versions.get(domain)
         if not version:
             logger.warning("Unbekannte Domain '%s', Fallback auf odata_base", domain)
             return f"{self.odata_base}/{domain}"
@@ -196,6 +217,8 @@ class WRSClientBase:
 
             # CSRF-Token via offizielle OData-Function holen
             self._fetch_csrf_token()
+            # API-Versionen erkennen (v7 vs v6 Fallback)
+            self._discover_api_versions()
             return
 
         # Schritt 2b: Server-Fehler (5xx) → System ist nicht verfuegbar
@@ -222,6 +245,8 @@ class WRSClientBase:
             self._authenticate_form()
             self._verify_authenticated()
             self._fetch_csrf_token()
+            # API-Versionen erkennen (v7 vs v6 Fallback)
+            self._discover_api_versions()
             return
 
         # Schritt 2e: Unerwartete Antwort (z.B. Proxy-Fehlerseite, SSO)
@@ -292,6 +317,38 @@ class WRSClientBase:
             raise WRSError(
                 "Authentifizierung fehlgeschlagen – Login-Seite statt OData-JSON erhalten.",
                 401,
+            )
+
+    def _discover_api_versions(self) -> None:
+        """Erkennt welche OData-API-Versionen das Zielsystem unterstuetzt.
+
+        Sendet einen Probe-Request gegen ProdMgmt mit der neuesten
+        Version (v7). Wenn 404 → System hat aeltere Versionen →
+        Fallback auf DOMAIN_VERSIONS_SAFE (v6 fuer die meisten Domains).
+
+        Wird einmalig pro Client-Instanz in _connect() aufgerufen.
+        """
+        probe_url = (
+            f"{self.base_url}/servlet/odata/"
+            f"{DOMAIN_VERSIONS_LATEST['ProdMgmt']}/ProdMgmt"
+        )
+        try:
+            resp = self._raw_get(probe_url, timeout=10)
+        except Exception:
+            logger.warning("Version-Discovery fehlgeschlagen, behalte neueste Versionen")
+            return
+
+        if resp.status_code == 404:
+            logger.info(
+                "System unterstuetzt %s nicht fuer ProdMgmt (404) "
+                "— Fallback auf konservative Versionen (v6)",
+                DOMAIN_VERSIONS_LATEST["ProdMgmt"],
+            )
+            self._domain_versions = dict(DOMAIN_VERSIONS_SAFE)
+        else:
+            logger.info(
+                "System unterstuetzt ProdMgmt %s (status=%d)",
+                DOMAIN_VERSIONS_LATEST["ProdMgmt"], resp.status_code,
             )
 
     # ── Low-level HTTP ───────────────────────────────────────

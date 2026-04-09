@@ -159,10 +159,11 @@ def _build_part_body(attrs: dict[str, Any]) -> tuple[dict[str, Any], dict[str, A
         patch_body["BALCPORDERPREFIX"] = product_family
 
     # Classification (IBA: BALCLASSIFICATIONBINDINGWTPART)
-    # Balluff-Pflichtfeld beim Create (nicht in Standard-PTC-Doku, aber vom System verlangt)
+    # Muss via PATCH gesetzt werden, nicht im POST-Body (v7 lehnt es als
+    # unbekannte Property ab).
     classification = attrs.get("Classification", "")
     if classification:
-        create_body["BALCLASSIFICATIONBINDINGWTPART"] = {
+        patch_body["BALCLASSIFICATIONBINDINGWTPART"] = {
             "ClfNodeInternalName": classification,
         }
 

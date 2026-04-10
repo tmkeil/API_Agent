@@ -47,7 +47,7 @@ _COL_BINDING        = BomViewColumn(key="BALBINDING",              label="Bindin
 _COL_SUFFIX         = BomViewColumn(key="BALSUFFIX",               label="Suffix",            source="partAttr")
 _COL_CONF_MOD       = BomViewColumn(key="ConfigurableModule",      label="Conf. Module",      source="partAttr")
 _COL_SAP_PLANTS     = BomViewColumn(key="BALSAPASSIGNEDPLANTS",    label="SAP Assigned Plants", source="partAttr")
-_COL_SAP_DOWNSTREAM = BomViewColumn(key="BALDOWNSTREAM",           label="SAP Downstream",    source="partAttr")
+_COL_SAP_DOWNSTREAM = BomViewColumn(key="BALDOWNSTREAM",           label="SAP Downstream Werke", source="partAttr")
 _COL_SAP_UPSTREAM   = BomViewColumn(key="BALUPSTREAM",             label="SAP Upstream",      source="partAttr")
 _COL_IS_VARIANT     = BomViewColumn(key="BALISVARIANT",            label="Is Variant",        source="partAttr")
 _COL_CN_APPROVER    = BomViewColumn(key="ECNAPPROVER",             label="CN Approver",       source="partAttr")

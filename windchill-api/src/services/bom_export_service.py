@@ -202,13 +202,17 @@ def _build_part_row(
     row["Description"] = n["name"]
     row["DocPart"] = "000"
     row["PTp"] = "L"
-    row["SAP Downstream"] = _flat(part_raw.get("BALDOWNSTREAM") or "")
+    # SAP Downstream ist im Balluff-Export nur fuer Dokumente relevant
+    # (BALSAPRELEVANCE = boolean). Parts haben hier keinen Wert.
     row["State"] = n["state"]
     row["Assembly"] = "Yes" if has_children else "No"
     row["Parent"] = parent_number
 
     # Raw-Dimensions aus Part-IBAs
     _apply_raw_dimensions(row, part_raw)
+
+    # DisconType ist ein PART-Attribut (BAL_SAP_MARA_ZZROLLUSEUAS), kein UsageLink-Attribut
+    row["DisconType"] = _flat(part_raw.get("BALSAPMARAZZROLLUSEUAS") or "")
 
     # Usage-Link-Attribute (nur bei Kindern, nicht Root)
     if usage_link:
@@ -225,18 +229,20 @@ def _build_part_row(
             or ""
         )
         row["Quantity Unit"] = _abbreviate_unit(unit_raw)
+        # OData-Schema: ReferenceDesignatorRange (nicht ReferenceDesignator)
         row["Reference Designator"] = _flat(
-            usage_link.get("ReferenceDesignator") or ""
+            usage_link.get("ReferenceDesignatorRange")
+            or usage_link.get("ReferenceDesignator")
+            or ""
         )
         row["Formula Key"] = _flat(usage_link.get("BALSAPFORMULAKEY") or "")
-        row["DisconType"] = _flat(usage_link.get("BALSAPDISCTYPE") or "")
-        row["DisconDate"] = _flat(usage_link.get("BALSAPDISCDATE") or "")
-        row["DisconGrp"] = _flat(usage_link.get("BALSAPDISCGRP") or "")
+        # OData-Schema: BAL_SAP_STPO_NFEAG → BALSAPSTPONFEAG
+        row["DisconDate"] = _flat(usage_link.get("BALSAPSTPONFEAG") or "")
+        # OData-Schema: BAL_SAP_STPO_NFGRP → BALSAPSTPONFGRP
+        row["DisconGrp"] = _flat(usage_link.get("BALSAPSTPONFGRP") or "")
         row["SuccessGrp"] = _flat(usage_link.get("BALSAPSUCCGRP") or "")
-        row["ERP Position Text"] = _flat(usage_link.get("BALSAPERPPOSTEXT") or "")
-    else:
-        # Root-Part: DisconType kann direkt auf dem Part liegen
-        row["DisconType"] = _flat(part_raw.get("BALSAPDISCTYPE") or "")
+        # OData-Schema: BAL_ERP_BOM_POSITION_TEXT → BALERPBOMPOSITIONTEXT
+        row["ERP Position Text"] = _flat(usage_link.get("BALERPBOMPOSITIONTEXT") or "")
 
     return row
 
@@ -273,7 +279,10 @@ def _build_doc_row(
     row["Description"] = n["name"]
     row["DocPart"] = "000"
     row["PTp"] = "" if is_cad else "D"
-    row["SAP Downstream"] = _flat(doc_raw.get("BALDOWNSTREAM") or "")
+    # SAP Downstream fuer Dokumente = BAL_SAP_RELEVANCE (boolean)
+    row["SAP Downstream"] = _flat(doc_raw.get("BALSAPRELEVANCE") or "")
+    # Printing Good existiert nur auf BAL_ENC_DOC_PART (nicht auf WTDocument/EPMDocument)
+    # Wird via DescribedBy nicht geladen, daher Fallback auf BALPRINTINGGOOD
     row["Printing Good"] = _flat(doc_raw.get("BALPRINTINGGOOD") or "")
     row["State"] = n["state"]
     row["Parent"] = parent_number

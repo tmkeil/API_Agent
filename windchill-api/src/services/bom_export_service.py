@@ -183,8 +183,13 @@ def _build_doc_row(
     doc_raw: dict,
     depth: int,
     parent_number: str,
+    *,
+    is_cad: bool = False,
 ) -> dict[str, str]:
-    """Eine Dokument-Zeile (PTp=D) bauen."""
+    """Eine Dokument-Zeile bauen.
+
+    WTDocuments erhalten PTp='D', CAD-Drawings (EPMDocuments) erhalten leeres PTp.
+    """
     n = normalize_item(doc_raw)
     row = _empty_row()
 
@@ -195,7 +200,7 @@ def _build_doc_row(
     row["Version"] = n["version"] or _flat(doc_raw.get("VersionID") or "")
     row["Description"] = n["name"]
     row["DocPart"] = "000"
-    row["PTp"] = "D"
+    row["PTp"] = "" if is_cad else "D"
     row["Printing Good"] = _flat(doc_raw.get("BALPRINTINGGOOD") or "")
     row["State"] = n["state"]
     row["Parent"] = parent_number
@@ -255,19 +260,20 @@ def _export_node(
         cad_docs = f_cad.result()
         children_links = f_children.result()
 
-    # Dokumente deduplizieren
+    # Dokumente deduplizieren (WTDocuments vs. CAD-Drawings getrennt)
     seen_doc_ids: set[str] = set()
-    all_docs: list[dict] = []
+    all_docs_wt: list[dict] = []
+    all_docs_cad: list[dict] = []
     for d in (docs or []):
         did = d.get("ID", "")
         if did and did not in seen_doc_ids:
             seen_doc_ids.add(did)
-            all_docs.append(d)
+            all_docs_wt.append(d)
     for d in (cad_docs or []):
         did = d.get("ID", "")
         if did and did not in seen_doc_ids:
             seen_doc_ids.add(did)
-            all_docs.append(d)
+            all_docs_cad.append(d)
 
     # Kinder aufloesen
     resolved_children: list[tuple[dict, dict]] = []  # (link, child_part)
@@ -286,8 +292,10 @@ def _export_node(
     rows.append(_build_part_row(part_raw, depth, parent_number, usage_link, has_children))
 
     # ── 2. Dokument-Zeilen (gleiche Tiefe wie Kinder) ────
-    for doc in all_docs:
-        rows.append(_build_doc_row(doc, depth + 1, number))
+    for doc in all_docs_wt:
+        rows.append(_build_doc_row(doc, depth + 1, number, is_cad=False))
+    for doc in all_docs_cad:
+        rows.append(_build_doc_row(doc, depth + 1, number, is_cad=True))
 
     # ── 3. Kinder rekursiv ───────────────────────────────
     # Sortiert nach Position, dann Nummer
@@ -330,12 +338,16 @@ def balluff_bom_export(client, part_number: str) -> dict:
 
     _export_node(client, raw_part, 0, "", None, rows, seen)
 
+    n_parts = sum(1 for r in rows if r["PTp"] == "L")
+    n_wt_docs = sum(1 for r in rows if r["PTp"] == "D")
+    n_cad = len(rows) - n_parts - n_wt_docs
     logger.info(
-        "Balluff BOM Export fuer %s: %d Zeilen (%d Parts, %d Docs)",
+        "Balluff BOM Export fuer %s: %d Zeilen (%d Parts, %d WTDocs, %d CAD)",
         part_number,
         len(rows),
-        sum(1 for r in rows if r["PTp"] == "L"),
-        sum(1 for r in rows if r["PTp"] == "D"),
+        n_parts,
+        n_wt_docs,
+        n_cad,
     )
 
     return {

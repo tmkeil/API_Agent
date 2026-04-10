@@ -29,12 +29,6 @@ export default function Layout({ children }: { children: ReactNode }) {
               >
                 + Neues Part
               </button>
-              <button
-                onClick={() => navigate('/export/balluff')}
-                className="px-2.5 py-1 text-xs font-medium rounded bg-emerald-600 text-white hover:bg-emerald-700 transition-colors"
-              >
-                BOM Export
-              </button>
               <span className="text-slate-300 text-xs">{user.username}</span>
               <button
                 onClick={logout}

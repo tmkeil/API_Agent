@@ -106,6 +106,7 @@ class DocumentNode(BaseModel):
     name: str = ""
     version: str = ""
     state: str = ""
+    docAttributes: dict[str, Any] = {}
 
 
 class BomNodeResponse(BaseModel):

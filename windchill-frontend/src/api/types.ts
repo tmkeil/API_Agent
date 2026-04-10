@@ -57,6 +57,7 @@ export interface DocumentNode {
   name: string
   version: string
   state: string
+  docAttributes?: Record<string, unknown>
 }
 
 export interface BomNodeResponse {
@@ -71,7 +72,7 @@ export interface BomNodeResponse {
 export interface BomViewColumn {
   key: string
   label: string
-  source: 'part' | 'link' | 'usageLink' | 'partAttr'
+  source: 'part' | 'link' | 'usageLink' | 'partAttr' | 'docAttr'
   align: 'left' | 'right'
 }
 

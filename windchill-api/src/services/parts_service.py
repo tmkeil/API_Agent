@@ -187,10 +187,30 @@ def _map_tree_node(
     return node
 
 
+_SKIP_DOC_KEYS = {
+    "ID", "id", "Number", "Name", "Version", "VersionID",
+    "State", "LifeCycleState", "ObjectType", "TypeName",
+    "Identity", "DisplayIdentity", "ContainerName", "FolderLocation",
+    "LastModified", "ModifyTimestamp", "CreatedOn", "CreateTimestamp",
+    "OrganizationName", "Organization",
+}
+
+
 def _map_document(
     raw: dict, doc_type: str = WcType.DOCUMENT
 ) -> DocumentNode:
     n = normalize_item(raw)
+    # Collect extra attributes (same pattern as partAttributes on BomTreeNode)
+    doc_attrs: dict[str, object] = {}
+    for k, v in raw.items():
+        if k.startswith("@") or k.startswith("odata"):
+            continue
+        if k in _SKIP_DOC_KEYS:
+            continue
+        flat = _flatten_value(v)
+        if flat is None:
+            continue
+        doc_attrs[k] = flat
     return DocumentNode(
         docId=n["id"],
         type=doc_type,
@@ -199,6 +219,7 @@ def _map_document(
         name=n["name"],
         version=n["version"],
         state=n["state"],
+        docAttributes=doc_attrs,
     )
 
 

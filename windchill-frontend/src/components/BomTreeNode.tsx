@@ -22,6 +22,10 @@ const ATTR_BAGS: Record<string, (n: BomTreeNode) => Record<string, unknown> | un
   partAttr:  n => n.partAttributes as Record<string, unknown> | undefined,
 }
 
+const DOC_ATTR_BAGS: Record<string, (d: DocumentNode) => Record<string, unknown> | undefined> = {
+  docAttr: d => d.docAttributes as Record<string, unknown> | undefined,
+}
+
 function getCellValue(node: BomTreeNode, col: BomViewColumn): string {
   const bag = ATTR_BAGS[col.source]?.(node) ?? (node as unknown as Record<string, unknown>)
   const val = bag?.[col.key]
@@ -41,6 +45,12 @@ function getDocCellValue(doc: DocumentNode, col: BomViewColumn): string {
   // "part" source keys that Documents share with Parts
   if (col.source === 'part') {
     const val = docRecord[col.key]
+    return val != null ? String(val) : ''
+  }
+  // Document attributes (e.g. BALSAPRELEVANCE, DocTypeName)
+  if (col.source === 'docAttr') {
+    const bag = DOC_ATTR_BAGS.docAttr?.(doc)
+    const val = bag?.[col.key]
     return val != null ? String(val) : ''
   }
   return ''

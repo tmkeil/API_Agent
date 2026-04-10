@@ -14,6 +14,7 @@ Parts (PTp=L) und Dokumente (PTp=D) werden abwechselnd ausgegeben:
 from __future__ import annotations
 
 import logging
+import re
 from concurrent.futures import ThreadPoolExecutor
 from typing import Any
 
@@ -66,6 +67,10 @@ COLUMNS: list[str] = [
     "Parent",
 ]
 
+# Subtypes die als Collection gelten (werden im Export uebersprungen,
+# Kinder werden zum Eltern-Level hochgezogen)
+_COLLECTION_SUBTYPES = {"Collection", "BALCOLLECTIONPART"}
+
 
 # ═════════════════════════════════════════════════════════════
 # OData-Value Helper
@@ -93,6 +98,61 @@ def _flat(val: Any) -> str:
 def _empty_row() -> dict[str, str]:
     """Leere Zeile mit allen Spalten."""
     return {col: "" for col in COLUMNS}
+
+
+# ── Version-Formatierung ─────────────────────────────────────
+# Windchill Version: "00.1 (Manufacturing)" → nur Major: "00"
+# Dokument-Version:  "AB.3" → nur Revision: "AB"
+
+_VERSION_RE = re.compile(r"^([A-Za-z0-9]+)")
+
+
+def _format_version(raw: dict) -> str:
+    """Major-Version extrahieren (ohne Iteration und View-Label)."""
+    ver = str(raw.get("Version") or raw.get("VersionID") or "")
+    # Alles vor dem ersten Punkt oder Leerzeichen
+    m = _VERSION_RE.match(ver.split(".")[0].split("(")[0].strip())
+    return m.group(1) if m else ver
+
+
+# ── Mengeneinheiten-Abkuerzungen ─────────────────────────────
+# Windchill OData liefert volle Namen, Balluff-Export nutzt ISO-Kuerzel
+
+_UNIT_MAP: dict[str, str] = {
+    "each": "ea",
+    "meters": "m",
+    "meter": "m",
+    "millimeters": "mm",
+    "millimeter": "mm",
+    "centimeters": "cm",
+    "centimeter": "cm",
+    "kilograms": "kg",
+    "kilogram": "kg",
+    "grams": "g",
+    "gram": "g",
+    "liters": "l",
+    "liter": "l",
+    "pieces": "pc",
+    "piece": "pc",
+}
+
+
+def _abbreviate_unit(unit_str: str) -> str:
+    """OData-Einheit in Windchill-Export-Kuerzel umwandeln."""
+    return _UNIT_MAP.get(unit_str.lower().strip(), unit_str)
+
+
+def _format_quantity(val: str) -> str:
+    """Menge formatieren: '1.0' → '1', '2.554' bleibt."""
+    if not val:
+        return val
+    try:
+        f = float(val)
+        if f == int(f):
+            return str(int(f))
+        return val
+    except (ValueError, TypeError):
+        return val
 
 
 # ═════════════════════════════════════════════════════════════
@@ -138,7 +198,7 @@ def _build_part_row(
     row["Subtyp"] = _flat(part_raw.get("ObjectType") or part_raw.get("TypeName") or "")
     row["Made From"] = _flat(part_raw.get("BALMADEFROMNUMBER") or "")
     row["Mat/Doc Number"] = n["number"]
-    row["Version"] = n["version"] or _flat(part_raw.get("VersionID") or "")
+    row["Version"] = _format_version(part_raw)
     row["Description"] = n["name"]
     row["DocPart"] = "000"
     row["PTp"] = "L"
@@ -157,12 +217,14 @@ def _build_part_row(
             or usage_link.get("LineNumber")
             or ""
         )
-        row["Quantity"] = _flat(usage_link.get("Quantity") or "")
-        row["Quantity Unit"] = _flat(
+        qty_raw = _flat(usage_link.get("Quantity") or "")
+        row["Quantity"] = _format_quantity(qty_raw)
+        unit_raw = _flat(
             usage_link.get("QuantityUnit")
             or usage_link.get("Unit")
             or ""
         )
+        row["Quantity Unit"] = _abbreviate_unit(unit_raw)
         row["Reference Designator"] = _flat(
             usage_link.get("ReferenceDesignator") or ""
         )
@@ -194,13 +256,24 @@ def _build_doc_row(
     row = _empty_row()
 
     row["Structure Level"] = str(depth)
-    row["Subtyp"] = _flat(doc_raw.get("ObjectType") or doc_raw.get("TypeName") or "")
+    # CAD-Dokumente: "CAD-Document " Prefix fuer den Subtyp (wie Windchill)
+    subtyp = _flat(doc_raw.get("ObjectType") or doc_raw.get("TypeName") or "")
+    if is_cad and subtyp and not subtyp.startswith("CAD"):
+        subtyp = f"CAD-Document {subtyp}"
+    row["Subtyp"] = subtyp
     row["Mat/Doc Number"] = n["number"]
-    row["DocType"] = _flat(doc_raw.get("DocType") or "")
-    row["Version"] = n["version"] or _flat(doc_raw.get("VersionID") or "")
+    # DocTypeName = Standard-WTDocument-Feld, BAL_DOCUMENT_DOCTYPE = Balluff-IBA
+    row["DocType"] = _flat(
+        doc_raw.get("DocTypeName")
+        or doc_raw.get("BAL_DOCUMENT_DOCTYPE")
+        or doc_raw.get("DocType")
+        or ""
+    )
+    row["Version"] = _format_version(doc_raw)
     row["Description"] = n["name"]
     row["DocPart"] = "000"
     row["PTp"] = "" if is_cad else "D"
+    row["SAP Downstream"] = _flat(doc_raw.get("BALDOWNSTREAM") or "")
     row["Printing Good"] = _flat(doc_raw.get("BALPRINTINGGOOD") or "")
     row["State"] = n["state"]
     row["Parent"] = parent_number
@@ -225,18 +298,30 @@ def _export_node(
     part_id = extract_id(part_raw)
     number = part_raw.get("Number") or normalize_item(part_raw)["number"]
 
+    # Collection-Parts pruefen (ObjectType oder TypeName)
+    obj_type = str(
+        part_raw.get("ObjectType")
+        or part_raw.get("TypeName")
+        or ""
+    )
+    is_collection = obj_type in _COLLECTION_SUBTYPES
+
     # ── Daten laden (Dokumente + Kinder parallel) ─────────
     docs: list[dict] = []
     cad_docs: list[dict] = []
     children_links: list = []
 
     def _load_docs():
+        if is_collection:
+            return []
         try:
             return client.get_described_documents(part_id, number)
         except Exception:
             return []
 
     def _load_cad():
+        if is_collection:
+            return []
         try:
             return client.get_cad_documents(part_id)
         except Exception:
@@ -260,20 +345,21 @@ def _export_node(
         cad_docs = f_cad.result()
         children_links = f_children.result()
 
-    # Dokumente deduplizieren (WTDocuments vs. CAD-Drawings getrennt)
+    # Dokumente deduplizieren — WTDocs und CAD zusammen, nach Nummer sortiert
     seen_doc_ids: set[str] = set()
-    all_docs_wt: list[dict] = []
-    all_docs_cad: list[dict] = []
+    all_docs: list[tuple[dict, bool]] = []  # (doc_raw, is_cad)
     for d in (docs or []):
         did = d.get("ID", "")
         if did and did not in seen_doc_ids:
             seen_doc_ids.add(did)
-            all_docs_wt.append(d)
+            all_docs.append((d, False))
     for d in (cad_docs or []):
         did = d.get("ID", "")
         if did and did not in seen_doc_ids:
             seen_doc_ids.add(did)
-            all_docs_cad.append(d)
+            all_docs.append((d, True))
+    # Sortierung nach Dokumentnummer (wie Windchill-Export)
+    all_docs.sort(key=lambda x: x[0].get("Number") or normalize_item(x[0])["number"])
 
     # Kinder aufloesen
     resolved_children: list[tuple[dict, dict]] = []  # (link, child_part)
@@ -288,25 +374,39 @@ def _export_node(
 
     has_children = len(resolved_children) > 0
 
-    # ── 1. Part-Zeile ────────────────────────────────────
-    rows.append(_build_part_row(part_raw, depth, parent_number, usage_link, has_children))
-
-    # ── 2. Dokument-Zeilen (gleiche Tiefe wie Kinder) ────
-    for doc in all_docs_wt:
-        rows.append(_build_doc_row(doc, depth + 1, number, is_cad=False))
-    for doc in all_docs_cad:
-        rows.append(_build_doc_row(doc, depth + 1, number, is_cad=True))
-
-    # ── 3. Kinder rekursiv ───────────────────────────────
-    # Sortiert nach Position, dann Nummer
-    resolved_children.sort(
-        key=lambda x: (
-            _flat(x[0].get("FindNumber") or x[0].get("LineNumber") or ""),
-            x[1].get("Number", ""),
+    if is_collection:
+        # ── Collection Part: Zeile UND Dokumente ueberspringen,
+        #    Kinder werden auf gleicher Tiefe (depth) weitergefuehrt
+        logger.debug(
+            "Collection Part %s uebersprungen (Kinder: %d)",
+            number, len(resolved_children),
         )
-    )
-    for link, child in resolved_children:
-        _export_node(client, child, depth + 1, number, link, rows, seen)
+        # Kinder sortieren
+        resolved_children.sort(
+            key=lambda x: (
+                _flat(x[0].get("FindNumber") or x[0].get("LineNumber") or ""),
+                x[1].get("Number", ""),
+            )
+        )
+        for link, child in resolved_children:
+            _export_node(client, child, depth, number, link, rows, seen)
+    else:
+        # ── 1. Part-Zeile ────────────────────────────────
+        rows.append(_build_part_row(part_raw, depth, parent_number, usage_link, has_children))
+
+        # ── 2. Dokument-Zeilen (alle nach Nummer sortiert) ──
+        for doc, cad_flag in all_docs:
+            rows.append(_build_doc_row(doc, depth + 1, number, is_cad=cad_flag))
+
+        # ── 3. Kinder rekursiv ───────────────────────────
+        resolved_children.sort(
+            key=lambda x: (
+                _flat(x[0].get("FindNumber") or x[0].get("LineNumber") or ""),
+                x[1].get("Number", ""),
+            )
+        )
+        for link, child in resolved_children:
+            _export_node(client, child, depth + 1, number, link, rows, seen)
 
     # Part-ID wieder freigeben (darf in anderen Zweigen nochmal vorkommen)
     if part_id:

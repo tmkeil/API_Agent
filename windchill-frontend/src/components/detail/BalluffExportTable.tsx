@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useMemo, useRef, useState } from 'react'
 import { fetchBalluffBomExport } from '../../api/client'
 import type { BalluffBomExportResponse } from '../../api/types'
 
@@ -74,12 +74,52 @@ export default function BalluffExportTable({ partNumber, onClose }: Props) {
   const [editCell, setEditCell] = useState<{ row: number; col: string } | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
+  // ── Collapse state ──────────────────────────────────────
+  // Set of row indices that are collapsed (their children are hidden)
+  const [collapsed, setCollapsed] = useState<Set<number>>(new Set())
+
+  const toggleCollapse = useCallback((rowIdx: number) => {
+    setCollapsed(prev => {
+      const next = new Set(prev)
+      if (next.has(rowIdx)) next.delete(rowIdx)
+      else next.add(rowIdx)
+      return next
+    })
+  }, [])
+
+  // Compute visible rows based on collapse state
+  const visibleRows = useMemo(() => {
+    if (!data) return []
+    const rows = data.rows
+    const visible: number[] = []
+    let skipUntilLevel = -1
+
+    for (let i = 0; i < rows.length; i++) {
+      const level = parseInt(rows[i]['Structure Level'] || '0', 10)
+
+      // If we're skipping (a parent is collapsed), check if we've exited the subtree
+      if (skipUntilLevel >= 0) {
+        if (level > skipUntilLevel) continue  // still inside collapsed subtree
+        skipUntilLevel = -1  // exited subtree
+      }
+
+      visible.push(i)
+
+      // If this row is collapsed and is a Part with children, skip its subtree
+      if (collapsed.has(i) && rows[i]['PTp'] === 'L' && rows[i]['Assembly'] === 'Yes') {
+        skipUntilLevel = level
+      }
+    }
+    return visible
+  }, [data, collapsed])
+
   // ── Load ────────────────────────────────────────────────
 
   const handleLoad = useCallback(async () => {
     setLoading(true)
     setError('')
     setData(null)
+    setCollapsed(new Set())
     try {
       const resp: BalluffBomExportResponse = await fetchBalluffBomExport(partNumber)
       setData({
@@ -180,9 +220,7 @@ export default function BalluffExportTable({ partNumber, onClose }: Props) {
           <h3 className="text-sm font-semibold text-slate-700">Balluff BOM Export</h3>
           {data && (
             <>
-              <span className="text-xs text-slate-500">
-                {data.rows.length} Zeilen · {data.rows.filter(r => r['PTp'] === 'L').length} Parts · {data.rows.filter(r => r['PTp'] === 'D').length} Docs · {data.rows.filter(r => r['PTp'] !== 'L' && r['PTp'] !== 'D').length} CAD
-              </span>
+              <span className="text-xs text-slate-500">{data.rows.length} Zeilen · {data.rows.filter(r => r['PTp'] === 'L').length} Parts · {data.rows.filter(r => r['PTp'] === 'D').length} Docs · {data.rows.filter(r => r['PTp'] !== 'L' && r['PTp'] !== 'D').length} CAD</span>
               <button
                 onClick={handleDownload}
                 className="px-3 py-1 text-xs font-medium rounded bg-emerald-600 text-white hover:bg-emerald-700 transition-colors"
@@ -244,38 +282,61 @@ export default function BalluffExportTable({ partNumber, onClose }: Props) {
               </tr>
             </thead>
             <tbody>
-              {data.rows.map((row, ri) => (
+              {visibleRows.map(ri => {
+                const row = data.rows[ri]
+                const isAssembly = row['PTp'] === 'L' && row['Assembly'] === 'Yes'
+                const isCollapsed = collapsed.has(ri)
+                const level = parseInt(row['Structure Level'] || '0', 10)
+                return (
                 <tr
                   key={ri}
                   className={`${rowBg(row)} hover:bg-yellow-50/50 group border-b border-slate-100`}
                 >
                   {/* Row controls */}
                   <td className="px-1 py-0.5 text-center sticky left-0 bg-inherit z-10 border-r border-slate-100">
-                    <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button
-                        onClick={() => addRowAfter(ri)}
-                        className="text-emerald-500 hover:text-emerald-700 text-[10px] leading-none"
-                        title="Zeile darunter einfügen"
-                      >
-                        +
-                      </button>
-                      <button
-                        onClick={() => removeRow(ri)}
-                        className="text-red-400 hover:text-red-600 text-[10px] leading-none"
-                        title="Zeile entfernen"
-                      >
-                        ×
-                      </button>
+                    <div className="flex items-center gap-0.5">
+                      {isAssembly ? (
+                        <button
+                          onClick={() => toggleCollapse(ri)}
+                          className="text-slate-500 hover:text-slate-700 text-[10px] leading-none w-3"
+                          title={isCollapsed ? 'Aufklappen' : 'Zuklappen'}
+                        >
+                          {isCollapsed ? '▸' : '▾'}
+                        </button>
+                      ) : (
+                        <span className="w-3" />
+                      )}
+                      <span className="opacity-0 group-hover:opacity-100 transition-opacity flex gap-0.5">
+                        <button
+                          onClick={() => addRowAfter(ri)}
+                          className="text-emerald-500 hover:text-emerald-700 text-[10px] leading-none"
+                          title="Zeile darunter einfügen"
+                        >
+                          +
+                        </button>
+                        <button
+                          onClick={() => removeRow(ri)}
+                          className="text-red-400 hover:text-red-600 text-[10px] leading-none"
+                          title="Zeile entfernen"
+                        >
+                          ×
+                        </button>
+                      </span>
                     </div>
                   </td>
                   {data.columns.map(col => {
                     const isEditing = editCell?.row === ri && editCell?.col === col
                     const val = row[col] ?? ''
+                    // Indent the first data column by structure level
+                    const indent = col === 'Structure Level' && level > 0
+                      ? { paddingLeft: `${level * 8 + 8}px` }
+                      : undefined
                     return (
                       <td
                         key={col}
                         className={`px-2 py-0.5 whitespace-nowrap cursor-text
                                     ${isEditing ? 'p-0' : ''} ${colWidth(col)}`}
+                        style={indent}
                         onDoubleClick={() => startEdit(ri, col)}
                       >
                         {isEditing ? (
@@ -299,7 +360,7 @@ export default function BalluffExportTable({ partNumber, onClose }: Props) {
                     )
                   })}
                 </tr>
-              ))}
+              )})}
             </tbody>
           </table>
         </div>

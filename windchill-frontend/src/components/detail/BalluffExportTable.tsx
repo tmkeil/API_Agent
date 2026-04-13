@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useRef, useState } from 'react'
-import { fetchBalluffBomExport } from '../../api/client'
-import type { BalluffBomExportResponse } from '../../api/types'
+import { fetchBalluffBomExport, fetchSapExport } from '../../api/client'
+import type { BalluffBomExportResponse, SapExportResponse } from '../../api/types'
 
 // ── State ───────────────────────────────────────────────────
 
@@ -184,6 +184,55 @@ export default function BalluffExportTable({ partNumber, onClose }: Props) {
     downloadCsv(csv, filename)
   }, [data])
 
+  // ── SAP Export ──────────────────────────────────────────
+
+  const [sapLoading, setSapLoading] = useState(false)
+  const [sapResult, setSapResult] = useState<SapExportResponse | null>(null)
+  const [sapError, setSapError] = useState('')
+  const [showSapDialog, setShowSapDialog] = useState(false)
+
+  const handleSapExport = useCallback(async () => {
+    setSapLoading(true)
+    setSapError('')
+    setSapResult(null)
+    setShowSapDialog(true)
+    try {
+      const resp = await fetchSapExport(partNumber)
+      setSapResult(resp)
+    } catch (e: unknown) {
+      setSapError(e instanceof Error ? e.message : String(e))
+    } finally {
+      setSapLoading(false)
+    }
+  }, [partNumber])
+
+  const handleSapDownloadAll = useCallback(() => {
+    if (!sapResult || sapResult.files.length === 0) return
+    const bom = '\uFEFF'
+    for (const file of sapResult.files) {
+      const blob = new Blob([bom + file.content], { type: 'text/csv;charset=utf-8;' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = file.filename
+      a.click()
+      URL.revokeObjectURL(url)
+    }
+  }, [sapResult])
+
+  const handleSapDownloadSingle = useCallback((idx: number) => {
+    if (!sapResult) return
+    const file = sapResult.files[idx]
+    const bom = '\uFEFF'
+    const blob = new Blob([bom + file.content], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = file.filename
+    a.click()
+    URL.revokeObjectURL(url)
+  }, [sapResult])
+
   // ── Initial state: show load button ─────────────────────
 
   if (!data && !loading && !error) {
@@ -226,6 +275,13 @@ export default function BalluffExportTable({ partNumber, onClose }: Props) {
                 className="px-3 py-1 text-xs font-medium rounded bg-emerald-600 text-white hover:bg-emerald-700 transition-colors"
               >
                 CSV herunterladen
+              </button>
+              <button
+                onClick={handleSapExport}
+                disabled={sapLoading}
+                className="px-3 py-1 text-xs font-medium rounded bg-indigo-600 text-white hover:bg-indigo-700 transition-colors disabled:opacity-40"
+              >
+                {sapLoading ? 'SAP Export…' : 'SAP Export'}
               </button>
               <button
                 onClick={handleLoad}
@@ -363,6 +419,119 @@ export default function BalluffExportTable({ partNumber, onClose }: Props) {
               )})}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {/* ── SAP Export Dialog ── */}
+      {showSapDialog && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
+          <div className="bg-white rounded-lg shadow-xl border border-slate-200 w-[600px] max-h-[80vh] flex flex-col">
+            {/* Dialog header */}
+            <div className="flex items-center justify-between px-5 py-3 border-b border-slate-200">
+              <h3 className="text-sm font-semibold text-slate-800">SAP Export</h3>
+              <button
+                onClick={() => setShowSapDialog(false)}
+                className="text-slate-400 hover:text-slate-600 text-sm"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Dialog body */}
+            <div className="flex-1 overflow-auto px-5 py-4 space-y-4">
+              {sapLoading && (
+                <div className="text-sm text-slate-500 animate-pulse py-8 text-center">
+                  BOM wird geladen und für SAP aufbereitet…
+                </div>
+              )}
+
+              {sapError && (
+                <div className="bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-2 rounded-md">
+                  {sapError}
+                </div>
+              )}
+
+              {sapResult && (
+                <>
+                  {/* Stats */}
+                  <div className="text-xs text-slate-500 flex gap-4">
+                    <span>Input: {sapResult.stats.totalInputRows} Zeilen</span>
+                    <span>Output: {sapResult.stats.totalOutputRows} SAP-Zeilen</span>
+                    <span>Dateien: {sapResult.stats.filesCount}</span>
+                    <span>Übersprungen: {sapResult.stats.skippedRows}</span>
+                  </div>
+
+                  {/* Validation */}
+                  {sapResult.validation.length > 0 && (
+                    <div className="bg-amber-50 border border-amber-200 rounded-md px-4 py-3">
+                      <div className="text-xs font-semibold text-amber-800 mb-2">
+                        Validierung — {sapResult.validation.length} Hinweis{sapResult.validation.length !== 1 ? 'e' : ''}
+                      </div>
+                      <ul className="text-xs text-amber-700 space-y-1 max-h-40 overflow-auto">
+                        {sapResult.validation.map((msg, i) => (
+                          <li key={i} className="flex gap-1.5">
+                            <span className="text-amber-500 shrink-0">•</span>
+                            <span>{msg}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  {sapResult.validation.length === 0 && (
+                    <div className="bg-emerald-50 border border-emerald-200 rounded-md px-4 py-2 text-xs text-emerald-700">
+                      Keine Validierungsfehler gefunden.
+                    </div>
+                  )}
+
+                  {/* Files list */}
+                  {sapResult.files.length > 0 && (
+                    <div>
+                      <div className="text-xs font-semibold text-slate-700 mb-2">
+                        CSV-Dateien ({sapResult.files.length})
+                      </div>
+                      <div className="border border-slate-200 rounded-md divide-y divide-slate-100 max-h-48 overflow-auto">
+                        {sapResult.files.map((file, i) => (
+                          <div key={i} className="flex items-center justify-between px-3 py-1.5 hover:bg-slate-50">
+                            <span className="text-xs text-slate-700 font-mono">{file.filename}</span>
+                            <button
+                              onClick={() => handleSapDownloadSingle(i)}
+                              className="text-xs text-indigo-600 hover:text-indigo-800"
+                            >
+                              ↓
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {sapResult.files.length === 0 && !sapError && (
+                    <div className="text-xs text-slate-500 py-4 text-center">
+                      Keine SAP-Dateien erzeugt (keine Zeilen mit gesetzter Pos).
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+
+            {/* Dialog footer */}
+            {sapResult && sapResult.files.length > 0 && (
+              <div className="flex justify-end gap-2 px-5 py-3 border-t border-slate-200">
+                <button
+                  onClick={() => setShowSapDialog(false)}
+                  className="px-3 py-1.5 text-xs font-medium rounded border border-slate-300 text-slate-600 hover:bg-slate-100"
+                >
+                  Schließen
+                </button>
+                <button
+                  onClick={handleSapDownloadAll}
+                  className="px-4 py-1.5 text-xs font-medium rounded bg-indigo-600 text-white hover:bg-indigo-700"
+                >
+                  Alle {sapResult.files.length} CSVs herunterladen
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       )}
     </div>

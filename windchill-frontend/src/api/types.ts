@@ -438,3 +438,23 @@ export interface BalluffBomExportResponse {
   partNumber: string
   rowCount: number
 }
+
+// ── SAP Export ──────────────────────────────────────────────
+
+export interface SapExportFileEntry {
+  filename: string
+  content: string
+}
+
+export interface SapExportStats {
+  totalInputRows: number
+  totalOutputRows: number
+  filesCount: number
+  skippedRows: number
+}
+
+export interface SapExportResponse {
+  validation: string[]
+  files: SapExportFileEntry[]
+  stats: SapExportStats
+}

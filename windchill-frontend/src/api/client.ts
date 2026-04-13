@@ -26,6 +26,7 @@ import type {
   WhereUsedResponse,
   WriteResponse,
   ApiLogEntry,
+  SapExportResponse,
 } from './types'
 
 const BASE = '/api'
@@ -354,7 +355,16 @@ export async function fetchBalluffBomExport(
     { signal },
   )
 }
-
+// SAP Export (aufbereitete CSV-Dateien)
+export async function fetchSapExport(
+  partNumber: string,
+  signal?: AbortSignal,
+): Promise<SapExportResponse> {
+  return request<SapExportResponse>(
+    `${BASE}/export/sap/${encodeURIComponent(partNumber)}`,
+    { signal },
+  )
+}
 // ── Write Operations ────────────────────────────────────────
 
 export async function createObject(

@@ -20,8 +20,8 @@ from src.core.auth import require_auth
 from src.core.cache import cache
 from src.core.dependencies import get_client, get_session
 from src.core.session import log_session_event
-from src.models.dto import BalluffBomExportResponse, BenchmarkResponse, CacheStats
-from src.services import admin_service, bom_export_service, parts_service
+from src.models.dto import BalluffBomExportResponse, BenchmarkResponse, CacheStats, SapExportResponse
+from src.services import admin_service, bom_export_service, parts_service, sap_export_service
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -159,6 +159,35 @@ def balluff_bom_export(
         log_session_event(
             session, "GET", f"/api/export/balluff/{part_number}", 200, 0, "web",
             f"balluff export: {part_number} ({result['rowCount']} rows)",
+        )
+    return result
+
+
+# ── SAP Export (aufbereitete CSVs) ───────────────────────────
+
+
+@router.get(
+    "/export/sap/{part_number}",
+    response_model=SapExportResponse,
+    summary="SAP Export — aufbereitete CSV-Dateien fuer SAP-Import",
+)
+def sap_export(
+    part_number: str,
+    request: Request = None,
+    _: None = Depends(require_auth),
+):
+    client = get_client(request)
+    session = get_session(request)
+    try:
+        raw_export = bom_export_service.balluff_bom_export(client, part_number)
+        result = sap_export_service.sap_export(raw_export)
+    except Exception as e:
+        raise HTTPException(500, f"SAP-Export fehlgeschlagen: {e}")
+
+    if session:
+        log_session_event(
+            session, "GET", f"/api/export/sap/{part_number}", 200, 0, "web",
+            f"sap export: {part_number} ({result['stats']['filesCount']} files)",
         )
     return result
 

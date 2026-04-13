@@ -514,3 +514,26 @@ class BalluffBomExportResponse(BaseModel):
     rows: list[dict[str, str]] = []
     partNumber: str = ""
     rowCount: int = 0
+
+
+# ── SAP Export ───────────────────────────────────────────────
+
+class SapExportFileEntry(BaseModel):
+    """Einzelne CSV-Datei im SAP-Export."""
+    filename: str = ""
+    content: str = ""
+
+
+class SapExportStats(BaseModel):
+    """Statistiken zum SAP-Export."""
+    totalInputRows: int = 0
+    totalOutputRows: int = 0
+    filesCount: int = 0
+    skippedRows: int = 0
+
+
+class SapExportResponse(BaseModel):
+    """Response fuer den SAP-Export (aufbereitete CSV-Dateien)."""
+    validation: list[str] = []
+    files: list[SapExportFileEntry] = []
+    stats: SapExportStats = SapExportStats()

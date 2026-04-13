@@ -19,6 +19,7 @@ from concurrent.futures import ThreadPoolExecutor
 from typing import Any
 
 from src.core.odata import extract_id, normalize_item
+from src.core.odata_fields import F
 
 logger = logging.getLogger(__name__)
 
@@ -69,7 +70,7 @@ COLUMNS: list[str] = [
 
 # Subtypes die als Collection gelten (werden im Export uebersprungen,
 # Kinder werden zum Eltern-Level hochgezogen)
-_COLLECTION_SUBTYPES = {"Collection", "BALCOLLECTIONPART"}
+_COLLECTION_SUBTYPES = {"Collection", F.PartSubtype.COLLECTION}
 
 
 # ═════════════════════════════════════════════════════════════
@@ -160,14 +161,14 @@ def _format_quantity(val: str) -> str:
 # ═════════════════════════════════════════════════════════════
 
 _RAW_IBA_MAP = [
-    ("BALSAPSTPOROMS1", "Raw Dimension 1"),
-    ("BALSAPSTPOROMS2", "Raw Dimension 2"),
-    ("BALSAPSTPOROMS3", "Raw Dimension 3"),
-    ("BALSAPSTPOROMEI", "Raw Dimension Unit"),
-    ("BALSAPSTPOROMEN", "Raw Material Amount"),
-    ("BALSAPSTPOROAME", "Raw Material Amount Unit"),
-    ("BALSAPSTPOROANZ", "Raw Material Quantity"),
-    ("BALSAPSTPOROKME", "Raw Material Quantity Unit"),
+    (F.RawMaterialLink.RAW_DIM_1, "Raw Dimension 1"),
+    (F.RawMaterialLink.RAW_DIM_2, "Raw Dimension 2"),
+    (F.RawMaterialLink.RAW_DIM_3, "Raw Dimension 3"),
+    (F.RawMaterialLink.RAW_DIM_UNIT, "Raw Dimension Unit"),
+    (F.RawMaterialLink.RAW_AMOUNT, "Raw Material Amount"),
+    (F.RawMaterialLink.RAW_AMOUNT_UNIT, "Raw Material Amount Unit"),
+    (F.RawMaterialLink.RAW_QUANTITY, "Raw Material Quantity"),
+    (F.RawMaterialLink.RAW_QUANTITY_UNIT, "Raw Material Quantity Unit"),
 ]
 
 
@@ -197,7 +198,7 @@ def _build_part_row(
 
     row["Structure Level"] = str(depth)
     row["Subtyp"] = _flat(part_raw.get("ObjectType") or part_raw.get("TypeName") or "")
-    row["Made From"] = _flat(part_raw.get("BALMADEFROMNUMBER") or "")
+    row["Made From"] = _flat(part_raw.get(F.Part.MADE_FROM_NUMBER) or "")
     row["Mat/Doc Number"] = n["number"]
     row["Version"] = _format_version(part_raw)
     row["Description"] = n["name"]
@@ -212,41 +213,36 @@ def _build_part_row(
     # Raw-Dimensions aus Part-IBAs
     _apply_raw_dimensions(row, part_raw)
 
-    # DisconType ist ein PART-Attribut (BAL_SAP_MARA_ZZROLLUSEUAS), kein UsageLink-Attribut
-    row["DisconType"] = _flat(part_raw.get("BALSAPMARAZZROLLUSEUAS") or "")
+    row["DisconType"] = _flat(part_raw.get(F.Part.DISCON_TYPE) or "")
 
     # Usage-Link-Attribute (nur bei Kindern, nicht Root)
     if usage_link:
         row["Pos"] = _flat(
-            usage_link.get("FindNumber")
-            or usage_link.get("LineNumber")
+            usage_link.get(F.UsageLink.FIND_NUMBER)
+            or usage_link.get(F.UsageLink.LINE_NUMBER)
             or ""
         )
-        qty_raw = _flat(usage_link.get("Quantity") or "")
+        qty_raw = _flat(usage_link.get(F.UsageLink.QUANTITY) or "")
         row["Quantity"] = _format_quantity(qty_raw)
         unit_raw = _flat(
-            usage_link.get("QuantityUnit")
-            or usage_link.get("Unit")
+            usage_link.get(F.UsageLink.QUANTITY_UNIT)
+            or usage_link.get(F.UsageLink.UNIT)
             or ""
         )
         row["Quantity Unit"] = _abbreviate_unit(unit_raw)
-        # OData-Schema: ReferenceDesignatorRange (nicht ReferenceDesignator)
         row["Reference Designator"] = _flat(
-            usage_link.get("ReferenceDesignatorRange")
-            or usage_link.get("ReferenceDesignator")
+            usage_link.get(F.UsageLink.REF_DESIGNATOR_RANGE)
+            or usage_link.get(F.UsageLink.REF_DESIGNATOR)
             or ""
         )
-        # OData-Schema: BAL_SAP_STPO_NFEAG → BALSAPSTPONFEAG
-        row["DisconDate"] = _flat(usage_link.get("BALSAPSTPONFEAG") or "")
-        # OData-Schema: BAL_SAP_STPO_NFGRP → BALSAPSTPONFGRP
-        row["DisconGrp"] = _flat(usage_link.get("BALSAPSTPONFGRP") or "")
-        row["SuccessGrp"] = _flat(usage_link.get("BALSAPSUCCGRP") or "")
-        # OData-Schema: BAL_ERP_BOM_POSITION_TEXT → BALERPBOMPOSITIONTEXT
-        row["ERP Position Text"] = _flat(usage_link.get("BALERPBOMPOSITIONTEXT") or "")
+        row["DisconDate"] = _flat(usage_link.get(F.UsageLink.DISCON_DATE) or "")
+        row["DisconGrp"] = _flat(usage_link.get(F.UsageLink.DISCON_GRP) or "")
+        row["SuccessGrp"] = ""  # Existiert nicht im OData-Schema
+        row["ERP Position Text"] = _flat(usage_link.get(F.UsageLink.ERP_POSITION_TEXT) or "")
 
     # Formula Key aus RawMaterialLink (nicht Part, nicht UsageLink)
     if made_from_link:
-        row["Formula Key"] = _flat(made_from_link.get("BALSAPSTPORFORM") or "")
+        row["Formula Key"] = _flat(made_from_link.get(F.RawMaterialLink.FORMULA_KEY) or "")
 
     return row
 
@@ -275,7 +271,7 @@ def _build_doc_row(
     # DocType-Code: BALDOCUMENTTYPE ist ein EnumType auf WTDocument-Entities,
     # z.B. {"Value": "DOK", "Display": "DOK - Technical documents"}.
     # Wir brauchen den kurzen Value-Code (DOK, QEP, DRW, DRF, ...).
-    doc_type_raw = doc_raw.get("BALDOCUMENTTYPE")
+    doc_type_raw = doc_raw.get(F.Doc.DOC_TYPE)
     if isinstance(doc_type_raw, dict):
         row["DocType"] = str(doc_type_raw.get("Value") or "")
     elif doc_type_raw:
@@ -287,10 +283,8 @@ def _build_doc_row(
     row["DocPart"] = "000"
     row["PTp"] = "" if is_cad else "D"
     # SAP Downstream fuer Dokumente = BAL_SAP_RELEVANCE (boolean)
-    row["SAP Downstream"] = _flat(doc_raw.get("BALSAPRELEVANCE") or "")
-    # Printing Good existiert nur auf BAL_ENC_DOC_PART (nicht auf WTDocument/EPMDocument)
-    # Wird via DescribedBy nicht geladen, daher Fallback auf BALPRINTINGGOOD
-    row["Printing Good"] = _flat(doc_raw.get("BALPRINTINGGOOD") or "")
+    row["SAP Downstream"] = _flat(doc_raw.get(F.Doc.SAP_RELEVANCE) or "")
+    row["Printing Good"] = _flat(doc_raw.get(F.Doc.PRINTING_GOOD) or "")
     row["State"] = n["state"]
     row["Parent"] = parent_number
 
@@ -329,7 +323,7 @@ def _export_node(
     made_from_links: list[dict] = []
 
     # Made-From nur laden wenn Part ein BALMADEFROMNUMBER hat
-    has_made_from = bool(part_raw.get("BALMADEFROMNUMBER"))
+    has_made_from = bool(part_raw.get(F.Part.MADE_FROM_NUMBER))
 
     def _load_docs():
         if is_collection:

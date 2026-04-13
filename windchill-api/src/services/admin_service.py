@@ -14,6 +14,7 @@ import time
 from collections import OrderedDict
 
 from src.core.odata import WcType, extract_id, normalize_item
+from src.core.odata_fields import F
 from src.models.dto import BenchmarkResponse, BenchmarkResult
 from src.services import parts_service
 
@@ -49,20 +50,20 @@ def _export_doc_node(doc: dict, doc_type: str = WcType.DOCUMENT) -> OrderedDict:
 
 def _build_made_from(part_attrs: dict) -> OrderedDict | None:
     """Extract Made From RAW dimension data from part attributes (no lookup)."""
-    mf_number = part_attrs.get("BALMADEFROMNUMBER", "")
+    mf_number = part_attrs.get(F.Part.MADE_FROM_NUMBER, "")
     if not mf_number or mf_number == "<list:0 items>":
         return None
     raw_fields = OrderedDict()
     raw_fields["made_from_number"] = mf_number
     _RAW_KEYS = [
-        ("BALSAPSTPOROMS1", "raw_dimension_1"),
-        ("BALSAPSTPOROMS2", "raw_dimension_2"),
-        ("BALSAPSTPOROMS3", "raw_dimension_3"),
-        ("BALSAPSTPOROMEI", "raw_dimension_unit"),
-        ("BALSAPSTPOROMEN", "raw_material_amount"),
-        ("BALSAPSTPOROAME", "raw_material_amount_unit"),
-        ("BALSAPSTPOROANZ", "raw_material_quantity"),
-        ("BALSAPSTPOROKME", "raw_material_quantity_unit"),
+        (F.RawMaterialLink.RAW_DIM_1, "raw_dimension_1"),
+        (F.RawMaterialLink.RAW_DIM_2, "raw_dimension_2"),
+        (F.RawMaterialLink.RAW_DIM_3, "raw_dimension_3"),
+        (F.RawMaterialLink.RAW_DIM_UNIT, "raw_dimension_unit"),
+        (F.RawMaterialLink.RAW_AMOUNT, "raw_material_amount"),
+        (F.RawMaterialLink.RAW_AMOUNT_UNIT, "raw_material_amount_unit"),
+        (F.RawMaterialLink.RAW_QUANTITY, "raw_material_quantity"),
+        (F.RawMaterialLink.RAW_QUANTITY_UNIT, "raw_material_quantity_unit"),
     ]
     for odata_key, export_key in _RAW_KEYS:
         val = part_attrs.get(odata_key)
@@ -640,7 +641,7 @@ def build_extended_export(
     design_tree = _export_part_node(client, part_id, raw_part, None, 0, seen_ids, part_cache, mf_cache)
 
     # ── 2. Find Manufacturing equivalents ──────────────────
-    downstream_raw = _flatten(raw_part.get("BALDOWNSTREAM", ""))
+    downstream_raw = _flatten(raw_part.get(F.Part.DOWNSTREAM, ""))
     mfg_numbers = _parse_equiv_downstream(str(downstream_raw) if downstream_raw else "")
     logger.info(
         "Extended export for %s: found %d Manufacturing equivalents: %s",
@@ -660,7 +661,7 @@ def build_extended_export(
 
             # Check if this is a Gathering Part (Suffix=GATH)
             # Gathering parts are included but their BOMs are not expanded
-            suffix = _flatten(mfg_raw.get("BALSAPSUFFIX", "")) or ""
+            suffix = _flatten(mfg_raw.get(F.Part.SAP_SUFFIX, "")) or ""
             is_gathering = str(suffix).upper() == "GATH"
 
             if is_gathering:

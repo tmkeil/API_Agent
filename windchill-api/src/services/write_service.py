@@ -12,6 +12,7 @@ from typing import Any
 
 from src.adapters.wrs_client import WRSClient
 from src.core.odata import extract_id, normalize_item
+from src.core.odata_fields import F
 from src.models.dto import TimingInfo, WriteResponse
 
 logger = logging.getLogger(__name__)
@@ -158,13 +159,13 @@ def _build_part_body(attrs: dict[str, Any]) -> tuple[dict[str, Any], dict[str, A
     # ProductFamily (IBA: BALCPORDERPREFIX)
     product_family = attrs.get("ProductFamily", "")
     if product_family:
-        patch_body["BALCPORDERPREFIX"] = product_family
+        patch_body[F.Part.CP_ORDER_PREFIX] = product_family
 
     # Classification (IBA: BALCLASSIFICATIONBINDINGWTPART)
     # Pflichtfeld bei Balluff — im POST-Body senden (v6 akzeptiert es).
     classification = attrs.get("Classification", "")
     if classification:
-        create_body["BALCLASSIFICATIONBINDINGWTPART"] = {
+        create_body[F.PartSubtype.CLASSIFICATION_BINDING] = {
             "ClfNodeInternalName": classification,
         }
 
@@ -475,7 +476,7 @@ def _build_downstream_string(entries: list[dict[str, str]]) -> str:
 
 def _extract_downstream_raw(raw_part: dict) -> str:
     """Extract BALDOWNSTREAM string from a raw OData part response."""
-    val = raw_part.get("BALDOWNSTREAM", "")
+    val = raw_part.get(F.Part.DOWNSTREAM, "")
     if isinstance(val, list):
         val = ", ".join(str(v) for v in val)
     return str(val) if val else ""
@@ -552,7 +553,7 @@ def add_downstream_link(
 
     # 6. PATCH design part with updated BALDOWNSTREAM
     new_value = _build_downstream_string(entries)
-    client.update_object_attributes("part", design_id, {"BALDOWNSTREAM": new_value})
+    client.update_object_attributes("part", design_id, {F.Part.DOWNSTREAM: new_value})
 
     ms = round((time.monotonic() - t0) * 1000, 1)
     return WriteResponse(
@@ -598,7 +599,7 @@ def remove_downstream_link(
 
     # 4. PATCH design part with updated BALDOWNSTREAM
     new_value = _build_downstream_string(entries)
-    client.update_object_attributes("part", design_id, {"BALDOWNSTREAM": new_value})
+    client.update_object_attributes("part", design_id, {F.Part.DOWNSTREAM: new_value})
 
     ms = round((time.monotonic() - t0) * 1000, 1)
     return WriteResponse(

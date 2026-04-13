@@ -189,6 +189,7 @@ def _build_part_row(
     parent_number: str,
     usage_link: dict | None,
     has_children: bool,
+    made_from_link: dict | None = None,
 ) -> dict[str, str]:
     """Eine Part-Zeile (PTp=L) bauen."""
     n = normalize_item(part_raw)
@@ -235,7 +236,6 @@ def _build_part_row(
             or usage_link.get("ReferenceDesignator")
             or ""
         )
-        row["Formula Key"] = _flat(usage_link.get("BALSAPFORMULAKEY") or "")
         # OData-Schema: BAL_SAP_STPO_NFEAG → BALSAPSTPONFEAG
         row["DisconDate"] = _flat(usage_link.get("BALSAPSTPONFEAG") or "")
         # OData-Schema: BAL_SAP_STPO_NFGRP → BALSAPSTPONFGRP
@@ -243,6 +243,10 @@ def _build_part_row(
         row["SuccessGrp"] = _flat(usage_link.get("BALSAPSUCCGRP") or "")
         # OData-Schema: BAL_ERP_BOM_POSITION_TEXT → BALERPBOMPOSITIONTEXT
         row["ERP Position Text"] = _flat(usage_link.get("BALERPBOMPOSITIONTEXT") or "")
+
+    # Formula Key aus RawMaterialLink (nicht Part, nicht UsageLink)
+    if made_from_link:
+        row["Formula Key"] = _flat(made_from_link.get("BALSAPSTPORFORM") or "")
 
     return row
 
@@ -318,10 +322,14 @@ def _export_node(
     )
     is_collection = obj_type in _COLLECTION_SUBTYPES
 
-    # ── Daten laden (Dokumente + Kinder parallel) ─────────
+    # ── Daten laden (Dokumente + Kinder + MadeFrom parallel) ──
     docs: list[dict] = []
     cad_docs: list[dict] = []
     children_links: list = []
+    made_from_links: list[dict] = []
+
+    # Made-From nur laden wenn Part ein BALMADEFROMNUMBER hat
+    has_made_from = bool(part_raw.get("BALMADEFROMNUMBER"))
 
     def _load_docs():
         if is_collection:
@@ -349,13 +357,23 @@ def _export_node(
         except Exception:
             return []
 
-    with ThreadPoolExecutor(max_workers=3) as pool:
+    def _load_made_from():
+        if not has_made_from or is_collection:
+            return []
+        try:
+            return client.get_made_from_links(part_id)
+        except Exception:
+            return []
+
+    with ThreadPoolExecutor(max_workers=4) as pool:
         f_docs = pool.submit(_load_docs)
         f_cad = pool.submit(_load_cad)
         f_children = pool.submit(_load_children)
+        f_mf = pool.submit(_load_made_from)
         docs = f_docs.result()
         cad_docs = f_cad.result()
         children_links = f_children.result()
+        made_from_links = f_mf.result()
 
     # Dokumente deduplizieren — WTDocs und CAD zusammen, nach Nummer sortiert
     seen_doc_ids: set[str] = set()
@@ -404,7 +422,9 @@ def _export_node(
             _export_node(client, child, depth, number, link, rows, seen)
     else:
         # ── 1. Part-Zeile ────────────────────────────────
-        rows.append(_build_part_row(part_raw, depth, parent_number, usage_link, has_children))
+        # Erstes RawMaterialLink-Objekt (fuer Formula Key + ggf. Raw Dimensions)
+        mf_link = made_from_links[0] if made_from_links else None
+        rows.append(_build_part_row(part_raw, depth, parent_number, usage_link, has_children, mf_link))
 
         # ── 2. Dokument-Zeilen (alle nach Nummer sortiert) ──
         for doc, cad_flag in all_docs:

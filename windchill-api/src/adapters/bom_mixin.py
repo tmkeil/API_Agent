@@ -225,3 +225,16 @@ class BomMixin:
         except Exception:
             logger.debug("_resolve_link_via_nav(%s, %s) failed", link_id, nav, exc_info=True)
         return None
+
+    # ── Made-From / RawMaterialLink ──────────────────────────
+
+    def get_made_from_links(self: "WRSClientBase", part_id: str) -> list[dict]:
+        """RawMaterialLinks eines Parts laden.
+
+        GET /ProdMgmt/{v}/Parts('{id}')/MadeFromLink
+        Liefert die Link-Objekte mit Attributen wie BAL_SAP_STPO_RFORM,
+        BAL_SAP_STPO_ROMS1-3, ROMEI, ROMEN, ROAME, ROANZ, ROKME.
+        """
+        url = f"{self._odata_url('ProdMgmt')}/Parts('{part_id}')/MadeFromLink"
+        result = self._get_all_pages(url, return_none_on_error=True)
+        return result or []

@@ -192,30 +192,37 @@ def _build_part_row(
     has_children: bool,
     made_from_link: dict | None = None,
 ) -> dict[str, str]:
-    """Eine Part-Zeile (PTp=L) bauen."""
+    """Eine Part-Zeile (PTp=L) bauen.
+
+    Datenquellen:
+      part_raw        → WTPart OData-Record (Part-Attribute)
+      usage_link      → PTC.ProdMgmt.PartUse (BOM-Beziehung Parent→Child)
+      made_from_link  → PTC.BomTransformation.RawMaterialLink (Made-From-Beziehung)
+      normalize_item  → Standard-Felder (number, name, state)
+    """
     n = normalize_item(part_raw)
     row = _empty_row()
 
+    # ── Struktur / Metadaten ──────────────────────────────
     row["Structure Level"] = str(depth)
+    row["PTp"] = "L"
+    row["DocPart"] = "000"
+    row["Assembly"] = "Yes" if has_children else "No"
+    row["Parent"] = parent_number
+
+    # ── Quelle: WTPart (part_raw) ─────────────────────────
     row["Subtyp"] = _flat(part_raw.get("ObjectType") or part_raw.get("TypeName") or "")
     row["Made From"] = _flat(part_raw.get(F.Part.MADE_FROM_NUMBER) or "")
     row["Mat/Doc Number"] = n["number"]
     row["Version"] = _format_version(part_raw)
     row["Description"] = n["name"]
-    row["DocPart"] = "000"
-    row["PTp"] = "L"
-    # SAP Downstream ist im Balluff-Export nur fuer Dokumente relevant
-    # (BALSAPRELEVANCE = boolean). Parts haben hier keinen Wert.
     row["State"] = n["state"]
-    row["Assembly"] = "Yes" if has_children else "No"
-    row["Parent"] = parent_number
-
-    # Raw-Dimensions aus Part-IBAs
-    _apply_raw_dimensions(row, part_raw)
-
     row["DisconType"] = _flat(part_raw.get(F.Part.DISCON_TYPE) or "")
 
-    # Usage-Link-Attribute (nur bei Kindern, nicht Root)
+    # ── Quelle: WTPart — Raw-Dimensions (Part-IBAs) ──────
+    _apply_raw_dimensions(row, part_raw)
+
+    # ── Quelle: PartUse / UsageLink (nur bei Kindern) ────
     if usage_link:
         row["Pos"] = _flat(
             usage_link.get(F.UsageLink.FIND_NUMBER)
@@ -240,7 +247,7 @@ def _build_part_row(
         row["SuccessGrp"] = ""  # Existiert nicht im OData-Schema
         row["ERP Position Text"] = _flat(usage_link.get(F.UsageLink.ERP_POSITION_TEXT) or "")
 
-    # Formula Key aus RawMaterialLink (nicht Part, nicht UsageLink)
+    # ── Quelle: RawMaterialLink (Made-From-Beziehung) ────
     if made_from_link:
         row["Formula Key"] = _flat(made_from_link.get(F.RawMaterialLink.FORMULA_KEY) or "")
 
@@ -257,20 +264,25 @@ def _build_doc_row(
     """Eine Dokument-Zeile bauen.
 
     WTDocuments erhalten PTp='D', CAD-Drawings (EPMDocuments) erhalten leeres PTp.
+
+    Datenquelle: Ausschliesslich doc_raw (WTDocument/EPMDocument OData-Record).
     """
     n = normalize_item(doc_raw)
     row = _empty_row()
 
+    # ── Struktur / Metadaten ──────────────────────────────
     row["Structure Level"] = str(depth)
-    # CAD-Dokumente: "CAD-Document " Prefix fuer den Subtyp (wie Windchill)
+    row["DocPart"] = "000"
+    row["PTp"] = "" if is_cad else "D"
+    row["Parent"] = parent_number
+
+    # ── Quelle: WTDocument / EPMDocument (doc_raw) ────────
     subtyp = _flat(doc_raw.get("ObjectType") or doc_raw.get("TypeName") or "")
     if is_cad and subtyp and not subtyp.startswith("CAD"):
         subtyp = f"CAD-Document {subtyp}"
     row["Subtyp"] = subtyp
     row["Mat/Doc Number"] = n["number"]
-    # DocType-Code: BALDOCUMENTTYPE ist ein EnumType auf WTDocument-Entities,
-    # z.B. {"Value": "DOK", "Display": "DOK - Technical documents"}.
-    # Wir brauchen den kurzen Value-Code (DOK, QEP, DRW, DRF, ...).
+    # DocType: BALDOCUMENTTYPE EnumType → kurzer Value-Code (DOK, QEP, DRW, DRF, ...)
     doc_type_raw = doc_raw.get(F.Doc.DOC_TYPE)
     if isinstance(doc_type_raw, dict):
         row["DocType"] = str(doc_type_raw.get("Value") or "")
@@ -280,13 +292,9 @@ def _build_doc_row(
         row["DocType"] = ""
     row["Version"] = _format_version(doc_raw)
     row["Description"] = n["name"]
-    row["DocPart"] = "000"
-    row["PTp"] = "" if is_cad else "D"
-    # SAP Downstream fuer Dokumente = BAL_SAP_RELEVANCE (boolean)
     row["SAP Downstream"] = _flat(doc_raw.get(F.Doc.SAP_RELEVANCE) or "")
     row["Printing Good"] = _flat(doc_raw.get(F.Doc.PRINTING_GOOD) or "")
     row["State"] = n["state"]
-    row["Parent"] = parent_number
 
     return row
 

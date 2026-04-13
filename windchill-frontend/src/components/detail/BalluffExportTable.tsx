@@ -87,6 +87,20 @@ export default function BalluffExportTable({ partNumber, onClose }: Props) {
     })
   }, [])
 
+  // Compute which rows have deeper rows following them (assemblies OR parts with docs)
+  const rowHasChildren = useMemo(() => {
+    if (!data) return new Set<number>()
+    const result = new Set<number>()
+    const rows = data.rows
+    for (let i = 0; i < rows.length - 1; i++) {
+      if (rows[i]['PTp'] !== 'L') continue
+      const level = parseInt(rows[i]['Structure Level'] || '0', 10)
+      const nextLevel = parseInt(rows[i + 1]?.['Structure Level'] || '0', 10)
+      if (nextLevel > level) result.add(i)
+    }
+    return result
+  }, [data])
+
   // Compute visible rows based on collapse state
   const visibleRows = useMemo(() => {
     if (!data) return []
@@ -105,8 +119,8 @@ export default function BalluffExportTable({ partNumber, onClose }: Props) {
 
       visible.push(i)
 
-      // If this row is collapsed and is a Part with children, skip its subtree
-      if (collapsed.has(i) && rows[i]['PTp'] === 'L' && rows[i]['Assembly'] === 'Yes') {
+      // If this row is collapsed (any Part, not just assemblies), skip its subtree
+      if (collapsed.has(i) && rows[i]['PTp'] === 'L') {
         skipUntilLevel = level
       }
     }
@@ -346,7 +360,7 @@ export default function BalluffExportTable({ partNumber, onClose }: Props) {
             <tbody>
               {visibleRows.map(ri => {
                 const row = data.rows[ri]
-                const isAssembly = row['PTp'] === 'L' && row['Assembly'] === 'Yes'
+                const canCollapse = rowHasChildren.has(ri)
                 const isCollapsed = collapsed.has(ri)
                 const level = parseInt(row['Structure Level'] || '0', 10)
                 return (
@@ -357,7 +371,7 @@ export default function BalluffExportTable({ partNumber, onClose }: Props) {
                   {/* Row controls */}
                   <td className="px-1 py-0.5 text-center sticky left-0 bg-inherit z-10 border-r border-slate-100">
                     <div className="flex items-center gap-0.5">
-                      {isAssembly ? (
+                      {canCollapse ? (
                         <button
                           onClick={() => toggleCollapse(ri)}
                           className="text-slate-500 hover:text-slate-700 text-[10px] leading-none w-3"
@@ -464,7 +478,6 @@ export default function BalluffExportTable({ partNumber, onClose }: Props) {
                     <span>Input: {sapResult.stats.totalInputRows} Zeilen</span>
                     <span>Output: {sapResult.stats.totalOutputRows} SAP-Zeilen</span>
                     <span>Dateien: {sapResult.stats.filesCount}</span>
-                    <span>Übersprungen: {sapResult.stats.skippedRows}</span>
                   </div>
 
                   {/* Validation */}

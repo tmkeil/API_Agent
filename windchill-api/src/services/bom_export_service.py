@@ -268,13 +268,16 @@ def _build_doc_row(
         subtyp = f"CAD-Document {subtyp}"
     row["Subtyp"] = subtyp
     row["Mat/Doc Number"] = n["number"]
-    # DocTypeName = Standard-WTDocument-Feld, BAL_DOCUMENT_DOCTYPE = Balluff-IBA
-    row["DocType"] = _flat(
-        doc_raw.get("DocTypeName")
-        or doc_raw.get("BAL_DOCUMENT_DOCTYPE")
-        or doc_raw.get("DocType")
-        or ""
-    )
+    # DocType-Code: BALDOCUMENTTYPE ist ein EnumType auf WTDocument-Entities,
+    # z.B. {"Value": "DOK", "Display": "DOK - Technical documents"}.
+    # Wir brauchen den kurzen Value-Code (DOK, QEP, DRW, DRF, ...).
+    doc_type_raw = doc_raw.get("BALDOCUMENTTYPE")
+    if isinstance(doc_type_raw, dict):
+        row["DocType"] = str(doc_type_raw.get("Value") or "")
+    elif doc_type_raw:
+        row["DocType"] = str(doc_type_raw)
+    else:
+        row["DocType"] = ""
     row["Version"] = _format_version(doc_raw)
     row["Description"] = n["name"]
     row["DocPart"] = "000"

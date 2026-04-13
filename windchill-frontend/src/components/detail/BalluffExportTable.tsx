@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useRef, useState } from 'react'
 import { fetchBalluffBomExport, fetchSapExport } from '../../api/client'
-import type { BalluffBomExportResponse, SapExportResponse } from '../../api/types'
+import type { BalluffBomExportResponse, SapExportResponse, SapExportRequest } from '../../api/types'
 
 // ── State ───────────────────────────────────────────────────
 
@@ -192,19 +192,25 @@ export default function BalluffExportTable({ partNumber, onClose }: Props) {
   const [showSapDialog, setShowSapDialog] = useState(false)
 
   const handleSapExport = useCallback(async () => {
+    if (!data) return
     setSapLoading(true)
     setSapError('')
     setSapResult(null)
     setShowSapDialog(true)
     try {
-      const resp = await fetchSapExport(partNumber)
+      const body: SapExportRequest = {
+        columns: data.columns,
+        rows: data.rows,
+        partNumber: data.partNumber,
+      }
+      const resp = await fetchSapExport(body)
       setSapResult(resp)
     } catch (e: unknown) {
       setSapError(e instanceof Error ? e.message : String(e))
     } finally {
       setSapLoading(false)
     }
-  }, [partNumber])
+  }, [data])
 
   const handleSapDownloadAll = useCallback(() => {
     if (!sapResult || sapResult.files.length === 0) return
@@ -441,7 +447,7 @@ export default function BalluffExportTable({ partNumber, onClose }: Props) {
             <div className="flex-1 overflow-auto px-5 py-4 space-y-4">
               {sapLoading && (
                 <div className="text-sm text-slate-500 animate-pulse py-8 text-center">
-                  BOM wird geladen und für SAP aufbereitet…
+                  Daten werden für SAP aufbereitet…
                 </div>
               )}
 

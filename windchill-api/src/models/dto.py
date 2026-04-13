@@ -537,3 +537,10 @@ class SapExportResponse(BaseModel):
     validation: list[str] = []
     files: list[SapExportFileEntry] = []
     stats: SapExportStats = SapExportStats()
+
+
+class SapExportRequest(BaseModel):
+    """Request-Body fuer den SAP-Export (bereits geladene Balluff-Export-Daten)."""
+    columns: list[str] = []
+    rows: list[dict[str, str]] = []
+    partNumber: str = ""

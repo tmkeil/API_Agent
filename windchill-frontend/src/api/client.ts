@@ -27,6 +27,7 @@ import type {
   WriteResponse,
   ApiLogEntry,
   SapExportResponse,
+  SapExportRequest,
 } from './types'
 
 const BASE = '/api'
@@ -355,14 +356,14 @@ export async function fetchBalluffBomExport(
     { signal },
   )
 }
-// SAP Export (aufbereitete CSV-Dateien)
+// SAP Export (aufbereitete CSV-Dateien — nutzt bereits geladene Daten via POST)
 export async function fetchSapExport(
-  partNumber: string,
+  body: SapExportRequest,
   signal?: AbortSignal,
 ): Promise<SapExportResponse> {
   return request<SapExportResponse>(
-    `${BASE}/export/sap/${encodeURIComponent(partNumber)}`,
-    { signal },
+    `${BASE}/export/sap`,
+    { method: 'POST', body: JSON.stringify(body), signal },
   )
 }
 // ── Write Operations ────────────────────────────────────────

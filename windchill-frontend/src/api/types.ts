@@ -458,3 +458,9 @@ export interface SapExportResponse {
   files: SapExportFileEntry[]
   stats: SapExportStats
 }
+
+export interface SapExportRequest {
+  columns: string[]
+  rows: Record<string, string>[]
+  partNumber: string
+}

@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { diagnoseBomFields, exportBom, getBomRoot, getBomViews } from '../../api/client'
 import type { BomTreeNode, BomViewConfig } from '../../api/types'
 import BomTreeRow from '../BomTreeNode'
-import BalluffExportTable from './BalluffExportTable'
+import BalluffExportModal from './BalluffExportModal'
 
 interface Props {
   partNumber: string
@@ -247,7 +247,7 @@ export default function StructureTab({ partNumber }: Props) {
       )}
 
       {/* ── BOM table (full width) ── */}
-      <div className="bg-white rounded shadow-sm border border-slate-200 overflow-hidden flex flex-col" style={{ height: showBalluffExport ? '40vh' : '65vh' }}>
+      <div className="bg-white rounded shadow-sm border border-slate-200 overflow-hidden flex flex-col" style={{ height: '65vh' }}>
         <div className="flex-1 overflow-auto">
           <table className="w-full text-sm border-collapse">
             <thead className="bg-slate-100 text-slate-600 text-xs border-b border-slate-200 sticky top-0 z-10">
@@ -277,9 +277,9 @@ export default function StructureTab({ partNumber }: Props) {
         </div>
       </div>
 
-      {/* ── Balluff BOM Export (inline) ── */}
+      {/* ── Balluff BOM Export (Modal) ── */}
       {showBalluffExport && (
-        <BalluffExportTable
+        <BalluffExportModal
           partNumber={partNumber}
           onClose={() => setShowBalluffExport(false)}
         />

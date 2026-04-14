@@ -20,7 +20,7 @@ from src.core.auth import require_auth
 from src.core.cache import cache
 from src.core.dependencies import get_client, get_session
 from src.core.session import log_session_event
-from src.models.dto import BalluffBomExportResponse, BenchmarkResponse, CacheStats, SapExportRequest, SapExportResponse
+from src.models.dto import BalluffBomExportResponse, BenchmarkResponse, CacheStats, SapExportRequest, SapExportResponse, SapPreviewResponse
 from src.services import admin_service, bom_export_service, parts_service, sap_export_service
 
 logger = logging.getLogger(__name__)
@@ -163,6 +163,38 @@ def balluff_bom_export(
     return result
 
 
+# ── SAP Preview (nur PartA + PartB) ──────────────────────────
+
+
+@router.post(
+    "/export/sap/preview",
+    response_model=SapPreviewResponse,
+    summary="SAP Preview — PartA-Transformation + PartB-Validierung",
+)
+def sap_preview(
+    body: SapExportRequest,
+    request: Request = None,
+    _: None = Depends(require_auth),
+):
+    session = get_session(request)
+    try:
+        raw_export = {
+            "columns": body.columns,
+            "rows": body.rows,
+            "partNumber": body.partNumber,
+        }
+        result = sap_export_service.sap_preview(raw_export)
+    except Exception as e:
+        raise HTTPException(500, f"SAP-Preview fehlgeschlagen: {e}")
+
+    if session:
+        log_session_event(
+            session, "POST", "/api/export/sap/preview", 200, 0, "web",
+            f"sap preview: {body.partNumber} ({result['stats']['totalOutputRows']} rows)",
+        )
+    return result
+
+
 # ── SAP Export (aufbereitete CSVs) ───────────────────────────
 
 
@@ -182,6 +214,7 @@ def sap_export(
             "columns": body.columns,
             "rows": body.rows,
             "partNumber": body.partNumber,
+            "fromPreview": body.fromPreview,
         }
         result = sap_export_service.sap_export(raw_export)
     except Exception as e:

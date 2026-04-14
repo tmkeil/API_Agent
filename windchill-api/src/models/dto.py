@@ -544,3 +544,19 @@ class SapExportRequest(BaseModel):
     columns: list[str] = []
     rows: list[dict[str, str]] = []
     partNumber: str = ""
+    fromPreview: bool = False
+
+
+class SapPreviewStats(BaseModel):
+    """Statistiken fuer SAP Preview (nur PartA)."""
+    totalInputRows: int = 0
+    totalOutputRows: int = 0
+    removedRows: int = 0
+
+
+class SapPreviewResponse(BaseModel):
+    """Response fuer SAP Preview (PartA-Transformation + PartB-Validierung)."""
+    columns: list[str] = []
+    rows: list[dict[str, str]] = []
+    validation: list[str] = []
+    stats: SapPreviewStats = SapPreviewStats()

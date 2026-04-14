@@ -463,4 +463,20 @@ export interface SapExportRequest {
   columns: string[]
   rows: Record<string, string>[]
   partNumber: string
+  fromPreview?: boolean
+}
+
+// ── SAP Preview ────────────────────────────────────────────
+
+export interface SapPreviewStats {
+  totalInputRows: number
+  totalOutputRows: number
+  removedRows: number
+}
+
+export interface SapPreviewResponse {
+  columns: string[]
+  rows: Record<string, string>[]
+  validation: string[]
+  stats: SapPreviewStats
 }

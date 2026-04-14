@@ -28,6 +28,7 @@ import type {
   ApiLogEntry,
   SapExportResponse,
   SapExportRequest,
+  SapPreviewResponse,
 } from './types'
 
 const BASE = '/api'
@@ -354,6 +355,16 @@ export async function fetchBalluffBomExport(
   return request<BalluffBomExportResponse>(
     `${BASE}/export/balluff/${encodeURIComponent(partNumber)}`,
     { signal },
+  )
+}
+// SAP Preview (PartA-Transformation + PartB-Validierung)
+export async function fetchSapPreview(
+  body: SapExportRequest,
+  signal?: AbortSignal,
+): Promise<SapPreviewResponse> {
+  return request<SapPreviewResponse>(
+    `${BASE}/export/sap/preview`,
+    { method: 'POST', body: JSON.stringify(body), signal },
   )
 }
 // SAP Export (aufbereitete CSV-Dateien — nutzt bereits geladene Daten via POST)

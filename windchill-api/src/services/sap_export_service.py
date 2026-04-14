@@ -469,11 +469,53 @@ def part_d(rows: list[dict[str, str]]) -> list[dict[str, str]]:
 # Public API: Kompletter SAP-Export
 # ═════════════════════════════════════════════════════════════
 
+def sap_preview(raw_export: dict) -> dict:
+    """SAP Preview — nur PartA (Transformation) + PartB (Validierung).
+
+    Wird beim Oeffnen des Modals automatisch im Hintergrund aufgerufen.
+    Liefert die transformierten Daten fuer den "SAP Vorschau"-Tab.
+
+    Args:
+        raw_export: Ergebnis von balluff_bom_export() mit columns + rows.
+
+    Returns:
+        Dict mit columns, rows, validation, stats.
+    """
+    raw_rows = raw_export.get("rows", [])
+    part_number = raw_export.get("partNumber", "")
+
+    # ── PartA: Transformation ────────────────────────────
+    transformed = part_a(raw_rows)
+    logger.info("SAP Preview %s: PartA fertig — %d → %d Zeilen",
+                part_number, len(raw_rows), len(transformed))
+
+    # ── PartB: Validierung ───────────────────────────────
+    validation = part_b(transformed)
+    logger.info("SAP Preview %s: PartB fertig — %d Validierungsmeldungen",
+                part_number, len(validation))
+
+    # Spalten aus erster Zeile ableiten
+    columns = list(transformed[0].keys()) if transformed else []
+
+    return {
+        "columns": columns,
+        "rows": transformed,
+        "validation": validation,
+        "stats": {
+            "totalInputRows": len(raw_rows),
+            "totalOutputRows": len(transformed),
+            "removedRows": len(raw_rows) - len(transformed),
+        },
+    }
+
+
 def sap_export(raw_export: dict) -> dict:
     """Kompletter SAP-Export-Workflow.
 
     Args:
         raw_export: Ergebnis von balluff_bom_export() mit columns + rows.
+                    Wenn fromPreview=True, wird PartA uebersprungen (Daten
+                    sind bereits transformiert/editiert).
 
     Returns:
         Dict mit:
@@ -483,11 +525,17 @@ def sap_export(raw_export: dict) -> dict:
     """
     raw_rows = raw_export.get("rows", [])
     part_number = raw_export.get("partNumber", "")
+    from_preview = raw_export.get("fromPreview", False)
 
-    # ── PartA: Transformation ────────────────────────────
-    transformed = part_a(raw_rows)
-    logger.info("SAP Export %s: PartA fertig — %d → %d Zeilen",
-                part_number, len(raw_rows), len(transformed))
+    # ── PartA: Transformation (ggf. ueberspringen) ──────
+    if from_preview:
+        transformed = raw_rows
+        logger.info("SAP Export %s: PartA uebersprungen (fromPreview)",
+                    part_number)
+    else:
+        transformed = part_a(raw_rows)
+        logger.info("SAP Export %s: PartA fertig — %d → %d Zeilen",
+                    part_number, len(raw_rows), len(transformed))
 
     # ── PartB: Validierung ───────────────────────────────
     validation = part_b(transformed)

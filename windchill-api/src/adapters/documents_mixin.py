@@ -270,40 +270,137 @@ class DocumentsMixin:
     def get_cad_structure(
         self: "WRSClientBase",
         cad_doc_id: str,
-        bom_members_only: bool = False,
+        *,
+        recursive: bool = True,
+        _level: int = 1,
+        _seen: set | None = None,
     ) -> list[dict]:
         """CAD-Struktur (Assembly-Baum) eines CAD-Dokuments laden.
 
-        POST /CADDocuments('{id}')/PTC.CADDocumentMgmt.GetStructure
-        Body: { BOMMembersOnly: false }
+        Zweischritt-Ansatz:
+          1. GET /CADDocuments('{id}')/Uses  → Usage-Links (Quantity, DepType, FileName)
+          2. GET /CADDocuments?$filter=...   → Child-Details (Number, Version, State)
+        Ergebnis wird gemergt und bei ``recursive=True`` rekursiv aufgeloest.
 
         Returns:
-            Liste von CADStructure-Dicts.
+            Flache Liste von Dicts mit allen Feldern (level, fileName, number,
+            version, state, quantity, dependencyType, hasChildren, cadDocId).
         """
-        url = (
-            f"{self._odata_url('CADDocumentMgmt')}"
-            f"/CADDocuments('{cad_doc_id}')"
-            f"/PTC.CADDocumentMgmt.GetStructure"
-        )
-        self._refresh_csrf()
-        resp = self._post(
-            url,
-            json_body={"BOMMembersOnly": bom_members_only},
-            suppress_errors=True,
-        )
+        if _seen is None:
+            _seen = set()
 
-        if resp is None or resp.status_code not in (200, 201):
-            status = resp.status_code if resp else "no response"
-            logger.info("GetStructure nicht verfuegbar (HTTP %s) fuer %s", status, cad_doc_id)
+        # Schritt 1: Usage-Links laden
+        base = self._odata_url("CADDocumentMgmt")
+        uses_url = f"{base}/CADDocuments('{cad_doc_id}')/Uses"
+        uses = self._get_all_pages(uses_url, return_none_on_error=True)
+        if not uses:
+            logger.debug("Uses lieferte keine Eintraege fuer %s", cad_doc_id)
             return []
 
-        data = resp.json()
+        # ComponentName / UseInfo.FileName sammeln
+        file_names: list[str] = []
+        uses_by_file: dict[str, dict] = {}
+        for u in uses:
+            fn = (
+                u.get("ComponentName")
+                or (u.get("UseInfo") or {}).get("FileName")
+                or ""
+            )
+            if fn:
+                file_names.append(fn)
+                uses_by_file[fn] = u
 
-        # Response kann verschachtelt sein: value[] oder direkt eine Liste
-        items = data.get("value") or data.get("Components") or []
-        if not isinstance(items, list):
-            # Manchmal kommt ein einzelnes Objekt mit Children
-            items = [data] if isinstance(data, dict) and data.get("CADDocumentNumber") else []
+        # Schritt 2: Child-CADDocuments per Batch-Filter aufloesen
+        child_docs_by_file: dict[str, dict] = {}
+        if file_names:
+            child_docs_by_file = self._resolve_cad_docs_by_filenames(file_names)
 
-        logger.debug("GetStructure lieferte %d Eintraege fuer %s", len(items), cad_doc_id)
-        return items
+        # Zusammenfuehren
+        result: list[dict] = []
+        for fn in file_names:
+            use = uses_by_file.get(fn, {})
+            doc = child_docs_by_file.get(fn, {})
+
+            dep_type_raw = use.get("DepType") or ""
+            # DepType kann ein dict mit Value sein (PTC.EnumType)
+            dep_type = dep_type_raw.get("Value", "") if isinstance(dep_type_raw, dict) else str(dep_type_raw)
+
+            quantity = use.get("Quantity")
+            quantity_str = str(int(quantity)) if isinstance(quantity, (int, float)) and quantity == int(quantity) else str(quantity or "1")
+
+            # Version aus OData-Feldern
+            version = str(doc.get("Version") or doc.get("VersionID") or "")
+            # State (PTC.EnumType)
+            state_raw = doc.get("State")
+            state = state_raw.get("Value", "") if isinstance(state_raw, dict) else str(state_raw or "")
+
+            child_id = str(doc.get("ID") or "")
+            has_children = bool(doc.get("HasChildren", False))
+
+            # HasChildren aus Uses pruefen: Kind hat selbst Uses?
+            # Falls doc keinen HasChildren-Hint hat, merken wir die ID
+            # und pruefen per Rekursion.
+
+            node = {
+                "level": _level,
+                "fileName": fn,
+                "number": str(doc.get("Number") or ""),
+                "name": str(doc.get("Name") or ""),
+                "version": version,
+                "state": state,
+                "quantity": quantity_str,
+                "dependencyType": dep_type,
+                "hasChildren": has_children,
+                "cadDocId": child_id,
+            }
+            result.append(node)
+
+            # Rekursiv Kinder laden
+            if recursive and child_id and child_id not in _seen:
+                _seen.add(child_id)
+                children = self.get_cad_structure(
+                    child_id,
+                    recursive=True,
+                    _level=_level + 1,
+                    _seen=_seen,
+                )
+                result.extend(children)
+
+        logger.debug(
+            "Uses lieferte %d direkte Kinder (gesamt %d) fuer %s",
+            len(file_names), len(result), cad_doc_id,
+        )
+        return result
+
+    def _resolve_cad_docs_by_filenames(
+        self: "WRSClientBase",
+        file_names: list[str],
+    ) -> dict[str, dict]:
+        """CADDocuments per FileName-Filter batch-weise aufloesen.
+
+        Teilt grosse Listen in Chunks auf (OData-URL-Laenge begrenzt).
+        Returns: Mapping FileName → CADDocument-Dict
+        """
+        base = self._odata_url("CADDocumentMgmt")
+        result: dict[str, dict] = {}
+        chunk_size = 10  # Max 10 OR-Klauseln pro Request
+
+        for i in range(0, len(file_names), chunk_size):
+            chunk = file_names[i : i + chunk_size]
+            clauses = [f"FileName eq '{fn.replace(chr(39), chr(39)*2)}'" for fn in chunk]
+            filt = " or ".join(clauses)
+            url = f"{base}/CADDocuments"
+            items = self._get_all_pages(
+                url,
+                {"$filter": filt, "$select": "Number,Name,FileName,Version,State,ID"},
+                return_none_on_error=True,
+            )
+            if items:
+                # Nimm jeweils die neueste Version pro FileName
+                from src.core.odata import version_sort_key
+                for item in sorted(items, key=version_sort_key, reverse=True):
+                    fn = str(item.get("FileName") or "")
+                    if fn and fn not in result:
+                        result[fn] = item
+
+        return result

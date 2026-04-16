@@ -176,49 +176,19 @@ def get_cad_structure(
 
     raw_items = client.get_cad_structure(doc_id)
 
-    # Flach-Liste mit berechneter Ebene aufbauen.
-    # Die API liefert Items mit PVTreeId / PVParentTreeId fuer die Hierarchie.
     nodes: list[CadStructureNode] = []
-
-    # Erstelle eine Map TreeId → Item fuer Level-Berechnung
-    tree_map: dict[str, dict] = {}
     for item in raw_items:
-        tid = str(item.get("PVTreeId", ""))
-        if tid:
-            tree_map[tid] = item
-
-    def _calc_level(item: dict) -> int:
-        parent_id = str(item.get("PVParentTreeId", ""))
-        if not parent_id or parent_id not in tree_map:
-            return 0
-        return 1 + _calc_level(tree_map[parent_id])
-
-    for item in raw_items:
-        number = str(item.get("CADDocumentNumber", ""))
-        file_name = str(item.get("CADDocumentFileName", ""))
-        name = str(item.get("CADDocumentName", ""))
-        cad_id = str(item.get("CADDocumentID", ""))
-
-        # Version/State aus Expand oder nachgeladenem Objekt
-        version = str(item.get("Version") or item.get("VersionID") or "")
-        state = normalize_item(item).get("state", "") if item.get("State") else ""
-        quantity = str(item.get("Quantity") or item.get("ComponentQuantity") or "1")
-        dep_type = str(item.get("DependencyType") or item.get("ReferenceType") or "")
-
-        level = _calc_level(item)
-        has_children = bool(item.get("HasChildren", False))
-
         nodes.append(CadStructureNode(
-            cadDocId=cad_id,
-            number=number,
-            fileName=file_name,
-            name=name,
-            version=version,
-            state=state,
-            quantity=quantity,
-            level=level,
-            dependencyType=dep_type,
-            hasChildren=has_children,
+            cadDocId=item.get("cadDocId", ""),
+            number=item.get("number", ""),
+            fileName=item.get("fileName", ""),
+            name=item.get("name", ""),
+            version=item.get("version", ""),
+            state=item.get("state", ""),
+            quantity=item.get("quantity", "1"),
+            level=item.get("level", 0),
+            dependencyType=item.get("dependencyType", ""),
+            hasChildren=item.get("hasChildren", False),
         ))
 
     ms = round((time.monotonic() - t0) * 1000, 1)

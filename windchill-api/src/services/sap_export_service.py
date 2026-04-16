@@ -130,7 +130,18 @@ def _normalize_printing_good(val: str) -> str:
     return _PG_MAP.get(_norm(val).lower(), _norm(val).upper())
 
 
-def part_a(rows: list[dict[str, str]]) -> list[dict[str, str]]:
+# ── Default rule configuration ───────────────────────────────
+
+DEFAULT_RULES: dict[str, bool] = {
+    "ApplyPrintingGoodRule": True,
+    "FilterQepDrwDocTypes": False,
+}
+
+
+def part_a(
+    rows: list[dict[str, str]],
+    rules: dict[str, bool] | None = None,
+) -> list[dict[str, str]]:
     """PartA: Daten-Transformation.
 
     - Mat/Doc Number: 7000/S+4-Prefix entfernen
@@ -140,7 +151,13 @@ def part_a(rows: list[dict[str, str]]) -> list[dict[str, str]]:
     - PosText bilden (Reference Designator + ERP Position Text)
     - Reference Designator expandieren
     - [12345-1] aus Reference Designator entfernen
+    - DocType auf 3 Zeichen kuerzen
+    - DocType leer → DocPart/Version leeren
+    - Made From → Mat/Doc Number ueberschreiben
+    - Einheiten: 'ea' → 'ST'
+    - FilterQepDrwDocTypes: QEP/DRW Zeilen entfernen (optional)
     """
+    effective_rules = {**DEFAULT_RULES, **(rules or {})}
     result = [dict(r) for r in rows]  # Deep copy
 
     # 1) Mat/Doc Number: Prefixe entfernen
@@ -153,47 +170,48 @@ def part_a(rows: list[dict[str, str]]) -> list[dict[str, str]]:
         if _norm(r.get("Structure Level")) == "0":
             r["Parent"] = ""
 
-    # 3) Printing Good Regel
+    # 3) Printing Good Regel (konfigurierbar)
     # Printing Good Werte normalisieren
     for r in result:
         if "Printing Good" in r:
             r["Printing Good"] = _normalize_printing_good(r.get("Printing Good", ""))
 
-    # Enclosed Documentation mit PG=NO: Zeile entfernen + erstes Customer
-    # Related Document Kind auf gleiche Ebene hochziehen
-    rows_to_drop: list[int] = []
-    for i in range(len(result)):
-        subtyp = _norm(result[i].get("Subtyp"))
-        pg = _norm(result[i].get("Printing Good"))
-        if subtyp == "Enclosed Documentation" and pg == "NO":
-            parent_val = _norm(result[i].get("Parent"))
-            sl = _norm(result[i].get("Structure Level"))
-            try:
-                ed_level = int(sl)
-            except (ValueError, TypeError):
-                ed_level = 0
-            first_found = False
-            for ni in range(i + 1, len(result)):
-                next_subtyp = _norm(result[ni].get("Subtyp"))
-                next_sl = _norm(result[ni].get("Structure Level"))
+    if effective_rules.get("ApplyPrintingGoodRule", True):
+        # Enclosed Documentation mit PG=NO: Zeile entfernen + erstes Customer
+        # Related Document Kind auf gleiche Ebene hochziehen
+        rows_to_drop: list[int] = []
+        for i in range(len(result)):
+            subtyp = _norm(result[i].get("Subtyp"))
+            pg = _norm(result[i].get("Printing Good"))
+            if subtyp == "Enclosed Documentation" and pg == "NO":
+                parent_val = _norm(result[i].get("Parent"))
+                sl = _norm(result[i].get("Structure Level"))
                 try:
-                    next_level = int(next_sl)
+                    ed_level = int(sl)
                 except (ValueError, TypeError):
-                    continue
-                if next_level <= ed_level:
-                    break
-                if next_subtyp == "Customer related document" and next_level > ed_level:
-                    if not first_found:
-                        result[ni]["Parent"] = parent_val
-                        result[ni]["Structure Level"] = sl
-                        first_found = True
-                    else:
-                        result[ni]["Parent"] = parent_val
-            rows_to_drop.append(i)
+                    ed_level = 0
+                first_found = False
+                for ni in range(i + 1, len(result)):
+                    next_subtyp = _norm(result[ni].get("Subtyp"))
+                    next_sl = _norm(result[ni].get("Structure Level"))
+                    try:
+                        next_level = int(next_sl)
+                    except (ValueError, TypeError):
+                        continue
+                    if next_level <= ed_level:
+                        break
+                    if next_subtyp == "Customer related document" and next_level > ed_level:
+                        if not first_found:
+                            result[ni]["Parent"] = parent_val
+                            result[ni]["Structure Level"] = sl
+                            first_found = True
+                        else:
+                            result[ni]["Parent"] = parent_val
+                rows_to_drop.append(i)
 
-    # Zeilen entfernen (von hinten nach vorne)
-    for idx in reversed(rows_to_drop):
-        result.pop(idx)
+        # Zeilen entfernen (von hinten nach vorne)
+        for idx in reversed(rows_to_drop):
+            result.pop(idx)
 
     # Printing Good Spalte entfernen (nicht mehr benoetigt)
     for r in result:
@@ -211,6 +229,37 @@ def part_a(rows: list[dict[str, str]]) -> list[dict[str, str]]:
         # PosText = expandierter RD + ERP Position Text
         parts = [rd_expanded, erp]
         r["PosText"] = " ".join(p for p in parts if p).strip()
+
+    # 5) DocType auf 3 Zeichen kuerzen (z.B. "DOK - xyz" → "DOK")
+    for r in result:
+        doc_type = _norm(r.get("DocType"))
+        if len(doc_type) > 3:
+            r["DocType"] = doc_type[:3]
+
+    # 6) DocType leer → DocPart/Version leeren
+    for r in result:
+        if not _filled(r.get("DocType")):
+            r["DocPart"] = ""
+            r["Version"] = ""
+
+    # 7) Made From → Mat/Doc Number ueberschreiben
+    for r in result:
+        if _filled(r.get("Made From")):
+            r["Mat/Doc Number"] = _norm(r["Made From"])
+
+    # 8) Einheiten: 'ea' → 'ST'
+    for r in result:
+        for col in ("Quantity Unit", "Raw Material Amount Unit",
+                     "Raw Material Quantity Unit"):
+            if _norm(r.get(col, "")).lower() == "ea":
+                r[col] = "ST"
+
+    # 9) FilterQepDrwDocTypes: QEP/DRW Zeilen entfernen (konfigurierbar)
+    if effective_rules.get("FilterQepDrwDocTypes", False):
+        result = [
+            r for r in result
+            if _norm(r.get("DocType")).upper() not in ("QEP", "DRW")
+        ]
 
     return result
 
@@ -469,7 +518,7 @@ def part_d(rows: list[dict[str, str]]) -> list[dict[str, str]]:
 # Public API: Kompletter SAP-Export
 # ═════════════════════════════════════════════════════════════
 
-def sap_preview(raw_export: dict) -> dict:
+def sap_preview(raw_export: dict, rules: dict[str, bool] | None = None) -> dict:
     """SAP Preview — nur PartA (Transformation) + PartB (Validierung).
 
     Wird beim Oeffnen des Modals automatisch im Hintergrund aufgerufen.
@@ -477,6 +526,7 @@ def sap_preview(raw_export: dict) -> dict:
 
     Args:
         raw_export: Ergebnis von balluff_bom_export() mit columns + rows.
+        rules: Regel-Konfiguration (z.B. ApplyPrintingGoodRule, FilterQepDrwDocTypes).
 
     Returns:
         Dict mit columns, rows, validation, stats.
@@ -485,7 +535,7 @@ def sap_preview(raw_export: dict) -> dict:
     part_number = raw_export.get("partNumber", "")
 
     # ── PartA: Transformation ────────────────────────────
-    transformed = part_a(raw_rows)
+    transformed = part_a(raw_rows, rules=rules)
     logger.info("SAP Preview %s: PartA fertig — %d → %d Zeilen",
                 part_number, len(raw_rows), len(transformed))
 
@@ -509,13 +559,14 @@ def sap_preview(raw_export: dict) -> dict:
     }
 
 
-def sap_export(raw_export: dict) -> dict:
+def sap_export(raw_export: dict, rules: dict[str, bool] | None = None) -> dict:
     """Kompletter SAP-Export-Workflow.
 
     Args:
         raw_export: Ergebnis von balluff_bom_export() mit columns + rows.
                     Wenn fromPreview=True, wird PartA uebersprungen (Daten
                     sind bereits transformiert/editiert).
+        rules: Regel-Konfiguration (z.B. ApplyPrintingGoodRule, FilterQepDrwDocTypes).
 
     Returns:
         Dict mit:
@@ -533,7 +584,7 @@ def sap_export(raw_export: dict) -> dict:
         logger.info("SAP Export %s: PartA uebersprungen (fromPreview)",
                     part_number)
     else:
-        transformed = part_a(raw_rows)
+        transformed = part_a(raw_rows, rules=rules)
         logger.info("SAP Export %s: PartA fertig — %d → %d Zeilen",
                     part_number, len(raw_rows), len(transformed))
 

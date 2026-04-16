@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import type { ChangeItem, ChangeItemsResponse } from '../../api/types'
 import { TYPE_KEY_MAP, typeLabel } from '../../utils/labels'
+import BalluffExportModal from './BalluffExportModal'
 
 interface Props {
   /** Display label for loading/empty states */
@@ -18,6 +19,7 @@ export default function ChangeItemsTab({ label, fetchFn }: Props) {
   const [items, setItems] = useState<ChangeItem[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [exportPartNumber, setExportPartNumber] = useState<string | null>(null)
   const navigate = useNavigate()
 
   const load = useCallback(async (signal?: AbortSignal) => {
@@ -80,11 +82,13 @@ export default function ChangeItemsTab({ label, fetchFn }: Props) {
             <th className="text-left px-3 py-2 font-medium">Name</th>
             <th className="text-left px-3 py-2 font-medium">Version</th>
             <th className="text-left px-3 py-2 font-medium">Status</th>
+            <th className="w-10" />
           </tr>
         </thead>
         <tbody className="divide-y divide-slate-100">
           {items.map((item) => {
             const tk = TYPE_KEY_MAP[item.objectType]
+            const isPart = tk === 'part'
             return (
               <tr
                 key={item.objectId || item.number}
@@ -101,7 +105,7 @@ export default function ChangeItemsTab({ label, fetchFn }: Props) {
               >
                 <td className="px-3 py-2 whitespace-nowrap">
                   <span className="inline-block px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-100 text-slate-600">
-                    {typeLabel(item.objectType)}
+                    {typeLabel(item.objectType, item.subType)}
                   </span>
                 </td>
                 <td className="px-3 py-2 font-mono text-indigo-600 whitespace-nowrap">
@@ -110,11 +114,30 @@ export default function ChangeItemsTab({ label, fetchFn }: Props) {
                 <td className="px-3 py-2 text-slate-600 max-w-[300px] truncate">{item.name}</td>
                 <td className="px-3 py-2 text-slate-500 whitespace-nowrap">{item.version}</td>
                 <td className="px-3 py-2 text-slate-500 whitespace-nowrap">{item.state}</td>
+                <td className="px-1 py-2 text-center">
+                  {isPart && (
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setExportPartNumber(item.number) }}
+                      className="px-2 py-0.5 text-[10px] font-medium rounded bg-emerald-600 text-white hover:bg-emerald-700 transition-colors"
+                      title={`Balluff BOM Export für ${item.number}`}
+                    >
+                      Export
+                    </button>
+                  )}
+                </td>
               </tr>
             )
           })}
         </tbody>
       </table>
+
+      {/* Balluff BOM Export Modal */}
+      {exportPartNumber && (
+        <BalluffExportModal
+          partNumber={exportPartNumber}
+          onClose={() => setExportPartNumber(null)}
+        />
+      )}
     </div>
   )
 }

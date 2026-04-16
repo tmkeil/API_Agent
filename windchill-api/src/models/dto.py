@@ -226,6 +226,7 @@ class ChangeItem(BaseModel):
     """An item affected by or resulting from a Change object."""
     objectId: str = ""
     objectType: str = ""
+    subType: str = ""
     number: str = ""
     name: str = ""
     version: str = ""
@@ -545,6 +546,7 @@ class SapExportRequest(BaseModel):
     rows: list[dict[str, str]] = []
     partNumber: str = ""
     fromPreview: bool = False
+    rules: dict[str, bool] | None = None
 
 
 class SapPreviewStats(BaseModel):

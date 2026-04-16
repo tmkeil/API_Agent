@@ -128,6 +128,19 @@ def normalize_item(raw: dict) -> dict:
         if meta_key in raw:
             result[meta_key] = raw[meta_key]
 
+    # ── Version-Bereinigung ──────────────────────────────
+    # Change-Objekte liefern unter "Version" manchmal die interne
+    # Referenz "VR:wt.change2.WTChangeOrder2:16093825".
+    # In diesem Fall: Revision + "." + Iteration verwenden (z.B. "A.1").
+    ver = result.get("version", "")
+    if ver.startswith("VR:") or ver.startswith("OR:"):
+        revision = str(raw.get("Revision") or "")
+        iteration = result.get("iteration", "")
+        if revision:
+            result["version"] = f"{revision}.{iteration}" if iteration else revision
+        else:
+            result["version"] = ""
+
     return result
 
 

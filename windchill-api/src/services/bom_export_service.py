@@ -32,23 +32,30 @@ _MAX_DEPTH = 50
 COLUMNS: list[str] = [
     "Structure Level",
     "LvL",
+    "Pos",
+    "PTp",
+    "Mat/Doc Number",
+    "State",
+    "Subtyp",
+    "SAP Downstream",
+    "Assembly",
+    "Parent",
+    "Made From",
     "MatScr",
     "MatDest",
     "Plant",
     "DisconType",
     "DisconDate",
-    "Subtyp",
-    "Made From",
-    "Mat/Doc Number",
-    "DocType",
-    "Version",
+    "DisconGrp",
+    "SuccessGrp",
     "Description",
     "DocPart",
-    "PTp",
-    "Formula Key",
-    "SAP Downstream",
-    "Printing Good",
-    "State",
+    "DocType",
+    "Version",
+    "Quantity",
+    "Quantity Unit",
+    "Reference Designator",
+    "ERP Position Text",
     "Raw Dimension 1",
     "Raw Dimension 2",
     "Raw Dimension 3",
@@ -57,15 +64,8 @@ COLUMNS: list[str] = [
     "Raw Material Amount Unit",
     "Raw Material Quantity",
     "Raw Material Quantity Unit",
-    "Assembly",
-    "Pos",
-    "DisconGrp",
-    "SuccessGrp",
-    "Quantity",
-    "Quantity Unit",
-    "Reference Designator",
-    "ERP Position Text",
-    "Parent",
+    "Formular Key",
+    "Printing Good",
 ]
 
 # Subtypes die als Collection gelten (werden im Export uebersprungen,
@@ -249,7 +249,7 @@ def _build_part_row(
 
     # ── Quelle: RawMaterialLink (Made-From-Beziehung) ────
     if made_from_link:
-        row["Formula Key"] = _flat(made_from_link.get(F.RawMaterialLink.FORMULA_KEY) or "")
+        row["Formular Key"] = _flat(made_from_link.get(F.RawMaterialLink.FORMULA_KEY) or "")
 
     return row
 
@@ -273,7 +273,6 @@ def _build_doc_row(
     # ── Struktur / Metadaten ──────────────────────────────
     row["Structure Level"] = str(depth)
     row["DocPart"] = "000"
-    row["PTp"] = "" if is_cad else "D"
     row["Parent"] = parent_number
 
     # ── Quelle: WTDocument / EPMDocument (doc_raw) ────────
@@ -283,13 +282,19 @@ def _build_doc_row(
     row["Subtyp"] = subtyp
     row["Mat/Doc Number"] = n["number"]
     # DocType: BALDOCUMENTTYPE EnumType → kurzer Value-Code (DOK, QEP, DRW, DRF, ...)
+    # WTDocuments liefern EnumType-Dict {"Value": "DOK", "Display": "DOK - Technical documents"}
+    # CAD EPMDocuments liefern oft nur den Display-String ("DRW - Material documents")
     doc_type_raw = doc_raw.get(F.Doc.DOC_TYPE)
     if isinstance(doc_type_raw, dict):
         row["DocType"] = str(doc_type_raw.get("Value") or "")
     elif doc_type_raw:
-        row["DocType"] = str(doc_type_raw)
+        # Plain-String: Short-Code vor " - " extrahieren (z.B. "DRW - Material documents" → "DRW")
+        s = str(doc_type_raw).strip()
+        row["DocType"] = s.split(" - ")[0].strip() if " - " in s else s
     else:
         row["DocType"] = ""
+
+    row["PTp"] = "D"
     row["Version"] = _format_version(doc_raw)
     row["Description"] = n["name"]
     row["SAP Downstream"] = _flat(doc_raw.get(F.Doc.SAP_RELEVANCE) or "")
@@ -311,6 +316,7 @@ def _export_node(
     usage_link: dict | None,
     rows: list[dict[str, str]],
     seen: set[str],
+    max_depth: int = _MAX_DEPTH,
 ) -> None:
     """Part-Knoten + Dokumente + Kinder rekursiv flach exportieren."""
     part_id = extract_id(part_raw)
@@ -350,8 +356,6 @@ def _export_node(
             return []
 
     def _load_children():
-        if depth >= _MAX_DEPTH:
-            return []
         if part_id in seen:
             return []
         try:
@@ -421,26 +425,28 @@ def _export_node(
             )
         )
         for link, child in resolved_children:
-            _export_node(client, child, depth, number, link, rows, seen)
+            _export_node(client, child, depth, number, link, rows, seen, max_depth)
     else:
         # ── 1. Part-Zeile ────────────────────────────────
-        # Erstes RawMaterialLink-Objekt (fuer Formula Key + ggf. Raw Dimensions)
+        # Erstes RawMaterialLink-Objekt (fuer Formular Key + ggf. Raw Dimensions)
         mf_link = made_from_links[0] if made_from_links else None
         rows.append(_build_part_row(part_raw, depth, parent_number, usage_link, has_children, mf_link))
 
-        # ── 2. Dokument-Zeilen (alle nach Nummer sortiert) ──
-        for doc, cad_flag in all_docs:
-            rows.append(_build_doc_row(doc, depth + 1, number, is_cad=cad_flag))
+        # ── 2. Dokument-Zeilen (nur unterhalb max_depth, da Docs bei depth+1 liegen)
+        if depth < max_depth:
+            for doc, cad_flag in all_docs:
+                rows.append(_build_doc_row(doc, depth + 1, number, is_cad=cad_flag))
 
-        # ── 3. Kinder rekursiv ───────────────────────────
-        resolved_children.sort(
-            key=lambda x: (
-                _flat(x[0].get("FindNumber") or x[0].get("LineNumber") or ""),
-                x[1].get("Number", ""),
+        # ── 3. Kinder rekursiv (nur unterhalb max_depth) ──
+        if depth < max_depth:
+            resolved_children.sort(
+                key=lambda x: (
+                    _flat(x[0].get("FindNumber") or x[0].get("LineNumber") or ""),
+                    x[1].get("Number", ""),
+                )
             )
-        )
-        for link, child in resolved_children:
-            _export_node(client, child, depth + 1, number, link, rows, seen)
+            for link, child in resolved_children:
+                _export_node(client, child, depth + 1, number, link, rows, seen, max_depth)
 
     # Part-ID wieder freigeben (darf in anderen Zweigen nochmal vorkommen)
     if part_id:
@@ -451,13 +457,20 @@ def _export_node(
 # Public API
 # ═════════════════════════════════════════════════════════════
 
-def balluff_bom_export(client, part_number: str) -> dict:
+def balluff_bom_export(client, part_number: str, max_depth: int | None = None) -> dict:
     """Balluff BOM Export fuer ein Part als flache Tabelle.
+
+    Args:
+        client: WRS Client.
+        part_number: Windchill Part-Nummer.
+        max_depth: Maximale BOM-Tiefe (None = unbegrenzt, Standard: 50).
 
     Returns:
         Dict mit columns, rows, partNumber, rowCount.
     """
     from src.adapters.base import WRSError
+
+    effective_depth = max_depth if max_depth is not None else _MAX_DEPTH
 
     raw_part = client.find_part(part_number)
     part_id = extract_id(raw_part)
@@ -470,7 +483,7 @@ def balluff_bom_export(client, part_number: str) -> dict:
     rows: list[dict[str, str]] = []
     seen: set[str] = set()
 
-    _export_node(client, raw_part, 0, "", None, rows, seen)
+    _export_node(client, raw_part, 0, "", None, rows, seen, effective_depth)
 
     n_parts = sum(1 for r in rows if r["PTp"] == "L")
     n_wt_docs = sum(1 for r in rows if r["PTp"] == "D")

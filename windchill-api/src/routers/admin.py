@@ -145,15 +145,25 @@ def export_download(
 )
 def balluff_bom_export(
     part_number: str,
+    max_depth: int | None = None,
     request: Request = None,
     _: None = Depends(require_auth),
 ):
+    from src.core.cache import cache as bom_cache
+    cache_key = f"balluff_bom:{part_number}:depth={max_depth}"
+    cached = bom_cache.get(cache_key)
+    if cached:
+        return cached
+
     client = get_client(request)
     session = get_session(request)
     try:
-        result = bom_export_service.balluff_bom_export(client, part_number)
+        result = bom_export_service.balluff_bom_export(client, part_number, max_depth=max_depth)
     except Exception as e:
         raise HTTPException(500, f"Balluff-Export fehlgeschlagen: {e}")
+
+    # Cache for 10 minutes (BOM data changes infrequently)
+    bom_cache.set(cache_key, result, ttl=600)
 
     if session:
         log_session_event(
@@ -183,7 +193,7 @@ def sap_preview(
             "rows": body.rows,
             "partNumber": body.partNumber,
         }
-        result = sap_export_service.sap_preview(raw_export)
+        result = sap_export_service.sap_preview(raw_export, rules=body.rules)
     except Exception as e:
         raise HTTPException(500, f"SAP-Preview fehlgeschlagen: {e}")
 
@@ -216,7 +226,7 @@ def sap_export(
             "partNumber": body.partNumber,
             "fromPreview": body.fromPreview,
         }
-        result = sap_export_service.sap_export(raw_export)
+        result = sap_export_service.sap_export(raw_export, rules=body.rules)
     except Exception as e:
         raise HTTPException(500, f"SAP-Export fehlgeschlagen: {e}")
 

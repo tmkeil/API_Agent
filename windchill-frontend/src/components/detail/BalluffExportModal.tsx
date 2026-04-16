@@ -12,6 +12,31 @@ interface TabData {
   partNumber: string
 }
 
+type RuleConfig = Record<string, boolean>
+
+// ── Rule definitions ────────────────────────────────────────
+
+const RULE_DEFS: { key: string; label: string; description: string; defaultValue: boolean }[] = [
+  {
+    key: 'ApplyPrintingGoodRule',
+    label: 'Printing-Good-Regel',
+    description: 'Enclosed Documentation mit Printing Good = NO entfernen',
+    defaultValue: true,
+  },
+  {
+    key: 'FilterQepDrwDocTypes',
+    label: 'QEP/DRW Filter',
+    description: 'Zeilen mit DocType QEP oder DRW entfernen',
+    defaultValue: false,
+  },
+]
+
+function defaultRules(): RuleConfig {
+  const r: RuleConfig = {}
+  for (const d of RULE_DEFS) r[d.key] = d.defaultValue
+  return r
+}
+
 // ── CSV helper ──────────────────────────────────────────────
 
 function escCsv(v: string): string {
@@ -60,6 +85,40 @@ function rowBg(row: ExportRow): string {
   return 'bg-amber-50/50'
 }
 
+// ── Collapse helpers ────────────────────────────────────────
+
+function computeRowHasChildren(data: TabData | null): Set<number> {
+  if (!data) return new Set()
+  const result = new Set<number>()
+  const rows = data.rows
+  for (let i = 0; i < rows.length - 1; i++) {
+    if (rows[i]['PTp'] !== 'L') continue
+    const level = parseInt(rows[i]['Structure Level'] || '0', 10)
+    const nextLevel = parseInt(rows[i + 1]?.['Structure Level'] || '0', 10)
+    if (nextLevel > level) result.add(i)
+  }
+  return result
+}
+
+function computeVisibleRows(data: TabData | null, collapsedSet: Set<number>): number[] {
+  if (!data) return []
+  const rows = data.rows
+  const visible: number[] = []
+  let skipUntilLevel = -1
+  for (let i = 0; i < rows.length; i++) {
+    const level = parseInt(rows[i]['Structure Level'] || '0', 10)
+    if (skipUntilLevel >= 0) {
+      if (level > skipUntilLevel) continue
+      skipUntilLevel = -1
+    }
+    visible.push(i)
+    if (collapsedSet.has(i) && rows[i]['PTp'] === 'L') {
+      skipUntilLevel = level
+    }
+  }
+  return visible
+}
+
 // ── Component ───────────────────────────────────────────────
 
 interface Props {
@@ -68,10 +127,18 @@ interface Props {
 }
 
 export default function BalluffExportModal({ partNumber, onClose }: Props) {
-  const [activeTab, setActiveTab] = useState<'raw' | 'sap'>('raw')
+  const [activeTab, setActiveTab] = useState<'raw' | 'sap' | 'config'>('raw')
+
+  // ── Level picker state ────────────────────────────────
+  const [maxDepth, setMaxDepth] = useState<number | null>(null)
+  const [depthInput, setDepthInput] = useState('')
+  const [bomLoaded, setBomLoaded] = useState(false)
+
+  // ── Rules state ───────────────────────────────────────
+  const [rules, setRules] = useState<RuleConfig>(defaultRules)
 
   // ── Raw data state ────────────────────────────────────
-  const [rawLoading, setRawLoading] = useState(true)
+  const [rawLoading, setRawLoading] = useState(false)
   const [rawData, setRawData] = useState<TabData | null>(null)
   const [rawError, setRawError] = useState('')
 
@@ -83,6 +150,7 @@ export default function BalluffExportModal({ partNumber, onClose }: Props) {
     totalInputRows: number; totalOutputRows: number; removedRows: number
   } | null>(null)
   const [sapError, setSapError] = useState('')
+  const [validationStale, setValidationStale] = useState(false)
 
   // ── SAP Export (final) state ──────────────────────────
   const [exportLoading, setExportLoading] = useState(false)
@@ -93,31 +161,57 @@ export default function BalluffExportModal({ partNumber, onClose }: Props) {
   const [editCell, setEditCell] = useState<{ tab: string; row: number; col: string } | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
-  // ── Collapse state (raw tab) ──────────────────────────
-  const [collapsed, setCollapsed] = useState<Set<number>>(new Set())
+  // ── Collapse state ────────────────────────────────────
+  const [rawCollapsed, setRawCollapsed] = useState<Set<number>>(new Set())
+  const [sapCollapsed, setSapCollapsed] = useState<Set<number>>(new Set())
 
-  // ── Load raw data on mount ────────────────────────────
-  useEffect(() => {
+  // ── Depth input handler ───────────────────────────────
+  const handleDepthInputChange = useCallback((val: string) => {
+    setDepthInput(val)
+    if (val === '') {
+      setMaxDepth(null)
+    } else {
+      const n = parseInt(val, 10)
+      if (!isNaN(n) && n >= 1) setMaxDepth(n)
+    }
+  }, [])
+
+  // ── Load BOM (triggered by user) ──────────────────────
+  const sapPreviewTriggered = useRef(false)
+
+  const loadBom = useCallback((depth: number | null) => {
     const ctrl = new AbortController()
     setRawLoading(true)
     setRawError('')
-    fetchBalluffBomExport(partNumber, ctrl.signal)
+    setRawData(null)
+    setSapData(null)
+    setSapError('')
+    setSapValidation([])
+    setSapPreviewStats(null)
+    setExportResult(null)
+    setExportError('')
+    setRawCollapsed(new Set())
+    setSapCollapsed(new Set())
+    setValidationStale(false)
+    sapPreviewTriggered.current = false
+    fetchBalluffBomExport(partNumber, ctrl.signal, depth ?? undefined)
       .then((resp: BalluffBomExportResponse) => {
         setRawData({
           columns: resp.columns,
           rows: resp.rows.map(r => ({ ...r })),
           partNumber: resp.partNumber,
         })
+        setBomLoaded(true)
       })
       .catch(e => {
         if (e.name !== 'AbortError') setRawError(e instanceof Error ? e.message : String(e))
       })
       .finally(() => setRawLoading(false))
-    return () => ctrl.abort()
+    return ctrl
   }, [partNumber])
 
   // ── SAP Preview trigger ───────────────────────────────
-  const triggerSapPreview = useCallback((data: TabData) => {
+  const triggerSapPreview = useCallback((data: TabData, r?: RuleConfig) => {
     const ctrl = new AbortController()
     setSapLoading(true)
     setSapError('')
@@ -126,8 +220,10 @@ export default function BalluffExportModal({ partNumber, onClose }: Props) {
     setSapPreviewStats(null)
     setExportResult(null)
     setExportError('')
+    setValidationStale(false)
+    setSapCollapsed(new Set())
     fetchSapPreview(
-      { columns: data.columns, rows: data.rows, partNumber: data.partNumber },
+      { columns: data.columns, rows: data.rows, partNumber: data.partNumber, rules: r ?? rules },
       ctrl.signal,
     )
       .then((resp: SapPreviewResponse) => {
@@ -144,10 +240,9 @@ export default function BalluffExportModal({ partNumber, onClose }: Props) {
       })
       .finally(() => setSapLoading(false))
     return ctrl
-  }, [])
+  }, [rules])
 
   // Auto-trigger SAP preview when raw data first loads
-  const sapPreviewTriggered = useRef(false)
   useEffect(() => {
     if (!rawData || sapPreviewTriggered.current) return
     sapPreviewTriggered.current = true
@@ -155,9 +250,10 @@ export default function BalluffExportModal({ partNumber, onClose }: Props) {
     return () => ctrl.abort()
   }, [rawData, triggerSapPreview])
 
-  // ── Collapse logic (raw tab) ──────────────────────────
-  const toggleCollapse = useCallback((rowIdx: number) => {
-    setCollapsed(prev => {
+  // ── Collapse logic ────────────────────────────────────
+  const toggleCollapse = useCallback((tab: 'raw' | 'sap', rowIdx: number) => {
+    const setter = tab === 'raw' ? setRawCollapsed : setSapCollapsed
+    setter(prev => {
       const next = new Set(prev)
       if (next.has(rowIdx)) next.delete(rowIdx)
       else next.add(rowIdx)
@@ -165,37 +261,10 @@ export default function BalluffExportModal({ partNumber, onClose }: Props) {
     })
   }, [])
 
-  const rowHasChildren = useMemo(() => {
-    if (!rawData) return new Set<number>()
-    const result = new Set<number>()
-    const rows = rawData.rows
-    for (let i = 0; i < rows.length - 1; i++) {
-      if (rows[i]['PTp'] !== 'L') continue
-      const level = parseInt(rows[i]['Structure Level'] || '0', 10)
-      const nextLevel = parseInt(rows[i + 1]?.['Structure Level'] || '0', 10)
-      if (nextLevel > level) result.add(i)
-    }
-    return result
-  }, [rawData])
-
-  const visibleRows = useMemo(() => {
-    if (!rawData) return []
-    const rows = rawData.rows
-    const visible: number[] = []
-    let skipUntilLevel = -1
-    for (let i = 0; i < rows.length; i++) {
-      const level = parseInt(rows[i]['Structure Level'] || '0', 10)
-      if (skipUntilLevel >= 0) {
-        if (level > skipUntilLevel) continue
-        skipUntilLevel = -1
-      }
-      visible.push(i)
-      if (collapsed.has(i) && rows[i]['PTp'] === 'L') {
-        skipUntilLevel = level
-      }
-    }
-    return visible
-  }, [rawData, collapsed])
+  const rawHasChildren = useMemo(() => computeRowHasChildren(rawData), [rawData])
+  const rawVisibleRows = useMemo(() => computeVisibleRows(rawData, rawCollapsed), [rawData, rawCollapsed])
+  const sapHasChildren = useMemo(() => computeRowHasChildren(sapData), [sapData])
+  const sapVisibleRows = useMemo(() => computeVisibleRows(sapData, sapCollapsed), [sapData, sapCollapsed])
 
   // ── Edit handlers ─────────────────────────────────────
   const startEdit = useCallback((tab: string, rowIdx: number, col: string) => {
@@ -212,28 +281,34 @@ export default function BalluffExportModal({ partNumber, onClose }: Props) {
       rows[editCell.row] = { ...rows[editCell.row], [editCell.col]: value }
       return { ...prev, rows }
     })
+    if (editCell.tab === 'sap') setValidationStale(true)
     setEditCell(null)
   }, [editCell])
 
-  // ── Row operations (raw tab) ──────────────────────────
-  const addRowAfter = useCallback((idx: number) => {
-    if (!rawData) return
+  // ── Row operations (both tabs) ────────────────────────
+  const addRowAfter = useCallback((tab: 'raw' | 'sap', idx: number) => {
+    const data = tab === 'raw' ? rawData : sapData
+    if (!data) return
     const empty: ExportRow = {}
-    for (const c of rawData.columns) empty[c] = ''
-    setRawData((prev: TabData | null) => {
+    for (const c of data.columns) empty[c] = ''
+    const setter = tab === 'raw' ? setRawData : setSapData
+    setter((prev: TabData | null) => {
       if (!prev) return prev
       const rows = [...prev.rows]
       rows.splice(idx + 1, 0, empty)
       return { ...prev, rows }
     })
-  }, [rawData])
+    if (tab === 'sap') setValidationStale(true)
+  }, [rawData, sapData])
 
-  const removeRow = useCallback((idx: number) => {
-    setRawData((prev: TabData | null) => {
+  const removeRow = useCallback((tab: 'raw' | 'sap', idx: number) => {
+    const setter = tab === 'raw' ? setRawData : setSapData
+    setter((prev: TabData | null) => {
       if (!prev) return prev
       const rows = prev.rows.filter((_: ExportRow, i: number) => i !== idx)
       return { ...prev, rows }
     })
+    if (tab === 'sap') setValidationStale(true)
   }, [])
 
   // ── CSV downloads ─────────────────────────────────────
@@ -261,6 +336,7 @@ export default function BalluffExportModal({ partNumber, onClose }: Props) {
         rows: sapData.rows,
         partNumber: sapData.partNumber,
         fromPreview: true,
+        rules,
       }
       const resp = await fetchSapExport(body)
       setExportResult(resp)
@@ -269,7 +345,7 @@ export default function BalluffExportModal({ partNumber, onClose }: Props) {
     } finally {
       setExportLoading(false)
     }
-  }, [sapData])
+  }, [sapData, rules])
 
   const handleDownloadSapFile = useCallback((idx: number) => {
     if (!exportResult) return
@@ -286,34 +362,43 @@ export default function BalluffExportModal({ partNumber, onClose }: Props) {
 
   // ── Reload ────────────────────────────────────────────
   const handleReload = useCallback(() => {
-    setRawData(null)
-    setRawLoading(true)
-    setRawError('')
-    setSapData(null)
-    setSapError('')
-    setSapValidation([])
-    setSapPreviewStats(null)
-    setExportResult(null)
-    setExportError('')
-    setCollapsed(new Set())
-    sapPreviewTriggered.current = false
-    fetchBalluffBomExport(partNumber)
-      .then((resp: BalluffBomExportResponse) => {
-        setRawData({
-          columns: resp.columns,
-          rows: resp.rows.map(r => ({ ...r })),
-          partNumber: resp.partNumber,
-        })
-      })
-      .catch(e => setRawError(e instanceof Error ? e.message : String(e)))
-      .finally(() => setRawLoading(false))
-  }, [partNumber])
+    loadBom(maxDepth)
+  }, [loadBom, maxDepth])
 
   // ── Recalculate SAP preview ───────────────────────────
   const handleRefreshPreview = useCallback(() => {
     if (!rawData) return
     triggerSapPreview(rawData)
   }, [rawData, triggerSapPreview])
+
+  // ── Re-validate SAP data after edits ──────────────────
+  const handleRevalidate = useCallback(() => {
+    if (!sapData) return
+    setValidationStale(false)
+    const ctrl = new AbortController()
+    setSapLoading(true)
+    setSapError('')
+    setSapValidation([])
+    setExportResult(null)
+    setExportError('')
+    fetchSapPreview(
+      { columns: sapData.columns, rows: sapData.rows, partNumber: sapData.partNumber, rules },
+      ctrl.signal,
+    )
+      .then((resp: SapPreviewResponse) => {
+        setSapData({
+          columns: resp.columns,
+          rows: resp.rows.map(r => ({ ...r })),
+          partNumber: sapData.partNumber,
+        })
+        setSapValidation(resp.validation)
+        setSapPreviewStats(resp.stats)
+      })
+      .catch(e => {
+        if (e.name !== 'AbortError') setSapError(e instanceof Error ? e.message : String(e))
+      })
+      .finally(() => setSapLoading(false))
+  }, [sapData, rules])
 
   // ── Close on Escape ───────────────────────────────────
   useEffect(() => {
@@ -324,22 +409,17 @@ export default function BalluffExportModal({ partNumber, onClose }: Props) {
     return () => window.removeEventListener('keydown', handler)
   }, [onClose, editCell])
 
+  // ── Can export? ───────────────────────────────────────
+  const exportBlocked = sapValidation.length > 0 || validationStale
+
   // ── Shared table renderer ─────────────────────────────
   function renderTable(
     tab: 'raw' | 'sap',
     data: TabData,
-    options: {
-      visibleRowIndices?: number[]
-      showCollapse?: boolean
-      showRowOps?: boolean
-    } = {},
   ) {
-    const {
-      visibleRowIndices,
-      showCollapse = false,
-      showRowOps = false,
-    } = options
-    const indices = visibleRowIndices ?? data.rows.map((_, i) => i)
+    const hasChildren = tab === 'raw' ? rawHasChildren : sapHasChildren
+    const visibleRowIndices = tab === 'raw' ? rawVisibleRows : sapVisibleRows
+    const collapsedSet = tab === 'raw' ? rawCollapsed : sapCollapsed
 
     return (
       <div className="border border-slate-200 rounded-lg overflow-auto flex-1">
@@ -361,11 +441,11 @@ export default function BalluffExportModal({ partNumber, onClose }: Props) {
             </tr>
           </thead>
           <tbody>
-            {indices.map(ri => {
+            {visibleRowIndices.map(ri => {
               const row = data.rows[ri]
               if (!row) return null
-              const canCollapse = showCollapse && rowHasChildren.has(ri)
-              const isCollapsed = collapsed.has(ri)
+              const canCollapse = hasChildren.has(ri)
+              const isCollapsed = collapsedSet.has(ri)
               const level = parseInt(row['Structure Level'] || '0', 10)
               return (
                 <tr
@@ -376,7 +456,7 @@ export default function BalluffExportModal({ partNumber, onClose }: Props) {
                     <div className="flex items-center gap-0.5">
                       {canCollapse ? (
                         <button
-                          onClick={() => toggleCollapse(ri)}
+                          onClick={() => toggleCollapse(tab, ri)}
                           className="text-slate-500 hover:text-slate-700 text-[10px] leading-none w-3"
                           title={isCollapsed ? 'Aufklappen' : 'Zuklappen'}
                         >
@@ -385,20 +465,18 @@ export default function BalluffExportModal({ partNumber, onClose }: Props) {
                       ) : (
                         <span className="w-3" />
                       )}
-                      {showRowOps && (
-                        <span className="opacity-0 group-hover:opacity-100 transition-opacity flex gap-0.5">
-                          <button
-                            onClick={() => addRowAfter(ri)}
-                            className="text-emerald-500 hover:text-emerald-700 text-[10px] leading-none"
-                            title="Zeile darunter einfügen"
-                          >+</button>
-                          <button
-                            onClick={() => removeRow(ri)}
-                            className="text-red-400 hover:text-red-600 text-[10px] leading-none"
-                            title="Zeile entfernen"
-                          >×</button>
-                        </span>
-                      )}
+                      <span className="opacity-0 group-hover:opacity-100 transition-opacity flex gap-0.5">
+                        <button
+                          onClick={() => addRowAfter(tab, ri)}
+                          className="text-emerald-500 hover:text-emerald-700 text-[10px] leading-none"
+                          title="Zeile einfügen"
+                        >+</button>
+                        <button
+                          onClick={() => removeRow(tab, ri)}
+                          className="text-red-400 hover:text-red-600 text-[10px] leading-none"
+                          title="Zeile entfernen"
+                        >×</button>
+                      </span>
                     </div>
                   </td>
                   {data.columns.map(col => {
@@ -410,9 +488,9 @@ export default function BalluffExportModal({ partNumber, onClose }: Props) {
                     return (
                       <td
                         key={col}
-                        className={`px-2 py-0.5 whitespace-nowrap cursor-text ${isEditing ? 'p-0' : ''} ${colWidth(col)}`}
+                        className={`px-2 py-0.5 whitespace-nowrap ${isEditing ? 'p-0' : 'shadow-[inset_0_1px_3px_rgba(0,0,0,0.08)] bg-white/80 hover:shadow-[inset_0_1px_4px_rgba(0,0,0,0.15)] hover:bg-white cursor-text rounded-sm'} ${colWidth(col)}`}
                         style={indent}
-                        onDoubleClick={() => startEdit(tab, ri, col)}
+                        onClick={() => !isEditing && startEdit(tab, ri, col)}
                       >
                         {isEditing ? (
                           <input
@@ -482,9 +560,22 @@ export default function BalluffExportModal({ partNumber, onClose }: Props) {
                 {!sapLoading && sapValidation.length > 0 && (
                   <span className="ml-1.5 text-amber-600 font-normal">⚠ {sapValidation.length}</span>
                 )}
-                {!sapLoading && sapData && sapValidation.length === 0 && (
+                {!sapLoading && sapData && sapValidation.length === 0 && !validationStale && (
                   <span className="ml-1.5 text-emerald-600">✓</span>
                 )}
+                {validationStale && (
+                  <span className="ml-1.5 text-orange-500 font-normal">◌</span>
+                )}
+              </button>
+              <button
+                onClick={() => setActiveTab('config')}
+                className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
+                  activeTab === 'config'
+                    ? 'bg-white text-slate-800 shadow-sm'
+                    : 'text-slate-500 hover:text-slate-700'
+                }`}
+              >
+                Regeln
               </button>
             </div>
           </div>
@@ -501,70 +592,92 @@ export default function BalluffExportModal({ partNumber, onClose }: Props) {
 
           {/* ── Ausgangsdaten Tab ── */}
           {activeTab === 'raw' && (
-            <>
-              {rawLoading && (
-                <div className="flex-1 flex items-center justify-center">
-                  <div className="text-sm text-slate-500 animate-pulse">
-                    BOM wird geladen und aufbereitet…
-                  </div>
+            !bomLoaded && !rawLoading && !rawError ? (
+              <div className="flex-1 flex flex-col items-center justify-center gap-5">
+                <div className="flex items-center gap-3">
+                  <label className="text-xs text-slate-500">Tiefe:</label>
+                  <input
+                    type="number"
+                    min={1}
+                    placeholder="Alle"
+                    value={depthInput}
+                    onChange={e => handleDepthInputChange(e.target.value)}
+                    className="w-20 px-2 py-1.5 text-sm border border-slate-300 rounded-lg text-center focus:border-indigo-400 focus:outline-none"
+                  />
+                  <button
+                    onClick={() => { setMaxDepth(null); setDepthInput('') }}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                      maxDepth === null
+                        ? 'bg-indigo-600 text-white shadow-sm'
+                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                    }`}
+                  >
+                    Alle
+                  </button>
                 </div>
-              )}
-              {rawError && !rawLoading && (
+                <button
+                  onClick={() => loadBom(maxDepth)}
+                  className="px-6 py-2 text-sm font-semibold rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 shadow transition-colors"
+                >
+                  BOM laden
+                </button>
+              </div>
+            ) : rawLoading ? (
+              <div className="flex-1 flex flex-col items-center justify-center gap-3">
+                <svg className="animate-spin h-8 w-8 text-indigo-500" viewBox="0 0 24 24" fill="none">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                </svg>
+                <span className="text-sm text-slate-600">
+                  Lade BOM{maxDepth !== null ? ` (${maxDepth} Ebenen)` : ''}…
+                </span>
+              </div>
+            ) : rawError ? (
                 <div className="bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-2 rounded-md">
                   {rawError}
                   <button onClick={handleReload} className="ml-3 underline">Erneut versuchen</button>
                 </div>
-              )}
-              {rawData && (
+              ) : rawData ? (
                 <>
                   <div className="flex items-center gap-3 mb-2 shrink-0">
                     <span className="text-xs text-slate-500">
-                      {rawData.rows.length} Zeilen ·{' '}
-                      {rawData.rows.filter(r => r['PTp'] === 'L').length} Parts ·{' '}
-                      {rawData.rows.filter(r => r['PTp'] === 'D').length} Docs ·{' '}
-                      {rawData.rows.filter(r => r['PTp'] !== 'L' && r['PTp'] !== 'D').length} CAD
+                      {rawData.rows.length} Zeilen · {rawData.rows.filter(r => r['PTp'] === 'L').length} Parts · {rawData.rows.filter(r => r['PTp'] === 'D').length} Docs
+                      {maxDepth !== null && <> · Tiefe: {maxDepth}</>}
                     </span>
-                    <button
-                      onClick={handleDownloadRaw}
-                      className="px-3 py-1 text-xs font-medium rounded bg-emerald-600 text-white hover:bg-emerald-700 transition-colors"
-                    >
-                      CSV herunterladen
+                    <button onClick={handleDownloadRaw} className="px-3 py-1 text-xs font-medium rounded bg-emerald-600 text-white hover:bg-emerald-700 transition-colors disabled:bg-emerald-300 disabled:text-white/70 disabled:cursor-not-allowed disabled:hover:bg-emerald-300">
+                      CSV
+                    </button>
+                    <button onClick={handleReload} disabled={rawLoading} className="px-2 py-1 text-xs font-medium rounded border border-slate-300 text-slate-500 hover:bg-slate-100 transition-colors disabled:opacity-40 disabled:bg-emerald-300">
+                      Neu laden
                     </button>
                     <button
-                      onClick={handleReload}
-                      disabled={rawLoading}
-                      className="px-2 py-1 text-xs font-medium rounded border border-slate-300 text-slate-500 hover:bg-slate-100 transition-colors disabled:opacity-40"
+                      onClick={() => { setBomLoaded(false); setRawData(null); setSapData(null); setSapValidation([]); setSapPreviewStats(null); setExportResult(null); setExportError(''); setValidationStale(false); sapPreviewTriggered.current = false }}
+                      className="px-2 py-1 text-xs font-medium rounded border border-slate-300 text-slate-500 hover:bg-slate-100 transition-colors"
                     >
-                      ↻ Neu laden
+                      Tiefe ändern
                     </button>
                   </div>
-                  {renderTable('raw', rawData, {
-                    visibleRowIndices: visibleRows,
-                    showCollapse: true,
-                    showRowOps: true,
-                  })}
+                  {renderTable('raw', rawData)}
                 </>
-              )}
-            </>
+              ) : null
           )}
 
           {/* ── SAP Vorschau Tab ── */}
           {activeTab === 'sap' && (
-            <>
-              {sapLoading && (
-                <div className="flex-1 flex items-center justify-center">
-                  <div className="text-sm text-slate-500 animate-pulse">
-                    SAP-Vorschau wird berechnet (PartA + Validierung)…
-                  </div>
-                </div>
-              )}
-              {sapError && !sapLoading && (
-                <div className="bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-2 rounded-md mb-2">
-                  {sapError}
-                  <button onClick={handleRefreshPreview} className="ml-3 underline">Erneut versuchen</button>
-                </div>
-              )}
-              {sapData && (
+            sapLoading ? (
+              <div className="flex-1 flex flex-col items-center justify-center gap-3">
+                <svg className="animate-spin h-8 w-8 text-indigo-500" viewBox="0 0 24 24" fill="none">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                </svg>
+                <span className="text-sm text-slate-600">SAP-Vorschau wird berechnet…</span>
+              </div>
+            ) : sapError ? (
+              <div className="bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-2 rounded-md mb-2">
+                {sapError}
+                <button onClick={handleRefreshPreview} className="ml-3 underline">Erneut versuchen</button>
+              </div>
+            ) : sapData ? (
                 <>
                   {/* Validation */}
                   {sapValidation.length > 0 && (
@@ -582,40 +695,58 @@ export default function BalluffExportModal({ partNumber, onClose }: Props) {
                       </ul>
                     </div>
                   )}
-                  {sapValidation.length === 0 && (
+                  {sapValidation.length === 0 && !validationStale && (
                     <div className="bg-emerald-50 border border-emerald-200 rounded-md px-4 py-1.5 mb-2 text-xs text-emerald-700 shrink-0">
-                      ✓ Keine Validierungsfehler gefunden
+                      ✓ Keine Validierungsfehler
+                    </div>
+                  )}
+                  {validationStale && (
+                    <div className="bg-orange-50 border border-orange-200 rounded-md px-4 py-1.5 mb-2 text-xs text-orange-700 shrink-0">
+                      Validierung veraltet — vor Export erneut prüfen
                     </div>
                   )}
 
-                  {/* Stats + actions */}
+                  {/* Actions */}
                   <div className="flex items-center gap-3 mb-2 shrink-0">
                     <span className="text-xs text-slate-500">
                       {sapData.rows.length} Zeilen
                       {sapPreviewStats && sapPreviewStats.removedRows > 0 && (
-                        <> · {sapPreviewStats.removedRows} entfernt (PG-Regel)</>
+                        <> · {sapPreviewStats.removedRows} entfernt</>
                       )}
                     </span>
-                    <button
-                      onClick={handleRefreshPreview}
-                      disabled={sapLoading}
-                      className="px-2 py-1 text-xs font-medium rounded border border-slate-300 text-slate-500 hover:bg-slate-100 transition-colors disabled:opacity-40"
-                    >
-                      ↻ Vorschau aktualisieren
+                    <button onClick={handleRefreshPreview} disabled={sapLoading} className="px-2 py-1 text-xs font-medium rounded border border-slate-300 text-slate-500 hover:bg-slate-100 transition-colors disabled:opacity-40">
+                      Vorschau aktualisieren
                     </button>
                     <button
-                      onClick={handleDownloadSap}
-                      className="px-3 py-1 text-xs font-medium rounded bg-emerald-600 text-white hover:bg-emerald-700 transition-colors"
+                      onClick={handleRevalidate}
+                      className={`px-2 py-1 text-xs font-medium rounded transition-colors ${
+                        validationStale
+                          ? 'border border-amber-400 bg-amber-50 text-amber-700 hover:bg-amber-100'
+                          : 'border border-slate-300 text-slate-500 hover:bg-slate-100'
+                      }`}
                     >
-                      CSV herunterladen
+                      Validierung prüfen
+                    </button>
+                    <button onClick={handleDownloadSap} className="px-3 py-1 text-xs font-medium rounded bg-emerald-600 text-white hover:bg-emerald-700 transition-colors disabled:bg-emerald-300 disabled:text-white/70 disabled:cursor-not-allowed disabled:hover:bg-emerald-300">
+                      CSV
                     </button>
                     <button
                       onClick={handleSapExport}
-                      disabled={exportLoading}
-                      className="px-3 py-1 text-xs font-medium rounded bg-indigo-600 text-white hover:bg-indigo-700 transition-colors disabled:opacity-40"
+                      disabled={exportLoading || exportBlocked}
+                      className={`px-3 py-1 text-xs font-medium rounded transition-colors disabled:opacity-40 ${
+                        exportBlocked
+                          ? 'bg-slate-400 text-white cursor-not-allowed'
+                          : 'bg-indigo-600 text-white hover:bg-indigo-700'
+                      }`}
+                      title={exportBlocked ? (validationStale ? 'Validierung veraltet' : 'Validierungsfehler beheben') : undefined}
                     >
-                      {exportLoading ? 'SAP Export…' : 'SAP Export'}
+                      {exportLoading ? 'Export…' : 'SAP Export'}
                     </button>
+                    {exportBlocked && (
+                      <span className="text-xs text-amber-600">
+                        {validationStale ? 'Validierung prüfen' : 'Fehler beheben'}
+                      </span>
+                    )}
                   </div>
 
                   {/* SAP Export Result */}
@@ -632,13 +763,10 @@ export default function BalluffExportModal({ partNumber, onClose }: Props) {
                         </span>
                         <div className="flex items-center gap-2">
                           <span className="text-xs text-slate-500">
-                            {exportResult.stats.totalOutputRows} SAP-Zeilen · {exportResult.stats.skippedRows} übersprungen
+                            {exportResult.stats.totalOutputRows} Zeilen · {exportResult.stats.skippedRows} übersprungen
                           </span>
                           {exportResult.files.length > 0 && (
-                            <button
-                              onClick={handleDownloadAllSapFiles}
-                              className="px-2 py-0.5 text-xs font-medium rounded bg-indigo-600 text-white hover:bg-indigo-700"
-                            >
+                            <button onClick={handleDownloadAllSapFiles} className="px-2 py-0.5 text-xs font-medium rounded bg-indigo-600 text-white hover:bg-indigo-700">
                               Alle herunterladen
                             </button>
                           )}
@@ -647,7 +775,7 @@ export default function BalluffExportModal({ partNumber, onClose }: Props) {
                       {exportResult.validation.length > 0 && (
                         <div className="px-3 py-2 bg-amber-50 border-b border-amber-200">
                           <div className="text-xs font-semibold text-amber-800 mb-1">
-                            Validierung nach Bearbeitung — {exportResult.validation.length} Hinweis{exportResult.validation.length !== 1 ? 'e' : ''}
+                            Validierung — {exportResult.validation.length} Hinweis{exportResult.validation.length !== 1 ? 'e' : ''}
                           </div>
                           <ul className="text-xs text-amber-700 space-y-0.5 max-h-20 overflow-auto">
                             {exportResult.validation.map((msg, i) => (
@@ -660,10 +788,7 @@ export default function BalluffExportModal({ partNumber, onClose }: Props) {
                         {exportResult.files.map((file, i) => (
                           <div key={i} className="flex items-center justify-between px-3 py-1.5 hover:bg-slate-50">
                             <span className="text-xs text-slate-700 font-mono">{file.filename}</span>
-                            <button
-                              onClick={() => handleDownloadSapFile(i)}
-                              className="text-xs text-indigo-600 hover:text-indigo-800"
-                            >↓</button>
+                            <button onClick={() => handleDownloadSapFile(i)} className="text-xs text-indigo-600 hover:text-indigo-800">↓</button>
                           </div>
                         ))}
                       </div>
@@ -677,8 +802,43 @@ export default function BalluffExportModal({ partNumber, onClose }: Props) {
 
                   {renderTable('sap', sapData)}
                 </>
-              )}
-            </>
+              ) : !rawData ? (
+                <div className="flex-1 flex items-center justify-center text-sm text-slate-400">
+                  Zuerst BOM im Tab "Ausgangsdaten" laden
+                </div>
+              ) : null
+          )}
+
+          {/* ── Regeln Tab ── */}
+          {activeTab === 'config' && (
+            <div className="flex-1 flex flex-col gap-4 max-w-lg mx-auto py-6">
+              <h3 className="text-sm font-semibold text-slate-700">Transformationsregeln</h3>
+              <p className="text-xs text-slate-400">
+                Regeln steuern die SAP-Vorschau-Transformation. Änderungen werden beim nächsten "Vorschau aktualisieren" angewendet.
+              </p>
+              <div className="space-y-3">
+                {RULE_DEFS.map(def => (
+                  <label key={def.key} className="flex items-start gap-3 p-3 rounded-lg border border-slate-200 hover:border-slate-300 cursor-pointer transition-colors">
+                    <input
+                      type="checkbox"
+                      checked={rules[def.key] ?? def.defaultValue}
+                      onChange={e => setRules(prev => ({ ...prev, [def.key]: e.target.checked }))}
+                      className="mt-0.5 h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                    />
+                    <div>
+                      <div className="text-xs font-medium text-slate-700">{def.label}</div>
+                      <div className="text-xs text-slate-400">{def.description}</div>
+                    </div>
+                  </label>
+                ))}
+              </div>
+              <button
+                onClick={() => setRules(defaultRules())}
+                className="self-start px-3 py-1 text-xs font-medium rounded border border-slate-300 text-slate-500 hover:bg-slate-100 transition-colors"
+              >
+                Standardwerte zurücksetzen
+              </button>
+            </div>
           )}
         </div>
       </div>

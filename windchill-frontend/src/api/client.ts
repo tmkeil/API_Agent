@@ -351,9 +351,11 @@ export async function exportBom(
 export async function fetchBalluffBomExport(
   partNumber: string,
   signal?: AbortSignal,
+  maxDepth?: number,
 ): Promise<BalluffBomExportResponse> {
+  const params = maxDepth != null ? `?max_depth=${maxDepth}` : ''
   return request<BalluffBomExportResponse>(
-    `${BASE}/export/balluff/${encodeURIComponent(partNumber)}`,
+    `${BASE}/export/balluff/${encodeURIComponent(partNumber)}${params}`,
     { signal },
   )
 }

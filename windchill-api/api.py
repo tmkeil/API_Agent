@@ -1,6 +1,7 @@
 """Windchill-API — FastAPI Application Entry Point."""
 
 import logging
+import os
 import socket
 import time
 from contextlib import asynccontextmanager
@@ -10,7 +11,8 @@ import httpx
 import uvicorn
 from fastapi import Depends, FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import FileResponse, JSONResponse
+from fastapi.staticfiles import StaticFiles
 
 from src.adapters.wrs_client import WRSError
 from src.core.config import WINDCHILL_SYSTEMS, settings
@@ -108,6 +110,39 @@ app.include_router(versions_router, prefix="/api")
 app.include_router(write_router, prefix="/api")
 app.include_router(bulk_router, prefix="/api")
 app.include_router(admin_router, prefix="/api")
+
+
+def _resolve_frontend_dist() -> str | None:
+    """Return frontend dist directory if present in known runtime locations."""
+    here = os.path.dirname(os.path.abspath(__file__))
+    candidates = [
+        os.path.join(here, "frontend-dist"),
+        os.path.join(os.path.dirname(here), "windchill-frontend", "dist"),
+    ]
+    for path in candidates:
+        if os.path.isdir(path):
+            return path
+    return None
+
+
+_frontend_dist = _resolve_frontend_dist()
+if _frontend_dist:
+    app.mount("/assets", StaticFiles(directory=os.path.join(_frontend_dist, "assets")), name="frontend-assets")
+
+    @app.get("/", include_in_schema=False)
+    def serve_frontend_index() -> FileResponse:
+        return FileResponse(os.path.join(_frontend_dist, "index.html"))
+
+
+    @app.get("/{full_path:path}", include_in_schema=False)
+    def serve_frontend_spa(full_path: str) -> Response:
+        if full_path.startswith("api/") or full_path in {"docs", "redoc", "openapi.json", "health", "health/windchill"}:
+            return JSONResponse(status_code=404, content={"detail": "Not Found"})
+
+        requested = os.path.join(_frontend_dist, full_path)
+        if os.path.isfile(requested):
+            return FileResponse(requested)
+        return FileResponse(os.path.join(_frontend_dist, "index.html"))
 
 
 @app.get("/health", tags=["meta"], include_in_schema=False)

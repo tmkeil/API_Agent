@@ -194,6 +194,7 @@ export interface DocumentListResponse {
 export interface ChangeItem {
   objectId: string
   objectType: string
+  subType: string
   number: string
   name: string
   version: string
@@ -464,6 +465,7 @@ export interface SapExportRequest {
   rows: Record<string, string>[]
   partNumber: string
   fromPreview?: boolean
+  rules?: Record<string, boolean>
 }
 
 // ── SAP Preview ────────────────────────────────────────────

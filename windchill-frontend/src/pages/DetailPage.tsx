@@ -9,6 +9,7 @@ import DocDetailsTab from '../components/detail/DocDetailsTab'
 import CadDetailsTab from '../components/detail/CadDetailsTab'
 import AttributesTab from '../components/detail/AttributesTab'
 import StructureTab from '../components/detail/StructureTab'
+import CadStructureTab from '../components/detail/CadStructureTab'
 import DocumentsTab from '../components/detail/DocumentsTab'
 import CadTab from '../components/detail/CadTab'
 import AllDocumentsTab from '../components/detail/AllDocumentsTab'
@@ -22,7 +23,7 @@ import LifecycleTab from '../components/detail/LifecycleTab'
 import EquivalenceTab from '../components/detail/EquivalenceTab'
 import WriteActionsPanel from '../components/detail/WriteActionsPanel'
 
-type TabKey = 'details' | 'attributes' | 'structure' | 'documents' | 'cad' | 'allDocuments'
+type TabKey = 'details' | 'attributes' | 'structure' | 'cadStructure' | 'documents' | 'cad' | 'allDocuments'
   | 'whereUsed' | 'occurrences' | 'equivalence'
   | 'affected' | 'resulting' | 'referencingParts' | 'files' | 'versions' | 'lifecycle' | 'actions'
 
@@ -57,6 +58,7 @@ const TABS_BY_TYPE: Record<string, TabDef[]> = {
   cad_document: [
     { key: 'details', label: 'Details' },
     { key: 'attributes', label: 'Attribute' },
+    { key: 'cadStructure', label: 'Struktur' },
     { key: 'referencingParts', label: 'Verknüpftes Part' },
     { key: 'files', label: 'Dateien' },
     { key: 'versions', label: 'Versionen' },
@@ -186,6 +188,7 @@ export default function DetailPage() {
         )}
         {activeTab === 'attributes' && <AttributesTab detail={detail} />}
         {activeTab === 'structure' && <StructureTab partNumber={detail.number} />}
+        {activeTab === 'cadStructure' && <CadStructureTab cadCode={detail.number} />}
         {activeTab === 'documents' && <DocumentsTab partCode={code} />}
         {activeTab === 'cad' && <CadTab partCode={code} />}
         {activeTab === 'allDocuments' && <AllDocumentsTab partCode={code} />}

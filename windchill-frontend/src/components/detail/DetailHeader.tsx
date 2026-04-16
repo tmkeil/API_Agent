@@ -1,5 +1,5 @@
 import type { ObjectDetail } from '../../api/types'
-import { TYPE_LABELS } from '../../utils/labels'
+import { typeLabel } from '../../utils/labels'
 
 interface Props {
   detail: ObjectDetail
@@ -7,7 +7,7 @@ interface Props {
 }
 
 export default function DetailHeader({ detail, onBack }: Props) {
-  const typeBadge = TYPE_LABELS[detail.objectType] || detail.objectType
+  const typeBadge = typeLabel(detail.objectType, detail.subType)
 
   return (
     <div className="flex items-start justify-between">

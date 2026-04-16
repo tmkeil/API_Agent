@@ -5,8 +5,12 @@ Endpoints:
   GET /documents/{type_key}/{code}/referencing-parts → Parts die dieses Dokument referenzieren
   GET /documents/{type_key}/{code}/files             → Datei-Info (ContentHolders)
   GET /documents/{type_key}/{code}/download          → Primaerdatei herunterladen
+  GET /documents/cad/{code}/structure                → CAD Assembly-Struktur
+  GET /documents/cad/{code}/structure/csv            → CAD Assembly-Struktur als CSV
 """
 
+import csv
+import io
 import logging
 
 from fastapi import APIRouter, Depends, Request
@@ -14,7 +18,7 @@ from fastapi.responses import Response
 
 from src.core.auth import require_auth
 from src.core.dependencies import get_client
-from src.models.dto import FileInfoResponse, ReferencingPartsResponse
+from src.models.dto import CadStructureResponse, FileInfoResponse, ReferencingPartsResponse
 from src.services import document_service
 
 logger = logging.getLogger(__name__)
@@ -83,5 +87,65 @@ def download_document(
         headers={
             "Content-Disposition": f'attachment; filename="{filename}"',
             "Content-Length": str(len(content_bytes)),
+        },
+    )
+
+
+# ── CAD Assembly Structure ───────────────────────────────────
+
+
+@router.get(
+    "/cad/{code}/structure",
+    response_model=CadStructureResponse,
+    summary="CAD Assembly-Struktur eines CAD-Dokuments",
+)
+def cad_structure(
+    code: str,
+    request: Request,
+    _: None = Depends(require_auth),
+):
+    client = get_client(request)
+    return document_service.get_cad_structure(client, code)
+
+
+@router.get(
+    "/cad/{code}/structure/csv",
+    summary="CAD Assembly-Struktur als CSV-Download",
+    responses={200: {"content": {"text/csv": {}}}},
+)
+def cad_structure_csv(
+    code: str,
+    request: Request,
+    _: None = Depends(require_auth),
+):
+    """CSV-Export der CAD Assembly-Struktur.
+
+    Spalten: Level, File Name, Version, Quantity, Number, Dependency Type, State
+    """
+    client = get_client(request)
+    result = document_service.get_cad_structure(client, code)
+
+    output = io.StringIO()
+    writer = csv.writer(output, delimiter=";")
+    writer.writerow(["Level", "File Name", "Version", "Quantity", "Number", "Dependency Type", "State"])
+    for node in result.nodes:
+        writer.writerow([
+            node.level,
+            node.fileName,
+            node.version,
+            node.quantity,
+            node.number,
+            node.dependencyType,
+            node.state,
+        ])
+
+    csv_content = output.getvalue()
+    filename = f"CAD_Structure_{code}.csv"
+
+    return Response(
+        content=csv_content,
+        media_type="text/csv; charset=utf-8",
+        headers={
+            "Content-Disposition": f'attachment; filename="{filename}"',
         },
     )

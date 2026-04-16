@@ -482,3 +482,31 @@ export interface SapPreviewResponse {
   validation: string[]
   stats: SapPreviewStats
 }
+
+// ── CAD Structure (Assembly) ────────────────────────────────
+
+export interface CadStructureNode {
+  cadDocId: string
+  number: string
+  fileName: string
+  name: string
+  version: string
+  state: string
+  quantity: string
+  level: number
+  dependencyType: string
+  hasChildren: boolean
+}
+
+export interface CadStructureResponse {
+  code: string
+  totalFound: number
+  nodes: CadStructureNode[]
+  timing: TimingInfo
+}
+
+// ── CN Part Results Check ───────────────────────────────────
+
+export interface CheckPartResultsResponse {
+  withParts: string[]
+}

@@ -5,11 +5,14 @@ Service-Schicht zwischen Router und Adapter. Normalisiert OData-Rohdaten
 zu typisierten DTOs.
 """
 
+import logging
 import time
 
 from src.adapters.wrs_client import WRSClient
 from src.core.odata import normalize_item
 from src.models.dto import ChangeItem, ChangeItemsResponse, TimingInfo
+
+logger = logging.getLogger(__name__)
 
 
 def get_affected_items(
@@ -72,3 +75,27 @@ def _to_change_item(raw: dict) -> ChangeItem:
         state=n["state"],
         identity=n["identity"],
     )
+
+
+def has_part_resulting_items(
+    client: WRSClient,
+    code: str,
+) -> bool:
+    """Pruefen ob ein Change Notice Resulting Items vom Typ WTPart hat.
+
+    Schneller Check ohne vollstaendige Normalisierung.
+    """
+    try:
+        raw_items = client.get_change_resulting_items("change_notice", code)
+    except Exception:
+        logger.debug("has_part_resulting_items failed for %s", code, exc_info=True)
+        return False
+
+    for raw in raw_items:
+        n = normalize_item(raw)
+        id_parts = n["id"].split(":")
+        if len(id_parts) >= 3:
+            obj_type = id_parts[1].rsplit(".", 1)[-1]
+            if obj_type == "WTPart":
+                return True
+    return False

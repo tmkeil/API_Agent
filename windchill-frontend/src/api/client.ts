@@ -7,7 +7,9 @@ import type {
   BomViewConfig,
   BulkItem,
   BulkResponse,
+  CadStructureResponse,
   ChangeItemsResponse,
+  CheckPartResultsResponse,
   ContainerListResponse,
   DocumentListResponse,
   FileInfoResponse,
@@ -511,4 +513,30 @@ export async function advancedSearch(body: AdvancedSearchRequest): Promise<PartS
 
 export function getDocumentDownloadUrl(typeKey: string, code: string): string {
   return `${BASE}/documents/${encodeURIComponent(typeKey)}/${encodeURIComponent(code)}/download`
+}
+
+// ── CAD Structure (Assembly) ────────────────────────────────
+
+export async function getCadStructure(code: string, signal?: AbortSignal): Promise<CadStructureResponse> {
+  return request<CadStructureResponse>(
+    `${BASE}/documents/cad/${encodeURIComponent(code)}/structure`,
+    { signal },
+  )
+}
+
+export function getCadStructureCsvUrl(code: string): string {
+  return `${BASE}/documents/cad/${encodeURIComponent(code)}/structure/csv`
+}
+
+// ── CN Part Results Check ───────────────────────────────────
+
+export async function checkCnPartResults(numbers: string[], signal?: AbortSignal): Promise<CheckPartResultsResponse> {
+  return request<CheckPartResultsResponse>(
+    `${BASE}/changes/check-part-results`,
+    {
+      method: 'POST',
+      body: JSON.stringify({ numbers }),
+      signal,
+    },
+  )
 }

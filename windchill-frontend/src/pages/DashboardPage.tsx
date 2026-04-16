@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { searchPartsStream } from '../api/client'
+import { searchPartsStream, checkCnPartResults } from '../api/client'
 import type { PartSearchResult } from '../api/types'
 import SearchBar, { type SearchMode } from '../components/SearchBar'
 import AdvancedSearchPanel from '../components/AdvancedSearchPanel'
@@ -100,6 +100,12 @@ export default function DashboardPage() {
   const [activeTypes] = useState<string[]>([])
   const hasRestoredRef = useRef(false)
 
+  // CN "has Part results" filter state
+  const [cnPartsFilter, setCnPartsFilter] = useState(false)
+  const [cnWithParts, setCnWithParts] = useState<Set<string>>(new Set())
+  const [cnCheckLoading, setCnCheckLoading] = useState(false)
+  const cnCheckRef = useRef<AbortController | null>(null)
+
   // ── Search ──────────────────────────────────────────────
 
   const handleSearch = useCallback((query: string, mode?: SearchMode) => {
@@ -130,6 +136,47 @@ export default function DashboardPage() {
 
   // Show Part-only columns only when all results are Parts
   const allParts = results.length > 0 && results.every((r) => r.objectType === 'WTPart')
+
+  // Check if results contain Change Notices
+  const hasCns = results.some((r) => r.objectType === 'WTChangeOrder2')
+
+  // Handle CN Part filter toggle
+  const handleCnFilterToggle = useCallback(async () => {
+    if (cnPartsFilter) {
+      setCnPartsFilter(false)
+      return
+    }
+    // Check which CNs have Part resulting items
+    setCnCheckLoading(true)
+    cnCheckRef.current?.abort()
+    const ctrl = new AbortController()
+    cnCheckRef.current = ctrl
+    try {
+      const cnNumbers = results
+        .filter((r) => r.objectType === 'WTChangeOrder2')
+        .map((r) => r.number)
+      const resp = await checkCnPartResults(cnNumbers, ctrl.signal)
+      setCnWithParts(new Set(resp.withParts))
+      setCnPartsFilter(true)
+    } catch (e: unknown) {
+      if ((e as Error).name !== 'AbortError') {
+        console.error('CN part check failed:', e)
+      }
+    } finally {
+      setCnCheckLoading(false)
+    }
+  }, [cnPartsFilter, results])
+
+  // Reset filter when results change
+  useEffect(() => {
+    setCnPartsFilter(false)
+    setCnWithParts(new Set())
+  }, [searchState.query])
+
+  // Apply CN filter to results
+  const displayResults = cnPartsFilter
+    ? results.filter((r) => r.objectType !== 'WTChangeOrder2' || cnWithParts.has(r.number))
+    : results
 
   // ── Render ─────────────────────────────────────────────
 
@@ -176,14 +223,39 @@ export default function DashboardPage() {
       {/* Search results table */}
       {results.length > 0 && (
         <section>
-          <h2 className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2">
-            {results.length} Ergebnis{results.length !== 1 ? 'se' : ''}
-            {searching && (
-              <span className="ml-2 text-indigo-500 animate-pulse">
-                — Lade weitere…
-              </span>
+          <div className="flex items-center justify-between mb-2">
+            <h2 className="text-xs font-semibold text-slate-400 uppercase tracking-wide">
+              {displayResults.length} Ergebnis{displayResults.length !== 1 ? 'se' : ''}
+              {cnPartsFilter && displayResults.length !== results.length && (
+                <span className="ml-1 text-emerald-500">(gefiltert von {results.length})</span>
+              )}
+              {searching && (
+                <span className="ml-2 text-indigo-500 animate-pulse">
+                  — Lade weitere…
+                </span>
+              )}
+            </h2>
+            {hasCns && !searching && (
+              <button
+                onClick={handleCnFilterToggle}
+                disabled={cnCheckLoading}
+                className={`px-2.5 py-1 text-[11px] font-medium rounded border transition-colors ${
+                  cnPartsFilter
+                    ? 'bg-emerald-50 text-emerald-700 border-emerald-300'
+                    : 'bg-slate-50 text-slate-600 border-slate-300 hover:bg-slate-100'
+                }`}
+                title="Nur Change Notices anzeigen, die Part Resulting Items enthalten"
+              >
+                {cnCheckLoading ? (
+                  <span className="animate-pulse">Prüfe CNs…</span>
+                ) : cnPartsFilter ? (
+                  '✓ Nur CNs mit Parts'
+                ) : (
+                  'Nur CNs mit Parts'
+                )}
+              </button>
             )}
-          </h2>
+          </div>
 
           <div className="bg-white rounded shadow-sm border border-slate-200 overflow-hidden">
             <div className="overflow-auto" style={{ maxHeight: 'calc(100vh - 300px)' }}>
@@ -204,7 +276,7 @@ export default function DashboardPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {results.map((r) => (
+                  {displayResults.map((r) => (
                     <tr
                       key={r.partId}
                       onClick={() => handleRowClick(r)}

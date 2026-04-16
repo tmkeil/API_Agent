@@ -1,5 +1,5 @@
 import type { ObjectDetail } from '../../api/types'
-import { TYPE_LABELS, formatDate } from '../../utils/labels'
+import { typeLabel, formatDate } from '../../utils/labels'
 
 interface Props {
   detail: ObjectDetail
@@ -8,8 +8,7 @@ interface Props {
 /** Details tab — shows object master data. */
 export default function DetailsTab({ detail }: Props) {
   const rows: [string, string][] = [
-    ['Typ', TYPE_LABELS[detail.objectType] || detail.objectType],
-    ['Subtyp', detail.subType || '—'],
+    ['Typ', typeLabel(detail.objectType, detail.subType)],
     ['Nummer', detail.number],
     ['Name', detail.name],
     ['Version', detail.version],

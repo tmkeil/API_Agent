@@ -264,3 +264,46 @@ class DocumentsMixin:
             f"Kein downloadbarer Content fuer {entity_set}('{doc_id}')",
             status_code=404,
         )
+
+    # ── CAD Structure (Assembly) ─────────────────────────────
+
+    def get_cad_structure(
+        self: "WRSClientBase",
+        cad_doc_id: str,
+        bom_members_only: bool = False,
+    ) -> list[dict]:
+        """CAD-Struktur (Assembly-Baum) eines CAD-Dokuments laden.
+
+        POST /CADDocuments('{id}')/PTC.CADDocumentMgmt.GetStructure
+        Body: { BOMMembersOnly: false }
+
+        Returns:
+            Liste von CADStructure-Dicts.
+        """
+        url = (
+            f"{self._odata_url('CADDocumentMgmt')}"
+            f"/CADDocuments('{cad_doc_id}')"
+            f"/PTC.CADDocumentMgmt.GetStructure"
+        )
+        self._refresh_csrf()
+        resp = self._post(
+            url,
+            json_body={"BOMMembersOnly": bom_members_only},
+            suppress_errors=True,
+        )
+
+        if resp is None or resp.status_code not in (200, 201):
+            status = resp.status_code if resp else "no response"
+            logger.info("GetStructure nicht verfuegbar (HTTP %s) fuer %s", status, cad_doc_id)
+            return []
+
+        data = resp.json()
+
+        # Response kann verschachtelt sein: value[] oder direkt eine Liste
+        items = data.get("value") or data.get("Components") or []
+        if not isinstance(items, list):
+            # Manchmal kommt ein einzelnes Objekt mit Children
+            items = [data] if isinstance(data, dict) and data.get("CADDocumentNumber") else []
+
+        logger.debug("GetStructure lieferte %d Eintraege fuer %s", len(items), cad_doc_id)
+        return items

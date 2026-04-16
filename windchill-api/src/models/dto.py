@@ -562,3 +562,28 @@ class SapPreviewResponse(BaseModel):
     rows: list[dict[str, str]] = []
     validation: list[str] = []
     stats: SapPreviewStats = SapPreviewStats()
+
+
+# ── CAD Structure (Assembly) ────────────────────────────────
+
+
+class CadStructureNode(BaseModel):
+    """Ein Knoten in der CAD-Assemblystruktur."""
+    cadDocId: str = ""
+    number: str = ""
+    fileName: str = ""
+    name: str = ""
+    version: str = ""
+    state: str = ""
+    quantity: str = ""
+    level: int = 0
+    dependencyType: str = ""
+    hasChildren: bool = False
+
+
+class CadStructureResponse(BaseModel):
+    """Response fuer CAD Assembly-Struktur."""
+    code: str
+    totalFound: int = 0
+    nodes: list[CadStructureNode] = []
+    timing: TimingInfo = TimingInfo()

@@ -297,18 +297,29 @@ class DocumentsMixin:
             logger.debug("Uses lieferte keine Eintraege fuer %s", cad_doc_id)
             return []
 
-        # ComponentName / UseInfo.FileName sammeln
-        file_names: list[str] = []
-        uses_by_file: dict[str, dict] = {}
+        # UseInfo.FileName ist der echte Dateiname (z.B. "part.sldprt").
+        # ComponentName ist der Instanzname mit Suffix (z.B. "part-3").
+        # Gleiche Dateien koennen mehrfach verbaut sein → gruppieren.
+        grouped: dict[str, dict] = {}  # FileName → aggregierter Eintrag
         for u in uses:
-            fn = (
-                u.get("ComponentName")
-                or (u.get("UseInfo") or {}).get("FileName")
-                or ""
-            )
-            if fn:
-                file_names.append(fn)
-                uses_by_file[fn] = u
+            fn = (u.get("UseInfo") or {}).get("FileName") or u.get("ComponentName") or ""
+            if not fn:
+                continue
+
+            qty = u.get("Quantity") or 1.0
+
+            if fn in grouped:
+                grouped[fn]["quantity"] += qty
+            else:
+                dep_type_raw = u.get("DepType") or ""
+                if isinstance(dep_type_raw, dict):
+                    dep_type = str(dep_type_raw.get("Display") or dep_type_raw.get("Value") or "")
+                else:
+                    dep_type = str(dep_type_raw)
+
+                grouped[fn] = {"quantity": qty, "depType": dep_type}
+
+        file_names = list(grouped.keys())
 
         # Schritt 2: Child-CADDocuments per Batch-Filter aufloesen
         child_docs_by_file: dict[str, dict] = {}
@@ -318,15 +329,13 @@ class DocumentsMixin:
         # Zusammenfuehren
         result: list[dict] = []
         for fn in file_names:
-            use = uses_by_file.get(fn, {})
+            grp = grouped[fn]
             doc = child_docs_by_file.get(fn, {})
 
-            dep_type_raw = use.get("DepType") or ""
-            # DepType kann ein dict mit Value sein (PTC.EnumType)
-            dep_type = dep_type_raw.get("Value", "") if isinstance(dep_type_raw, dict) else str(dep_type_raw)
+            dep_type = grp["depType"]
 
-            quantity = use.get("Quantity")
-            quantity_str = str(int(quantity)) if isinstance(quantity, (int, float)) and quantity == int(quantity) else str(quantity or "1")
+            quantity = grp["quantity"]
+            quantity_str = str(int(quantity)) if isinstance(quantity, (int, float)) and quantity == int(quantity) else str(quantity)
 
             # Version aus OData-Feldern
             version = str(doc.get("Version") or doc.get("VersionID") or "")
@@ -336,10 +345,6 @@ class DocumentsMixin:
 
             child_id = str(doc.get("ID") or "")
             has_children = bool(doc.get("HasChildren", False))
-
-            # HasChildren aus Uses pruefen: Kind hat selbst Uses?
-            # Falls doc keinen HasChildren-Hint hat, merken wir die ID
-            # und pruefen per Rekursion.
 
             node = {
                 "level": _level,

@@ -65,7 +65,7 @@ class ChangeMixin:
             filters.append(f"State/Value eq '{safe}'")
         if sub_type:
             safe = sub_type.replace("'", "''")
-            filters.append(f"ObjectType eq '{safe}'")
+            filters.append(f"contains(ObjectType,'{safe}')")
 
         params: dict = {
             "$top": top,

@@ -510,3 +510,61 @@ export interface CadStructureResponse {
 export interface CheckPartResultsResponse {
   withParts: string[]
 }
+
+// ── Change Notice Listing ───────────────────────────────────
+
+export interface ChangeNoticeListItem {
+  objectId: string
+  number: string
+  name: string
+  subType: string
+  version: string
+  state: string
+  createdBy: string
+  createdOn: string
+  lastModified: string
+  description: string
+}
+
+export interface ChangeNoticeListResponse {
+  totalCount: number
+  items: ChangeNoticeListItem[]
+  timing: TimingInfo
+}
+
+// ── WorkItem (Projekt-Tracking) ─────────────────────────────
+
+export interface WorkItemStep {
+  step: string
+  timestamp: string
+  data: Record<string, unknown>
+}
+
+export interface WorkItemSummary {
+  id: string
+  cnNumber: string
+  cnName: string
+  cnSubType: string
+  status: string
+  createdAt: string
+  updatedAt: string
+  stepCount: number
+}
+
+export interface WorkItem {
+  id: string
+  status: string
+  createdAt: string
+  updatedAt: string
+  changeNotice: Record<string, unknown>
+  resultingParts: Record<string, unknown>[]
+  selectedPart: Record<string, unknown>
+  bomData: Record<string, string>[]
+  bomColumns: string[]
+  steps: WorkItemStep[]
+}
+
+export interface WorkItemListResponse {
+  items: WorkItemSummary[]
+  totalCount: number
+}

@@ -15,11 +15,30 @@ from pydantic import BaseModel
 
 from src.core.auth import require_auth
 from src.core.dependencies import get_client
-from src.models.dto import ChangeItemsResponse
+from src.models.dto import ChangeItemsResponse, ChangeNoticeListResponse
 from src.services import change_service
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/changes", tags=["changes"])
+
+
+@router.get(
+    "/change_notices",
+    response_model=ChangeNoticeListResponse,
+    summary="Change Notices auflisten (optional gefiltert nach State/SubType)",
+)
+def list_change_notices(
+    request: Request,
+    state: str = "",
+    sub_type: str = "",
+    top: int = 50,
+    skip: int = 0,
+    _: None = Depends(require_auth),
+):
+    client = get_client(request)
+    return change_service.list_change_notices(
+        client, state=state, sub_type=sub_type, top=min(top, 200), skip=skip,
+    )
 
 
 @router.get(

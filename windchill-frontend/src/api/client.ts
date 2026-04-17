@@ -31,6 +31,9 @@ import type {
   SapExportResponse,
   SapExportRequest,
   SapPreviewResponse,
+  ChangeNoticeListResponse,
+  WorkItem,
+  WorkItemListResponse,
 } from './types'
 
 const BASE = '/api'
@@ -539,4 +542,72 @@ export async function checkCnPartResults(numbers: string[], signal?: AbortSignal
       signal,
     },
   )
+}
+
+// ── Change Notice Listing ───────────────────────────────────
+
+export async function listChangeNotices(
+  params?: { state?: string; subType?: string; top?: number; skip?: number },
+  signal?: AbortSignal,
+): Promise<ChangeNoticeListResponse> {
+  const qs = new URLSearchParams()
+  if (params?.state) qs.set('state', params.state)
+  if (params?.subType) qs.set('sub_type', params.subType)
+  if (params?.top) qs.set('top', String(params.top))
+  if (params?.skip) qs.set('skip', String(params.skip))
+  const q = qs.toString()
+  return request<ChangeNoticeListResponse>(
+    `${BASE}/changes/change_notices${q ? '?' + q : ''}`,
+    { signal },
+  )
+}
+
+// ── WorkItems ───────────────────────────────────────────────
+
+export async function listWorkItems(): Promise<WorkItemListResponse> {
+  return request<WorkItemListResponse>(`${BASE}/workitems`)
+}
+
+export async function createWorkItem(cnData: {
+  number: string
+  name?: string
+  subType?: string
+  state?: string
+  objectId?: string
+}): Promise<WorkItem> {
+  return request<WorkItem>(`${BASE}/workitems`, {
+    method: 'POST',
+    body: JSON.stringify(cnData),
+  })
+}
+
+export async function getWorkItem(id: string): Promise<WorkItem> {
+  return request<WorkItem>(`${BASE}/workitems/${encodeURIComponent(id)}`)
+}
+
+export async function updateWorkItem(
+  id: string,
+  updates: Partial<Pick<WorkItem, 'resultingParts' | 'selectedPart' | 'bomData' | 'bomColumns' | 'status'>>,
+): Promise<WorkItem> {
+  return request<WorkItem>(`${BASE}/workitems/${encodeURIComponent(id)}`, {
+    method: 'PATCH',
+    body: JSON.stringify(updates),
+  })
+}
+
+export async function deleteWorkItem(id: string): Promise<void> {
+  await request<{ ok: boolean }>(`${BASE}/workitems/${encodeURIComponent(id)}`, {
+    method: 'DELETE',
+  })
+}
+
+export async function addWorkItemStep(
+  id: string,
+  step: string,
+  data?: Record<string, unknown>,
+): Promise<WorkItem> {
+  return request<WorkItem>(`${BASE}/workitems/${encodeURIComponent(id)}/steps`, {
+    method: 'POST',
+    body: JSON.stringify({ step, data: data || {} }),
+  })
 }

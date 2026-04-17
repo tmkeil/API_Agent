@@ -24,6 +24,18 @@ export default function Layout({ children }: { children: ReactNode }) {
           {user && (
             <div className="flex items-center gap-4 text-sm">
               <button
+                onClick={() => navigate('/')}
+                className="px-2.5 py-1 text-xs font-medium rounded text-slate-300 hover:text-white transition-colors"
+              >
+                Suche
+              </button>
+              <button
+                onClick={() => navigate('/?mode=cn')}
+                className="px-2.5 py-1 text-xs font-medium rounded text-slate-300 hover:text-white transition-colors"
+              >
+                Change Notices
+              </button>
+              <button
                 onClick={() => navigate('/create/part')}
                 className="px-2.5 py-1 text-xs font-medium rounded bg-indigo-600 text-white hover:bg-indigo-700 transition-colors"
               >

@@ -244,6 +244,30 @@ class ChangeItemsResponse(BaseModel):
     timing: TimingInfo = TimingInfo()
 
 
+# ── Change Notice Listing ────────────────────────────────────
+
+
+class ChangeNoticeListItem(BaseModel):
+    """Summary item for CN listing."""
+    objectId: str = ""
+    number: str = ""
+    name: str = ""
+    subType: str = ""
+    version: str = ""
+    state: str = ""
+    createdBy: str = ""
+    createdOn: str = ""
+    lastModified: str = ""
+    description: str = ""
+
+
+class ChangeNoticeListResponse(BaseModel):
+    """Paginated list of Change Notices."""
+    totalCount: int = 0
+    items: list[ChangeNoticeListItem] = []
+    timing: TimingInfo = TimingInfo()
+
+
 # ── Document Details (Referencing Parts, File Info) ──────────
 
 
@@ -586,4 +610,46 @@ class CadStructureResponse(BaseModel):
     code: str
     totalFound: int = 0
     nodes: list[CadStructureNode] = []
+
+
+# ── WorkItem (Projektfortschritt-Tracking) ───────────────────
+
+
+class WorkItemStep(BaseModel):
+    """Ein einzelner Arbeitsschritt im WorkItem."""
+    step: str           # z.B. "cn_selected", "parts_loaded", "part_selected", "bom_exported", "bom_edited", "csv_generated"
+    timestamp: str = ""
+    data: dict[str, Any] = {}
+
+
+class WorkItemSummary(BaseModel):
+    """Kurzinfo eines WorkItems fuer die Liste."""
+    id: str
+    cnNumber: str = ""
+    cnName: str = ""
+    cnSubType: str = ""
+    status: str = "in_progress"  # in_progress | completed
+    createdAt: str = ""
+    updatedAt: str = ""
+    stepCount: int = 0
+
+
+class WorkItem(BaseModel):
+    """Vollstaendiges WorkItem mit allen Schritten und Daten."""
+    id: str
+    status: str = "in_progress"
+    createdAt: str = ""
+    updatedAt: str = ""
+    changeNotice: dict[str, Any] = {}   # CN-Metadaten (number, name, subType, state)
+    resultingParts: list[dict[str, Any]] = []
+    selectedPart: dict[str, Any] = {}
+    bomData: list[dict[str, str]] = []
+    bomColumns: list[str] = []
+    steps: list[WorkItemStep] = []
+
+
+class WorkItemListResponse(BaseModel):
+    """Liste aller WorkItems."""
+    items: list[WorkItemSummary] = []
+    totalCount: int = 0
     timing: TimingInfo = TimingInfo()

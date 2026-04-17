@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { getAffectedItems, getObjectDetail, getResultingItems } from '../api/client'
+import { getAffectedItems, getObjectDetail, getResultingItems, createWorkItem } from '../api/client'
 import type { ObjectDetail } from '../api/types'
 import DetailHeader from '../components/detail/DetailHeader'
 import DetailsTab from '../components/detail/DetailsTab'
@@ -154,10 +154,39 @@ export default function DetailPage() {
 
   if (!detail || !code) return null
 
+  const isChangeNotice = typeKey === 'change_notice'
+
+  const handleStartWorkItem = async () => {
+    if (!detail) return
+    try {
+      const wi = await createWorkItem({
+        number: detail.number,
+        name: detail.name,
+        subType: detail.subType,
+        state: detail.state,
+        objectId: detail.objectId,
+      })
+      navigate(`/workitem/${wi.id}`)
+    } catch (e: unknown) {
+      setError((e as Error).message || 'Fehler beim Erstellen des WorkItems')
+    }
+  }
+
   return (
     <div className="space-y-4">
       {/* Header */}
-      <DetailHeader detail={detail} onBack={() => navigate('/')} />
+      <div className="flex items-start justify-between">
+        <DetailHeader detail={detail} onBack={() => navigate('/')} />
+        {isChangeNotice && (
+          <button
+            onClick={handleStartWorkItem}
+            className="shrink-0 ml-4 px-3 py-1.5 text-xs font-medium rounded bg-emerald-50 text-emerald-700 border border-emerald-300 hover:bg-emerald-100 transition-colors"
+            title="WorkItem für dieses Change Notice erstellen"
+          >
+            ▶ WorkItem starten
+          </button>
+        )}
+      </div>
 
       {/* Tab bar */}
       <nav className="border-b border-slate-200">

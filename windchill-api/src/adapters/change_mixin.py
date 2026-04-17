@@ -37,6 +37,54 @@ class ChangeMixin:
         "problem_report": ("ChangeMgmt", "ProblemReports"),
     }
 
+    def list_change_notices(
+        self: "WRSClientBase",
+        *,
+        state: str = "",
+        sub_type: str = "",
+        top: int = 50,
+        skip: int = 0,
+    ) -> tuple[list[dict], int]:
+        """Change Notices auflisten mit optionalen Filtern.
+
+        Args:
+            state:    State-Filter (z.B. 'OPEN', 'RESOLVED', 'CANCELLED').
+            sub_type: ObjectType-Filter (z.B. 'ERP Transfer').
+            top:      Max Ergebnisse pro Seite.
+            skip:     Offset fuer Paging.
+
+        Returns:
+            Tuple (items, total_count).
+        """
+        service, entity_set = self._CHANGE_ENTITIES["change_notice"]
+        url = f"{self._odata_url(service)}/{entity_set}"
+
+        filters: list[str] = []
+        if state:
+            safe = state.replace("'", "''")
+            filters.append(f"State/Value eq '{safe}'")
+        if sub_type:
+            safe = sub_type.replace("'", "''")
+            filters.append(f"ObjectType eq '{safe}'")
+
+        params: dict = {
+            "$top": top,
+            "$skip": skip,
+            "$count": True,
+            "$orderby": "LastModified desc",
+        }
+        if filters:
+            params["$filter"] = " and ".join(filters)
+
+        resp = self._get(url, params, suppress_errors=True)
+        if not resp or resp.status_code != 200:
+            return [], 0
+
+        data = resp.json()
+        items = data.get("value", [])
+        total = data.get("@odata.count", len(items))
+        return items, total
+
     def get_change_affected_items(
         self: "WRSClientBase",
         type_key: str,

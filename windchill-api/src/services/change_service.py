@@ -10,9 +10,37 @@ import time
 
 from src.adapters.wrs_client import WRSClient
 from src.core.odata import normalize_item
-from src.models.dto import ChangeItem, ChangeItemsResponse, TimingInfo
+from src.models.dto import (
+    ChangeItem,
+    ChangeItemsResponse,
+    ChangeNoticeListItem,
+    ChangeNoticeListResponse,
+    TimingInfo,
+)
 
 logger = logging.getLogger(__name__)
+
+
+def list_change_notices(
+    client: WRSClient,
+    *,
+    state: str = "",
+    sub_type: str = "",
+    top: int = 50,
+    skip: int = 0,
+) -> ChangeNoticeListResponse:
+    """Change Notices auflisten mit optionalen Filtern."""
+    t0 = time.monotonic()
+    raw_items, total = client.list_change_notices(
+        state=state, sub_type=sub_type, top=top, skip=skip,
+    )
+    items = [_to_cn_list_item(raw) for raw in raw_items]
+    ms = round((time.monotonic() - t0) * 1000, 1)
+    return ChangeNoticeListResponse(
+        totalCount=total,
+        items=items,
+        timing=TimingInfo(totalMs=ms, wrsMs=ms),
+    )
 
 
 def get_affected_items(
@@ -99,3 +127,21 @@ def has_part_resulting_items(
             if obj_type == "WTPart":
                 return True
     return False
+
+
+def _to_cn_list_item(raw: dict) -> ChangeNoticeListItem:
+    """Normalize a raw OData ChangeNotice dict to a list item DTO."""
+    n = normalize_item(raw)
+    sub_type = str(raw.get("ObjectType") or "")
+    return ChangeNoticeListItem(
+        objectId=n["id"],
+        number=n["number"],
+        name=n["name"],
+        subType=sub_type,
+        version=n["version"],
+        state=n["state"],
+        createdBy=str(raw.get("CreatedBy") or ""),
+        createdOn=str(raw.get("CreatedOn") or ""),
+        lastModified=str(raw.get("LastModified") or ""),
+        description=str(raw.get("Description") or ""),
+    )

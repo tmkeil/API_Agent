@@ -128,7 +128,8 @@ export default function DashboardPage() {
     try {
       const resp = await listChangeNotices({
         state: cnStateFilter,
-        top: 500,
+        subType: cnErpOnly ? 'ERP Transfer' : '',
+        top: 1000,
         skip: 0,
       })
       setCnItems(resp.items)
@@ -138,24 +139,17 @@ export default function DashboardPage() {
     } finally {
       setCnLoading(false)
     }
-  }, [cnStateFilter])
+  }, [cnStateFilter, cnErpOnly])
 
-  // Load CNs when switching to CN mode or when state filter changes
+  // Load CNs when switching to CN mode or when server-side filters change
   useEffect(() => {
     if (mode === 'cn') loadCns()
   }, [mode, loadCns])
 
-  // Client-side filters (ERP + mit Parts)
-  const cnFilteredItems = (() => {
-    let items = cnItems
-    if (cnErpOnly) {
-      items = items.filter((cn) => cn.subType.toLowerCase().includes('erp transfer'))
-    }
-    if (cnOnlyWithParts) {
-      items = items.filter((cn) => cnWithPartsSet.has(cn.number))
-    }
-    return items
-  })()
+  // Client-side filter for "mit Parts" only (ERP is server-side now)
+  const cnFilteredItems = cnOnlyWithParts
+    ? cnItems.filter((cn) => cnWithPartsSet.has(cn.number))
+    : cnItems
 
   // Check which CNs have Part resulting items
   const handleCnPartsToggle = useCallback(async () => {
@@ -409,11 +403,13 @@ export default function DashboardPage() {
       {/* ── Change Notices Mode ─────────────────────────── */}
       {mode === 'cn' && (
         <>
-          {/* CN Header — just count */}
+          {/* CN Header — count with clear "loaded vs total" indicator */}
           <h2 className="text-xs font-semibold text-slate-400 uppercase tracking-wide">
-            {cnFilteredItems.length !== cnTotal
-              ? `${cnFilteredItems.length} von ${cnTotal} Change Notices`
-              : `${cnTotal} Change Notice${cnTotal !== 1 ? 's' : ''}`
+            {cnFilteredItems.length === cnItems.length && cnItems.length >= cnTotal
+              ? `${cnTotal} Change Notice${cnTotal !== 1 ? 's' : ''}`
+              : cnFilteredItems.length !== cnItems.length
+                ? `${cnFilteredItems.length} von ${cnItems.length} geladen (${cnTotal} gesamt)`
+                : `${cnItems.length} von ${cnTotal} geladen — Filter nutzen zum Eingrenzen`
             }
             {cnLoading && <span className="ml-2 text-indigo-500 animate-pulse">Lade…</span>}
           </h2>

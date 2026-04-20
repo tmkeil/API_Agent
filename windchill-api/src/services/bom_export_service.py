@@ -15,7 +15,7 @@ from __future__ import annotations
 
 import logging
 import re
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Any
 
 from src.core.odata import extract_id, normalize_item
@@ -397,16 +397,34 @@ def _export_node(
     # Sortierung nach Dokumentnummer (wie Windchill-Export)
     all_docs.sort(key=lambda x: x[0].get("Number") or normalize_item(x[0])["number"])
 
-    # Kinder aufloesen
+    # Kinder aufloesen (parallel — resolve_usage_link_child ist 1 OData-Call pro Kind)
     resolved_children: list[tuple[dict, dict]] = []  # (link, child_part)
     if part_id and part_id not in seen:
         seen.add(part_id)
-        for link in children_links:
-            child = client.resolve_usage_link_child(link)
-            if child:
-                child_id = extract_id(child)
-                if child_id:
-                    resolved_children.append((link, child))
+        if children_links:
+            def _resolve(link: dict) -> tuple[dict, dict | None]:
+                try:
+                    return link, client.resolve_usage_link_child(link)
+                except Exception:
+                    return link, None
+
+            # Reihenfolge der Kinder beibehalten → results_by_index
+            results_by_index: dict[int, tuple[dict, dict | None]] = {}
+            with ThreadPoolExecutor(max_workers=8) as pool:
+                futures = {
+                    pool.submit(_resolve, lk): idx
+                    for idx, lk in enumerate(children_links)
+                }
+                for fut in as_completed(futures):
+                    idx = futures[fut]
+                    results_by_index[idx] = fut.result()
+
+            for idx in sorted(results_by_index.keys()):
+                link, child = results_by_index[idx]
+                if child:
+                    child_id = extract_id(child)
+                    if child_id:
+                        resolved_children.append((link, child))
 
     has_children = len(resolved_children) > 0
 

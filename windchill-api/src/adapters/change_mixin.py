@@ -68,21 +68,55 @@ class ChangeMixin:
             filters.append(f"contains(ObjectType,'{safe}')")
 
         params: dict = {
-            "$top": top,
-            "$skip": skip,
             "$count": True,
             "$orderby": "LastModified desc",
         }
         if filters:
             params["$filter"] = " and ".join(filters)
 
-        resp = self._get(url, params, suppress_errors=True)
-        if not resp or resp.status_code != 200:
+        # Erste Seite holen (fuer Total-Count)
+        first_resp = self._get(url, {**params, "$top": min(top, 25), "$skip": skip}, suppress_errors=True)
+        if not first_resp or first_resp.status_code != 200:
             return [], 0
 
-        data = resp.json()
-        items = data.get("value", [])
-        total = data.get("@odata.count", len(items))
+        first_data = first_resp.json()
+        first_items = list(first_data.get("value", []))
+        total = first_data.get("@odata.count", len(first_items))
+
+        # Windchill cappt pro Request auf 25 → weitere Seiten parallel nachladen
+        if top > 25 and len(first_items) == 25 and total > 25:
+            import math
+            from concurrent.futures import ThreadPoolExecutor, as_completed
+
+            needed_remaining = min(top, int(total)) - 25
+            needed_pages = math.ceil(needed_remaining / 25)
+
+            page_skips = [skip + 25 * (i + 1) for i in range(needed_pages)]
+
+            def _fetch_page(page_skip: int) -> tuple[int, list[dict]]:
+                r = self._get(
+                    url,
+                    {**params, "$top": 25, "$skip": page_skip},
+                    suppress_errors=True,
+                )
+                if not r or r.status_code != 200:
+                    return page_skip, []
+                return page_skip, list(r.json().get("value", []))
+
+            results_by_skip: dict[int, list[dict]] = {skip: first_items}
+            with ThreadPoolExecutor(max_workers=10) as pool:
+                futures = {pool.submit(_fetch_page, ps): ps for ps in page_skips}
+                for fut in as_completed(futures):
+                    ps, items_pg = fut.result()
+                    results_by_skip[ps] = items_pg
+
+            all_items: list[dict] = []
+            for ps in sorted(results_by_skip.keys()):
+                all_items.extend(results_by_skip[ps])
+            items = all_items[:top]
+        else:
+            items = first_items[:top]
+
         return items, total
 
     def get_change_affected_items(

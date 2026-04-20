@@ -37,7 +37,7 @@ def list_change_notices(
 ):
     client = get_client(request)
     return change_service.list_change_notices(
-        client, state=state, sub_type=sub_type, top=min(top, 200), skip=skip,
+        client, state=state, sub_type=sub_type, top=min(top, 1000), skip=skip,
     )
 
 

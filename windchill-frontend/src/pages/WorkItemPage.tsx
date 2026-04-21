@@ -92,6 +92,30 @@ export default function WorkItemPage() {
     }
   }
 
+  const handleComplete = async () => {
+    if (!id || !wi || wi.status === 'completed') return
+    try {
+      const updated = await updateWorkItem(id, { status: 'completed' })
+      await addWorkItemStep(id, 'workitem_completed', {})
+      setWi(updated)
+    } catch (e: unknown) {
+      setError((e as Error).message)
+    }
+  }
+
+  const handleDownloadJson = () => {
+    if (!wi) return
+    const blob = new Blob([JSON.stringify(wi, null, 2)], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `workitem_${wi.id}.json`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+  }
+
   if (loading) {
     return <div className="text-sm text-slate-500 py-10 text-center animate-pulse">Laden…</div>
   }
@@ -123,12 +147,29 @@ export default function WorkItemPage() {
           </div>
           <p className="text-xs text-slate-400">Erstellt: {formatDate(wi.createdAt)}</p>
         </div>
-        <button
-          onClick={() => navigate('/change-notices')}
-          className="text-xs text-slate-500 hover:text-indigo-600 transition-colors"
-        >
-          ← Zurück
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleDownloadJson}
+            className="text-xs px-2.5 py-1 font-medium rounded bg-slate-50 text-slate-700 border border-slate-300 hover:bg-slate-100 transition-colors"
+            title="WorkItem als JSON-Datei herunterladen"
+          >
+            ⬇ JSON
+          </button>
+          <button
+            onClick={handleComplete}
+            disabled={wi.status === 'completed'}
+            className="text-xs px-2.5 py-1 font-medium rounded bg-green-50 text-green-700 border border-green-300 hover:bg-green-100 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            title={wi.status === 'completed' ? 'Bereits abgeschlossen' : 'WorkItem als abgeschlossen markieren'}
+          >
+            ✓ Abschließen
+          </button>
+          <button
+            onClick={() => navigate('/change-notices')}
+            className="text-xs text-slate-500 hover:text-indigo-600 transition-colors ml-1"
+          >
+            ← Zurück
+          </button>
+        </div>
       </div>
 
       {error && (

@@ -35,6 +35,7 @@ COLUMNS: list[str] = [
     "Pos",
     "PTp",
     "Mat/Doc Number",
+    "Description",
     "State",
     "Subtyp",
     "SAP Downstream",
@@ -48,7 +49,6 @@ COLUMNS: list[str] = [
     "DisconDate",
     "DisconGrp",
     "SuccessGrp",
-    "Description",
     "DocPart",
     "DocType",
     "Version",
@@ -218,6 +218,9 @@ def _build_part_row(
     row["Description"] = n["name"]
     row["State"] = n["state"]
     row["DisconType"] = _flat(part_raw.get(F.Part.DISCON_TYPE) or "")
+    # Printing Good liegt auf dem Part-Subtyp "Enclosed Documentation" (BALENCDOCPART),
+    # nicht auf dem Dokument. Wir lesen es daher auch aus part_raw.
+    row["Printing Good"] = _flat(part_raw.get(F.Part.PRINTING_GOOD) or "")
 
     # ── Quelle: WTPart — Raw-Dimensions (Part-IBAs) ──────
     _apply_raw_dimensions(row, part_raw)

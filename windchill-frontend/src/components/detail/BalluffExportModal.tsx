@@ -27,7 +27,7 @@ const RULE_DEFS: { key: string; label: string; description: string; defaultValue
     key: 'FilterQepDrwDocTypes',
     label: 'QEP/DRW Filter',
     description: 'Zeilen mit DocType QEP oder DRW entfernen',
-    defaultValue: false,
+    defaultValue: true,
   },
 ]
 
@@ -426,7 +426,7 @@ export default function BalluffExportModal({ partNumber, onClose }: Props) {
         <table className="text-xs border-collapse min-w-max">
           <thead className="sticky top-0 z-10">
             <tr className="bg-slate-100">
-              <th className="px-1 py-1.5 text-center text-slate-400 font-normal border-b border-slate-200 sticky left-0 bg-slate-100 z-20 w-16">
+              <th className="px-1 py-1.5 text-center text-slate-400 font-normal border-b border-slate-200 sticky left-0 bg-slate-100 z-20 w-20">
                 #
               </th>
               {data.columns.map(col => (
@@ -441,7 +441,7 @@ export default function BalluffExportModal({ partNumber, onClose }: Props) {
             </tr>
           </thead>
           <tbody>
-            {visibleRowIndices.map(ri => {
+            {visibleRowIndices.map((ri, displayIdx) => {
               const row = data.rows[ri]
               if (!row) return null
               const canCollapse = hasChildren.has(ri)
@@ -453,7 +453,10 @@ export default function BalluffExportModal({ partNumber, onClose }: Props) {
                   className={`${rowBg(row)} hover:bg-yellow-50/50 group border-b border-slate-100`}
                 >
                   <td className="px-1 py-0.5 text-center sticky left-0 bg-inherit z-10 border-r border-slate-100">
-                    <div className="flex items-center gap-0.5">
+                    <div className="flex items-center gap-1">
+                      <span className="text-[10px] text-slate-400 tabular-nums w-6 text-right select-none">
+                        {displayIdx + 1}
+                      </span>
                       {canCollapse ? (
                         <button
                           onClick={() => toggleCollapse(tab, ri)}

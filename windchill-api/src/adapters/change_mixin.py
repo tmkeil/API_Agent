@@ -11,6 +11,9 @@ Wird in ``WRSClient`` per Mehrfachvererbung eingebunden.
 from __future__ import annotations
 
 import logging
+import threading
+from collections.abc import Generator
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import TYPE_CHECKING
 
 from src.core.odata import extract_id, normalize_item
@@ -118,6 +121,77 @@ class ChangeMixin:
             items = first_items[:top]
 
         return items, total
+
+    def list_change_notices_stream(
+        self: "WRSClientBase",
+        *,
+        state: str = "",
+        sub_type: str = "",
+        top: int = 1000,
+        cancelled: threading.Event | None = None,
+    ) -> Generator[list[dict], None, None]:
+        """Stream Change Notices in batches (generator).
+
+        Yields each page (batch of <=25 items) as soon as it arrives.
+        Supports early cancellation via the `cancelled` event.
+        """
+        service, entity_set = self._CHANGE_ENTITIES["change_notice"]
+        url = f"{self._odata_url(service)}/{entity_set}"
+
+        filters: list[str] = []
+        if state:
+            safe = state.replace("'", "''")
+            filters.append(f"State/Value eq '{safe}'")
+        if sub_type:
+            safe = sub_type.replace("'", "''")
+            filters.append(f"contains(ObjectType,'{safe}')")
+
+        params: dict = {
+            "$count": True,
+            "$orderby": "LastModified desc",
+        }
+        if filters:
+            params["$filter"] = " and ".join(filters)
+
+        # First page
+        first_resp = self._get(url, {**params, "$top": 25, "$skip": 0}, suppress_errors=True)
+        if not first_resp or first_resp.status_code != 200:
+            return
+
+        first_data = first_resp.json()
+        first_items = list(first_data.get("value", []))
+        total = first_data.get("@odata.count", len(first_items))
+
+        if first_items:
+            yield first_items
+
+        if cancelled and cancelled.is_set():
+            return
+
+        # Remaining pages in parallel, yielding each batch as it completes
+        if len(first_items) == 25 and total > 25:
+            import math
+            needed = min(top, int(total)) - 25
+            n_pages = math.ceil(needed / 25)
+            page_skips = [25 * (i + 1) for i in range(n_pages)]
+
+            def _fetch(skip: int) -> tuple[int, list[dict]]:
+                r = self._get(url, {**params, "$top": 25, "$skip": skip}, suppress_errors=True)
+                if not r or r.status_code != 200:
+                    return skip, []
+                return skip, list(r.json().get("value", []))
+
+            with ThreadPoolExecutor(max_workers=10) as pool:
+                futures = {pool.submit(_fetch, s): s for s in page_skips}
+                for fut in as_completed(futures):
+                    if cancelled and cancelled.is_set():
+                        # Cancel remaining futures
+                        for f in futures:
+                            f.cancel()
+                        break
+                    _, items_pg = fut.result()
+                    if items_pg:
+                        yield items_pg
 
     def get_change_affected_items(
         self: "WRSClientBase",

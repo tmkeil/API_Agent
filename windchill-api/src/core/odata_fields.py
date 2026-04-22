@@ -43,6 +43,7 @@ class _PartFields:
     VARIANT_DERIVED_FROM = "BALVARIANTDERIVEDFROMNUMBER" # BAL_VARIANT_DERIVED_FROM — Verwendet in: BOM
     DOWNSTREAM         = "BALDOWNSTREAM"                # BAL_DOWNSTREAM           — Verwendet in: DET, WRT
     UPSTREAM           = "BALUPSTREAM"                  # BAL_UPSTREAM             — Verwendet in: BOM
+    PRINTING_GOOD      = "BALPRINTINGGOOD"              # BAL_PRINTING_GOOD        — Verwendet in: BET (auf Enclosed-Documentation Part-Subtyp)
 
 
 class _PartSubtypes:

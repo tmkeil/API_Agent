@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { searchPartsStream, checkCnPartResults, listChangeNotices } from '../api/client'
+import { searchPartsStream, checkCnPartResults, streamChangeNotices } from '../api/client'
 import type { PartSearchResult, ChangeNoticeListItem } from '../api/types'
 import SearchBar, { type SearchMode } from '../components/SearchBar'
 import AdvancedSearchPanel from '../components/AdvancedSearchPanel'
@@ -86,6 +86,89 @@ function abortSearch() {
   }
 }
 
+// ── Background CN Store ────────────────────────────────
+// Module-level singleton — persists across component mounts/unmounts
+// (tab switches, navigation to detail page and back).
+// Each unique (state, subType) filter combination is cached independently.
+// The SSE stream continues even if the user navigates away.
+
+interface CnStore {
+  items: ChangeNoticeListItem[]
+  loading: boolean
+  done: boolean
+  error: string
+  durationMs: number
+  /** Cache key = "state|subType" */
+  filterKey: string
+}
+
+let _cnStore: CnStore = {
+  items: [], loading: false, done: false, error: '', durationMs: 0, filterKey: '',
+}
+let _cnAbortCtrl: AbortController | null = null
+const _cnListeners = new Set<() => void>()
+// Per-filter-key cache: keeps completed results for instant tab switching
+const _cnCache = new Map<string, ChangeNoticeListItem[]>()
+
+function _cnNotify() {
+  _cnListeners.forEach((fn) => fn())
+}
+
+function getCnSnapshot(): CnStore {
+  return _cnStore
+}
+
+function subscribeCn(cb: () => void): () => void {
+  _cnListeners.add(cb)
+  return () => { _cnListeners.delete(cb) }
+}
+
+function startCnStream(state: string, subType: string) {
+  const filterKey = `${state}|${subType}`
+
+  // If the same filter is already loading/loaded, skip
+  if (_cnStore.filterKey === filterKey && (_cnStore.loading || _cnStore.done)) {
+    return
+  }
+
+  // Check cache
+  const cached = _cnCache.get(filterKey)
+  if (cached) {
+    _cnStore = { items: cached, loading: false, done: true, error: '', durationMs: 0, filterKey }
+    _cnNotify()
+    return
+  }
+
+  // Abort any in-flight stream (different filter)
+  _cnAbortCtrl?.abort()
+
+  _cnStore = { items: [], loading: true, done: false, error: '', durationMs: 0, filterKey }
+  _cnNotify()
+
+  const ctrl = streamChangeNotices(
+    (batch) => {
+      _cnStore = { ..._cnStore, items: [..._cnStore.items, ...batch] }
+      _cnNotify()
+    },
+    (info) => {
+      _cnStore = { ..._cnStore, loading: false, done: true, durationMs: info.durationMs }
+      // Cache completed results
+      _cnCache.set(filterKey, _cnStore.items)
+      _cnNotify()
+    },
+    (msg) => {
+      _cnStore = { ..._cnStore, loading: false, done: true, error: msg }
+      _cnNotify()
+    },
+    { state: state || undefined, subType: subType || undefined, top: 1000 },
+  )
+  _cnAbortCtrl = ctrl
+}
+
+function invalidateCnCache() {
+  _cnCache.clear()
+}
+
 // ── Component ──
 
 export default function DashboardPage() {
@@ -105,51 +188,31 @@ export default function DashboardPage() {
   const [activeTypes] = useState<string[]>([])
   const hasRestoredRef = useRef(false)
 
-  // CN "has Part results" filter state
+  // CN "has Part results" filter state (for search results containing CNs)
   const [cnPartsFilter, setCnPartsFilter] = useState(false)
   const [cnWithParts, setCnWithParts] = useState<Set<string>>(new Set())
   const [cnCheckLoading, setCnCheckLoading] = useState(false)
   const cnCheckRef = useRef<AbortController | null>(null)
 
-  // ── CN Listing state ────────────────────────────────────
-  const [cnItems, setCnItems] = useState<ChangeNoticeListItem[]>([])
-  const [cnTotal, setCnTotal] = useState(0)
-  const [cnLoading, setCnLoading] = useState(false)
-  const [cnError, setCnError] = useState('')
+  // ── CN Store (module-level, streaming, cached) ──────────
+  const cnState = useSyncExternalStore(subscribeCn, getCnSnapshot)
   const [cnStateFilter, setCnStateFilter] = useState('')
   const [cnErpOnly, setCnErpOnly] = useState(false)
   const [cnOnlyWithParts, setCnOnlyWithParts] = useState(false)
   const [cnWithPartsSet, setCnWithPartsSet] = useState<Set<string>>(new Set())
   const [cnPartsCheckLoading, setCnPartsCheckLoading] = useState(false)
 
-  const loadCns = useCallback(async () => {
-    setCnLoading(true)
-    setCnError('')
-    try {
-      const resp = await listChangeNotices({
-        state: cnStateFilter,
-        subType: cnErpOnly ? 'ERP Transfer' : '',
-        top: 1000,
-        skip: 0,
-      })
-      setCnItems(resp.items)
-      setCnTotal(resp.totalCount)
-    } catch (e: unknown) {
-      setCnError((e as Error).message || 'Fehler beim Laden')
-    } finally {
-      setCnLoading(false)
-    }
-  }, [cnStateFilter, cnErpOnly])
-
-  // Load CNs when switching to CN mode or when server-side filters change
+  // Start/resume CN stream when entering CN mode or when filters change
   useEffect(() => {
-    if (mode === 'cn') loadCns()
-  }, [mode, loadCns])
+    if (mode === 'cn') {
+      startCnStream(cnStateFilter, cnErpOnly ? 'ERP Transfer' : '')
+    }
+  }, [mode, cnStateFilter, cnErpOnly])
 
-  // Client-side filter for "mit Parts" only (ERP is server-side now)
+  // Client-side filter for "mit Parts" only
   const cnFilteredItems = cnOnlyWithParts
-    ? cnItems.filter((cn) => cnWithPartsSet.has(cn.number))
-    : cnItems
+    ? cnState.items.filter((cn) => cnWithPartsSet.has(cn.number))
+    : cnState.items
 
   // Check which CNs have Part resulting items
   const handleCnPartsToggle = useCallback(async () => {
@@ -159,7 +222,7 @@ export default function DashboardPage() {
     }
     setCnPartsCheckLoading(true)
     try {
-      const numbers = cnItems.map((cn) => cn.number)
+      const numbers = cnState.items.map((cn) => cn.number)
       const resp = await checkCnPartResults(numbers)
       setCnWithPartsSet(new Set(resp.withParts))
       setCnOnlyWithParts(true)
@@ -168,13 +231,13 @@ export default function DashboardPage() {
     } finally {
       setCnPartsCheckLoading(false)
     }
-  }, [cnOnlyWithParts, cnItems])
+  }, [cnOnlyWithParts, cnState.items])
 
-  // Reset client-side filters when server data changes
+  // Reset client-side "with parts" filter when server-side filters change
   useEffect(() => {
     setCnOnlyWithParts(false)
     setCnWithPartsSet(new Set())
-  }, [cnItems])
+  }, [cnStateFilter, cnErpOnly])
 
   // ── Search ──────────────────────────────────────────────
 
@@ -253,7 +316,7 @@ export default function DashboardPage() {
   return (
     <div className="space-y-4">
       {/* Mode Toggle */}
-      <div className="flex items-center gap-1 bg-slate-100 rounded-lg p-0.5 w-fit">
+      {/* <div className="flex items-center gap-1 bg-slate-100 rounded-lg p-0.5 w-fit">
         <button
           onClick={() => setSearchParams(mode === 'search' ? {} : {}, { replace: true })}
           className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
@@ -274,7 +337,7 @@ export default function DashboardPage() {
         >
           Change Notices
         </button>
-      </div>
+      </div> */}
 
       {/* ── Search Mode ─────────────────────────────────── */}
       {mode === 'search' && (
@@ -403,147 +466,162 @@ export default function DashboardPage() {
       {/* ── Change Notices Mode ─────────────────────────── */}
       {mode === 'cn' && (
         <>
-          {/* CN Header — count with clear "loaded vs total" indicator */}
+          {/* CN Header — progressive count */}
           <h2 className="text-xs font-semibold text-slate-400 uppercase tracking-wide">
-            {cnFilteredItems.length === cnItems.length && cnItems.length >= cnTotal
-              ? `${cnTotal} Change Notice${cnTotal !== 1 ? 's' : ''}`
-              : cnFilteredItems.length !== cnItems.length
-                ? `${cnFilteredItems.length} von ${cnItems.length} geladen (${cnTotal} gesamt)`
-                : `${cnItems.length} von ${cnTotal} geladen — Filter nutzen zum Eingrenzen`
+            {cnFilteredItems.length !== cnState.items.length
+              ? `${cnFilteredItems.length} von ${cnState.items.length} Change Notices (gefiltert)`
+              : `${cnState.items.length} Change Notice${cnState.items.length !== 1 ? 's' : ''}`
             }
-            {cnLoading && <span className="ml-2 text-indigo-500 animate-pulse">Lade…</span>}
+            {cnState.loading && (
+              <span className="ml-2 text-indigo-500 animate-pulse">
+                — Lade weitere…
+              </span>
+            )}
+            {cnState.done && cnState.durationMs > 0 && (
+              <span className="ml-2 text-slate-300 font-normal">
+                ({Math.round(cnState.durationMs)}ms)
+              </span>
+            )}
           </h2>
 
-          {cnError && (
+          {cnState.error && (
             <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded p-3">
-              {cnError}
+              {cnState.error}
             </div>
           )}
 
-          {/* CN Table — all filters in column headers */}
-          {cnItems.length > 0 && (
-            <div className="bg-white rounded shadow-sm border border-slate-200 overflow-hidden">
-              <div className="overflow-auto" style={{ maxHeight: 'calc(100vh - 240px)' }}>
-                <table className="w-full text-sm">
-                  <thead className="bg-slate-50 text-slate-500 text-xs border-b border-slate-200 sticky top-0 z-10">
-                    <tr>
-                      {/* Typ — click to toggle ERP filter */}
-                      <th className="text-left px-3 py-2 font-medium">
-                        <button
-                          onClick={() => setCnErpOnly(!cnErpOnly)}
-                          className={`flex items-center gap-1 transition-colors ${
-                            cnErpOnly ? 'text-indigo-600' : 'text-slate-500 hover:text-slate-700'
-                          }`}
-                          title={cnErpOnly ? 'Filter aufheben' : 'Nur ERP Transfer anzeigen'}
-                        >
-                          Typ
-                          {cnErpOnly && <span className="text-[9px]">✕</span>}
-                          <svg className="w-3 h-3 opacity-40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
-                          </svg>
-                        </button>
-                      </th>
-                      <th className="text-left px-3 py-2 font-medium">Nummer</th>
-                      <th className="text-left px-3 py-2 font-medium">Name</th>
-                      <th className="text-left px-3 py-2 font-medium">Version</th>
-                      {/* Status — dropdown filter */}
-                      <th className="text-left px-3 py-2 font-medium">
-                        <div className="relative inline-block">
-                          <select
-                            value={cnStateFilter}
-                            onChange={(e) => setCnStateFilter(e.target.value)}
-                            className={`appearance-none bg-transparent pr-4 cursor-pointer font-medium focus:outline-none ${
-                              cnStateFilter ? 'text-indigo-600' : 'text-slate-500'
-                            }`}
-                          >
-                            <option value="">Status ▾</option>
-                            {CN_STATES.map((s) => (
-                              <option key={s} value={s}>{s}</option>
-                            ))}
-                          </select>
-                          {cnStateFilter && (
-                            <button
-                              onClick={(e) => { e.stopPropagation(); setCnStateFilter('') }}
-                              className="absolute right-0 top-1/2 -translate-y-1/2 text-[9px] text-indigo-400 hover:text-indigo-600"
-                              title="Filter zurücksetzen"
-                            >✕</button>
-                          )}
-                        </div>
-                      </th>
-                      <th className="text-left px-3 py-2 font-medium">Ersteller</th>
-                      <th className="text-left px-3 py-2 font-medium">Geändert</th>
-                      {/* Resulting Parts — click to filter */}
-                      <th className="text-center px-3 py-2 font-medium w-10">
-                        <button
-                          onClick={handleCnPartsToggle}
-                          disabled={cnPartsCheckLoading || cnItems.length === 0}
-                          className={`transition-colors disabled:opacity-30 ${
-                            cnOnlyWithParts ? 'text-emerald-600' : 'text-slate-400 hover:text-slate-600'
-                          }`}
-                          title={cnOnlyWithParts ? 'Filter aufheben' : 'Nur CNs mit Part Resulting Items'}
-                        >
-                          {cnPartsCheckLoading ? (
-                            <span className="animate-pulse text-[10px]">…</span>
-                          ) : (
-                            <svg className="w-3.5 h-3.5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
-                            </svg>
-                          )}
-                        </button>
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {cnFilteredItems.map((cn) => (
-                      <tr
-                        key={cn.objectId}
-                        onClick={() => navigate(`/detail/change_notice/${encodeURIComponent(cn.number)}`)}
-                        className="cursor-pointer hover:bg-indigo-50 transition-colors"
+          {/* CN Table — renders progressively as data arrives;
+              filter controls are always visible (fixes reset bug) */}
+          <div className="bg-white rounded shadow-sm border border-slate-200 overflow-hidden">
+            <div className="overflow-auto" style={{ maxHeight: 'calc(100vh - 240px)' }}>
+              <table className="w-full text-sm">
+                <thead className="bg-slate-50 text-slate-500 text-xs border-b border-slate-200 sticky top-0 z-10">
+                  <tr>
+                    {/* Typ — click to toggle ERP filter */}
+                    <th className="text-left px-3 py-2 font-medium">
+                      <button
+                        onClick={() => setCnErpOnly(!cnErpOnly)}
+                        className={`flex items-center gap-1 transition-colors ${
+                          cnErpOnly ? 'text-indigo-600' : 'text-slate-500 hover:text-slate-700'
+                        }`}
+                        title={cnErpOnly ? 'Filter aufheben' : 'Nur ERP Transfer anzeigen'}
                       >
-                        <td className="px-3 py-2 whitespace-nowrap">
-                          <span className={`inline-block px-1.5 py-0.5 rounded border text-[10px] font-medium ${subtypeBadgeStyle(cn.subType || 'Change Notice')}`}>
-                            {cn.subType || 'Change Notice'}
-                          </span>
-                        </td>
-                        <td className="px-3 py-2 font-mono whitespace-nowrap">
-                          <span className="text-indigo-600">{cn.number}</span>
-                        </td>
-                        <td className="px-3 py-2 text-slate-600 max-w-[300px] truncate" title={cn.name}>
-                          {cn.name}
-                        </td>
-                        <td className="px-3 py-2 text-slate-500 whitespace-nowrap">{cn.version}</td>
-                        <td className="px-3 py-2 whitespace-nowrap">
-                          <span className={`text-xs px-1.5 py-0.5 rounded ${
-                            cn.state === 'OPEN' ? 'bg-green-50 text-green-700' :
-                            cn.state === 'RESOLVED' ? 'bg-blue-50 text-blue-700' :
-                            cn.state === 'CANCELLED' ? 'bg-red-50 text-red-700' :
-                            'bg-slate-100 text-slate-600'
-                          }`}>
-                            {cn.state}
-                          </span>
-                        </td>
-                        <td className="px-3 py-2 text-slate-400 whitespace-nowrap text-xs">{cn.createdBy}</td>
-                        <td className="px-3 py-2 text-slate-400 whitespace-nowrap text-xs">{formatDate(cn.lastModified)}</td>
-                        <td className="px-3 py-2 text-center">
-                          {cnWithPartsSet.size > 0 && (
-                            cnWithPartsSet.has(cn.number)
-                              ? <span className="text-emerald-500 text-[10px]">●</span>
-                              : <span className="text-slate-300 text-[10px]">○</span>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                        Typ
+                        {cnErpOnly && <span className="text-[9px]">✕</span>}
+                        <svg className="w-3 h-3 opacity-40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                        </svg>
+                      </button>
+                    </th>
+                    <th className="text-left px-3 py-2 font-medium">Nummer</th>
+                    <th className="text-left px-3 py-2 font-medium">Name</th>
+                    <th className="text-left px-3 py-2 font-medium">Version</th>
+                    {/* Status — dropdown filter */}
+                    <th className="text-left px-3 py-2 font-medium">
+                      <div className="relative inline-block">
+                        <select
+                          value={cnStateFilter}
+                          onChange={(e) => setCnStateFilter(e.target.value)}
+                          className={`appearance-none bg-transparent pr-4 cursor-pointer font-medium focus:outline-none ${
+                            cnStateFilter ? 'text-indigo-600' : 'text-slate-500'
+                          }`}
+                        >
+                          <option value="">Status ▾</option>
+                          {CN_STATES.map((s) => (
+                            <option key={s} value={s}>{s}</option>
+                          ))}
+                        </select>
+                        {cnStateFilter && (
+                          <button
+                            onClick={(e) => { e.stopPropagation(); setCnStateFilter('') }}
+                            className="absolute right-0 top-1/2 -translate-y-1/2 text-[9px] text-indigo-400 hover:text-indigo-600"
+                            title="Filter zurücksetzen"
+                          >✕</button>
+                        )}
+                      </div>
+                    </th>
+                    <th className="text-left px-3 py-2 font-medium">Ersteller</th>
+                    <th className="text-left px-3 py-2 font-medium">Geändert</th>
+                    {/* Resulting Parts — click to filter */}
+                    <th className="text-center px-3 py-2 font-medium w-10">
+                      <button
+                        onClick={handleCnPartsToggle}
+                        disabled={cnPartsCheckLoading || cnState.items.length === 0}
+                        className={`transition-colors disabled:opacity-30 ${
+                          cnOnlyWithParts ? 'text-emerald-600' : 'text-slate-400 hover:text-slate-600'
+                        }`}
+                        title={cnOnlyWithParts ? 'Filter aufheben' : 'Nur CNs mit Part Resulting Items'}
+                      >
+                        {cnPartsCheckLoading ? (
+                          <span className="animate-pulse text-[10px]">…</span>
+                        ) : (
+                          <svg className="w-3.5 h-3.5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                          </svg>
+                        )}
+                      </button>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {cnFilteredItems.map((cn) => (
+                    <tr
+                      key={cn.objectId}
+                      onClick={() => navigate(`/detail/change_notice/${encodeURIComponent(cn.number)}`)}
+                      className="cursor-pointer hover:bg-indigo-50 transition-colors"
+                    >
+                      <td className="px-3 py-2 whitespace-nowrap">
+                        <span className={`inline-block px-1.5 py-0.5 rounded border text-[10px] font-medium ${subtypeBadgeStyle(cn.subType || 'Change Notice')}`}>
+                          {cn.subType || 'Change Notice'}
+                        </span>
+                      </td>
+                      <td className="px-3 py-2 font-mono whitespace-nowrap">
+                        <span className="text-indigo-600">{cn.number}</span>
+                      </td>
+                      <td className="px-3 py-2 text-slate-600 max-w-[300px] truncate" title={cn.name}>
+                        {cn.name}
+                      </td>
+                      <td className="px-3 py-2 text-slate-500 whitespace-nowrap">{cn.version}</td>
+                      <td className="px-3 py-2 whitespace-nowrap">
+                        <span className={`text-xs px-1.5 py-0.5 rounded ${
+                          cn.state === 'OPEN' ? 'bg-green-50 text-green-700' :
+                          cn.state === 'RESOLVED' ? 'bg-blue-50 text-blue-700' :
+                          cn.state === 'CANCELLED' ? 'bg-red-50 text-red-700' :
+                          'bg-slate-100 text-slate-600'
+                        }`}>
+                          {cn.state}
+                        </span>
+                      </td>
+                      <td className="px-3 py-2 text-slate-400 whitespace-nowrap text-xs">{cn.createdBy}</td>
+                      <td className="px-3 py-2 text-slate-400 whitespace-nowrap text-xs">{formatDate(cn.lastModified)}</td>
+                      <td className="px-3 py-2 text-center">
+                        {cnWithPartsSet.size > 0 && (
+                          cnWithPartsSet.has(cn.number)
+                            ? <span className="text-emerald-500 text-[10px]">●</span>
+                            : <span className="text-slate-300 text-[10px]">○</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                  {cnFilteredItems.length === 0 && !cnState.loading && (
+                    <tr>
+                      <td colSpan={8} className="px-3 py-8 text-center text-sm text-slate-400">
+                        Keine Change Notices gefunden.
+                        {(cnStateFilter || cnErpOnly) && (
+                          <button
+                            onClick={() => { setCnStateFilter(''); setCnErpOnly(false) }}
+                            className="ml-2 text-indigo-500 hover:text-indigo-700 underline"
+                          >
+                            Filter zurücksetzen
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
             </div>
-          )}
-
-          {!cnLoading && cnItems.length === 0 && !cnError && (
-            <div className="text-sm text-slate-600 bg-amber-50 border border-amber-200 rounded p-3">
-              Keine Change Notices gefunden.
-            </div>
-          )}
+          </div>
         </>
       )}
     </div>

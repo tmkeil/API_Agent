@@ -242,10 +242,11 @@ def part_a(
             r["DocPart"] = ""
             r["Version"] = ""
 
-    # 7) Made From → Mat/Doc Number ueberschreiben
+    # 7) Made From → Mat/Doc Number ueberschreiben + PTp='R'
     for r in result:
         if _filled(r.get("Made From")):
             r["Mat/Doc Number"] = _norm(r["Made From"])
+            r["PTp"] = "R"
 
     # 8) Einheiten: 'ea' → 'ST'
     for r in result:
@@ -361,7 +362,7 @@ _SAP_HEADER_MAP = {
 _SAP_TARGET_COLUMNS = [
     "MatScr", "MatDest", "Plant", "DisconType", "DisconDate",
     "DisconGrp", "SuccessGrp", "Pos", "PTp", "Mat/Doc Number",
-    "DocType", "DocPart", "DocVersion", "Description", "Quantity",
+    "Description", "DocType", "DocPart", "DocVersion", "Quantity",
     "MEINS", "PosText", "ROMEN_BI", "ROANZ_BI", "ROMS1_BI",
     "ROMS2_BI", "ROMS3_BI", "ROMEI", "RFORM", "ROKME",
 ]
@@ -403,9 +404,10 @@ def part_c(rows: list[dict[str, str]]) -> list[dict[str, str]]:
         if len(doc_type) > 3:
             row["DocType"] = doc_type[:3]
 
-        # Made From → Mat/Doc Number ueberschreiben
+        # Made From → Mat/Doc Number ueberschreiben + PTp='R'
         if _filled(row.get("Made From")):
             row["Mat/Doc Number"] = _norm(row["Made From"])
+            row["PTp"] = "R"
 
         # Einheiten: 'ea' → 'ST'
         for col in ("Quantity Unit", "Raw Material Amount Unit",

@@ -8,17 +8,17 @@ interface Props {
 /** Details tab — shows object master data. */
 export default function DetailsTab({ detail }: Props) {
   const rows: [string, string][] = [
-    ['Typ', typeLabel(detail.objectType, detail.subType)],
-    ['Nummer', detail.number],
+    ['Type', typeLabel(detail.objectType, detail.subType)],
+    ['Number', detail.number],
     ['Name', detail.name],
     ['Version', detail.version],
     ['Iteration', detail.iteration],
     ['Status', detail.state],
-    ['Identität', detail.identity],
-    ['Kontext', detail.context],
+    ['Identity', detail.identity],
+    ['Context', detail.context],
     ['Last modified', formatDate(detail.lastModified)],
     ['Created', formatDate(detail.createdOn)],
-    ['Objekt-ID', detail.objectId],
+    ['Object ID', detail.objectId],
   ]
 
   return (

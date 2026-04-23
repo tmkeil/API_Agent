@@ -105,7 +105,7 @@ BOM_VIEWS: list[BomViewConfig] = [
     ),
     BomViewConfig(
         id="extended",
-        label="Erweitert",
+        label="Extended",
         columns=[
             _COL_LINE, _COL_NUM, _COL_NAME, _COL_VER, _COL_STATE,
             _COL_QTY, _COL_UNIT, _COL_OBJ_TYPE, _COL_SOURCE,
@@ -125,7 +125,7 @@ BOM_VIEWS: list[BomViewConfig] = [
     ),
     BomViewConfig(
         id="raw_material",
-        label="Rohmaterial",
+        label="Raw Material",
         columns=[
             _COL_LINE, _COL_NUM, _COL_NAME, _COL_STATE,
             _COL_QTY, _COL_UNIT, _COL_MADE_FROM,
@@ -136,7 +136,7 @@ BOM_VIEWS: list[BomViewConfig] = [
     ),
     BomViewConfig(
         id="all_fields",
-        label="Alle Felder",
+        label="All Fields",
         columns=[
             _COL_LINE, _COL_NUM, _COL_NAME, _COL_VER, _COL_ITER,
             _COL_STATE, _COL_IDENT, _COL_OBJ_TYPE, _COL_SOURCE,

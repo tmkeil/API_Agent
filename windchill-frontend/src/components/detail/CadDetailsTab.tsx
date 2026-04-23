@@ -237,7 +237,7 @@ export default function CadDetailsTab({ detail }: Props) {
       })}
 
       {otherEntries.length > 0 && (
-        <Section title={`Sonstige Attribute (${otherEntries.length})`} defaultCollapsed>
+        <Section title={`Other (${otherEntries.length})`} defaultCollapsed>
           <table className="w-full text-sm">
             <tbody className="divide-y divide-slate-100">
               {otherEntries.map(([key, value]) => (

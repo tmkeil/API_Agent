@@ -34,6 +34,7 @@ import type {
   ChangeNoticeListResponse,
   WorkItem,
   WorkItemListResponse,
+  ChangeNoticeListItem,
 } from './types'
 
 const BASE = '/api'
@@ -560,6 +561,83 @@ export async function listChangeNotices(
     `${BASE}/changes/change_notices${q ? '?' + q : ''}`,
     { signal },
   )
+}
+
+
+// ── Change Notice Stream ────────────────────────────────────
+
+export function streamChangeNotices(
+  onBatch: (items: ChangeNoticeListItem[]) => void,
+  onDone: (info: { durationMs: number }) => void,
+  onError: (err: string) => void,
+  opts?: { state?: string; subType?: string; top?: number },
+): AbortController {
+  const params = new URLSearchParams()
+  if (opts?.state) params.set('state', opts.state)
+  if (opts?.subType) params.set('sub_type', opts.subType)
+  if (opts?.top) params.set('top', String(opts.top))
+
+  const controller = new AbortController()
+
+  fetch(`${BASE}/changes/change_notices/stream?${params}`, {
+    credentials: 'include',
+    signal: controller.signal,
+    headers: { Accept: 'text/event-stream' },
+  })
+    .then(async (resp) => {
+      if (!resp.ok) {
+        const body = await resp.json().catch(() => ({}))
+        throw new Error(body.error || body.detail || `HTTP ${resp.status}`)
+      }
+      const reader = resp.body?.getReader()
+      if (!reader) throw new Error('No response body')
+
+      const decoder = new TextDecoder()
+      let buffer = ''
+      let doneReceived = false
+
+      const parseEvent = (raw: string) => {
+        const lines = raw.trim().split('\n')
+        let eventType = 'message'
+        let data = ''
+        for (const line of lines) {
+          if (line.startsWith('event: ')) eventType = line.slice(7)
+          else if (line.startsWith('data: ')) data += line.slice(6)
+        }
+        if (!data) return
+        if (eventType === 'done') {
+          doneReceived = true
+          try { onDone(JSON.parse(data)) } catch { /* ignore */ }
+        } else {
+          try {
+            const items = JSON.parse(data) as ChangeNoticeListItem[]
+            if (items.length > 0) onBatch(items)
+          } catch { /* ignore */ }
+        }
+      }
+
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+        buffer += decoder.decode(value, { stream: true })
+
+        const segments = buffer.split('\n\n')
+        buffer = segments.pop() || ''
+        for (const seg of segments) {
+          if (seg.trim()) parseEvent(seg)
+        }
+      }
+
+      if (buffer.trim()) parseEvent(buffer)
+      if (!doneReceived) onDone({ durationMs: 0 })
+    })
+    .catch((err) => {
+      if (err?.name !== 'AbortError') {
+        onError(err instanceof Error ? err.message : String(err))
+      }
+    })
+
+  return controller
 }
 
 // ── WorkItems ───────────────────────────────────────────────

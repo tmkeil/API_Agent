@@ -166,9 +166,12 @@ _RAW_IBA_MAP = [
     (F.RawMaterialLink.RAW_DIM_3, "Raw Dimension 3"),
     (F.RawMaterialLink.RAW_DIM_UNIT, "Raw Dimension Unit"),
     (F.RawMaterialLink.RAW_AMOUNT, "Raw Material Amount"),
-    (F.RawMaterialLink.RAW_AMOUNT_UNIT, "Raw Material Amount Unit"),
+    # Balluff/SAP-Konvention: ROAME (RAW_AMOUNT_UNIT) ist die Einheit der
+    # Anzahl (ROANZ), ROKME (RAW_QUANTITY_UNIT) ist die Einheit der Menge
+    # (ROMEN) — die Label-Zuordnung wird entsprechend getauscht.
+    (F.RawMaterialLink.RAW_QUANTITY_UNIT, "Raw Material Amount Unit"),
     (F.RawMaterialLink.RAW_QUANTITY, "Raw Material Quantity"),
-    (F.RawMaterialLink.RAW_QUANTITY_UNIT, "Raw Material Quantity Unit"),
+    (F.RawMaterialLink.RAW_AMOUNT_UNIT, "Raw Material Quantity Unit"),
 ]
 
 

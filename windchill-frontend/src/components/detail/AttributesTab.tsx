@@ -47,8 +47,8 @@ export default function AttributesTab({ detail }: Props) {
           <table className="w-full text-sm">
             <thead className="bg-slate-50 text-slate-500 text-xs border-b border-slate-200 sticky top-0 z-10">
               <tr>
-                <th className="text-left px-3 py-2 font-medium w-72">Attribut</th>
-                <th className="text-left px-3 py-2 font-medium">Wert</th>
+                <th className="text-left px-3 py-2 font-medium w-72">Attribute</th>
+                <th className="text-left px-3 py-2 font-medium">Value</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">

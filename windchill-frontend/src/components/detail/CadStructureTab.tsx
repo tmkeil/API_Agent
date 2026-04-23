@@ -52,14 +52,14 @@ export default function CadStructureTab({ cadCode }: Props) {
           onClick={() => load()}
           className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded hover:bg-indigo-700"
         >
-          Struktur laden
+          Load structure
         </button>
       </div>
     )
   }
 
   if (loading) {
-    return <p className="text-sm text-slate-500 animate-pulse py-4">CAD-Struktur wird geladen…</p>
+    return <p className="text-sm text-slate-500 animate-pulse py-4">Loading CAD structure…</p>
   }
 
   if (error) {
@@ -67,14 +67,14 @@ export default function CadStructureTab({ cadCode }: Props) {
       <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded p-3">
         {error}
         <button onClick={() => { setLoaded(false); load() }} className="ml-3 underline">
-          Erneut versuchen
+          Retry
         </button>
       </div>
     )
   }
 
   if (nodes.length === 0) {
-    return <p className="text-sm text-slate-400 py-4">Keine CAD-Struktur vorhanden.</p>
+    return <p className="text-sm text-slate-400 py-4">No CAD structure available.</p>
   }
 
   return (

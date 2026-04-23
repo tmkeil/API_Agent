@@ -10,7 +10,7 @@ import WorkItemPage from './pages/WorkItemPage'
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth()
-  if (loading) return <div className="flex items-center justify-center h-screen text-gray-500">Laden...</div>
+  if (loading) return <div className="flex items-center justify-center h-screen text-gray-500">Loading…</div>
   if (!user) return <Navigate to="/login" replace />
   return <>{children}</>
 }
@@ -19,15 +19,15 @@ function NotFoundPage() {
   return (
     <div className="flex flex-col items-center justify-center py-20 text-slate-500">
       <h1 className="text-2xl font-bold mb-2">404</h1>
-      <p className="text-sm">Seite nicht gefunden.</p>
-      <a href="/" className="mt-4 text-indigo-600 hover:underline text-sm">← Zur Startseite</a>
+      <p className="text-sm">Page not found.</p>
+      <a href="/" className="mt-4 text-indigo-600 hover:underline text-sm">← Back to start</a>
     </div>
   )
 }
 
 function AppRoutes() {
   const { user, loading } = useAuth()
-  if (loading) return <div className="flex items-center justify-center h-screen text-gray-500">Laden...</div>
+  if (loading) return <div className="flex items-center justify-center h-screen text-gray-500">Loading…</div>
 
   return (
     <Routes>

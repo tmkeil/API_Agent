@@ -52,7 +52,7 @@ export default function BomDetailPanel({ node, onClose }: Props) {
   const tabs: { key: PanelTab; label: string }[] = [
     { key: 'summary', label: 'Übersicht' },
     { key: 'attributes', label: 'Attribute' },
-    { key: 'documents', label: 'Dokumente' },
+    { key: 'documents', label: 'Documents' },
   ]
 
   return (
@@ -79,7 +79,7 @@ export default function BomDetailPanel({ node, onClose }: Props) {
         <button
           onClick={onClose}
           className="shrink-0 text-slate-400 hover:text-slate-600 transition-colors"
-          title="Panel schließen"
+          title="Close panel"
         >
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -107,7 +107,7 @@ export default function BomDetailPanel({ node, onClose }: Props) {
       {/* ── Content area ── */}
       <div className="flex-1 overflow-y-auto overflow-x-hidden p-3">
         {loading && (
-          <p className="text-xs text-slate-400 animate-pulse py-4">Lade Details…</p>
+          <p className="text-xs text-slate-400 animate-pulse py-4">Loading details…</p>
         )}
         {error && (
           <div className="bg-red-50 border border-red-200 text-red-700 text-xs rounded p-2">
@@ -143,8 +143,8 @@ function SummaryContent({ node, detail }: { node: BomTreeNode; detail: ObjectDet
     summaryRows.push(
       ['Iteration', detail.iteration || '—'],
       ['Kontext', detail.context || '—'],
-      ['Zuletzt geändert', detail.lastModified || '—'],
-      ['Erstellt am', detail.createdOn || '—'],
+      ['Last modified', detail.lastModified || '—'],
+      ['Created on', detail.createdOn || '—'],
     )
   }
 
@@ -289,7 +289,7 @@ function DocumentsContent({ partCode }: { partCode: string }) {
     return () => ctrl.abort()
   }, [partCode])
 
-  if (loading) return <p className="text-xs text-slate-400 animate-pulse py-2">Lade…</p>
+  if (loading) return <p className="text-xs text-slate-400 animate-pulse py-2">Loading…</p>
   if (error) return <p className="text-xs text-red-600 py-2">{error}</p>
 
   const all = [
@@ -298,7 +298,7 @@ function DocumentsContent({ partCode }: { partCode: string }) {
   ]
 
   if (all.length === 0) {
-    return <p className="text-xs text-slate-400 py-2">Keine Dokumente verknüpft.</p>
+    return <p className="text-xs text-slate-400 py-2">No documents linked.</p>
   }
 
   return (

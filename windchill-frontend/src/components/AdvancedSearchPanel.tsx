@@ -11,7 +11,7 @@ interface Props {
 
 const TYPE_OPTIONS = [
   { key: 'part', label: 'Part' },
-  { key: 'document', label: 'Dokument' },
+  { key: 'document', label: 'Document' },
   { key: 'cad_document', label: 'CAD' },
   { key: 'change_notice', label: 'Change Notice' },
   { key: 'change_request', label: 'Change Request' },
@@ -19,8 +19,8 @@ const TYPE_OPTIONS = [
 ]
 
 const DATE_FIELD_OPTIONS = [
-  { value: 'modified', label: 'Geändert' },
-  { value: 'created', label: 'Erstellt' },
+  { value: 'modified', label: 'Modified' },
+  { value: 'created', label: 'Created' },
 ]
 
 /**
@@ -83,7 +83,7 @@ export default function AdvancedSearchPanel({ contexts, onResults, onError }: Pr
         onClick={() => setOpen((o) => !o)}
         className="text-xs text-indigo-500 hover:text-indigo-700 font-medium transition-colors"
       >
-        {open ? '▾ Erweiterte Suche ausblenden' : '▸ Erweiterte Suche'}
+        {open ? '▾ Hide advanced search' : '▸ Advanced search'}
       </button>
 
       {open && (
@@ -91,11 +91,11 @@ export default function AdvancedSearchPanel({ contexts, onResults, onError }: Pr
           {/* Row 1: Query + State */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="text-xs text-slate-500 mb-1 block">Nummer / Name</label>
+              <label className="text-xs text-slate-500 mb-1 block">Number / Name</label>
               <input
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder="Suchbegriff"
+                placeholder="Search term"
                 className="w-full px-2 py-1.5 text-sm border border-slate-300 rounded focus:outline-none focus:ring-1 focus:ring-indigo-400"
               />
             </div>
@@ -104,7 +104,7 @@ export default function AdvancedSearchPanel({ contexts, onResults, onError }: Pr
               <input
                 value={state}
                 onChange={(e) => setState(e.target.value)}
-                placeholder="z.B. INWORK, RELEASED"
+                placeholder="e.g. INWORK, RELEASED"
                 className="w-full px-2 py-1.5 text-sm border border-slate-300 rounded focus:outline-none focus:ring-1 focus:ring-indigo-400"
               />
             </div>
@@ -113,25 +113,25 @@ export default function AdvancedSearchPanel({ contexts, onResults, onError }: Pr
           {/* Row 2: MultiSelect dropdowns (Types + Contexts) */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <MultiSelect
-              label="Typen"
+              label="Types"
               options={TYPE_OPTIONS}
               selected={selectedTypes}
               onChange={setSelectedTypes}
-              placeholder="Alle Typen"
+              placeholder="All types"
             />
             <MultiSelect
-              label="Kontext"
+              label="Context"
               options={contextOptions}
               selected={selectedContexts}
               onChange={setSelectedContexts}
-              placeholder="Alle Kontexte"
+              placeholder="All contexts"
             />
           </div>
 
           {/* Row 3: Date field selector + Date range + Limit */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <div>
-              <label className="text-xs text-slate-500 mb-1 block">Datumsfeld</label>
+              <label className="text-xs text-slate-500 mb-1 block">Date field</label>
               <select
                 value={dateField}
                 onChange={(e) => setDateField(e.target.value)}
@@ -143,7 +143,7 @@ export default function AdvancedSearchPanel({ contexts, onResults, onError }: Pr
               </select>
             </div>
             <div>
-              <label className="text-xs text-slate-500 mb-1 block">{dateField === 'modified' ? 'Geändert von' : 'Erstellt von'}</label>
+              <label className="text-xs text-slate-500 mb-1 block">{dateField === 'modified' ? 'Modified from' : 'Created from'}</label>
               <input
                 type="date"
                 value={dateFrom}
@@ -152,7 +152,7 @@ export default function AdvancedSearchPanel({ contexts, onResults, onError }: Pr
               />
             </div>
             <div>
-              <label className="text-xs text-slate-500 mb-1 block">{dateField === 'modified' ? 'Geändert bis' : 'Erstellt bis'}</label>
+              <label className="text-xs text-slate-500 mb-1 block">{dateField === 'modified' ? 'Modified to' : 'Created to'}</label>
               <input
                 type="date"
                 value={dateTo}
@@ -167,7 +167,7 @@ export default function AdvancedSearchPanel({ contexts, onResults, onError }: Pr
                 min={0}
                 max={10000}
                 value={limit}
-                placeholder="kein Limit"
+                placeholder="no limit"
                 onChange={(e) => {
                   const v = e.target.value
                   setLimit(v === '' ? '' : Math.max(0, Number(v)))
@@ -184,13 +184,13 @@ export default function AdvancedSearchPanel({ contexts, onResults, onError }: Pr
               disabled={busy}
               className="px-4 py-1.5 text-sm font-medium rounded bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50 transition-colors"
             >
-              {busy ? 'Suche…' : 'Erweiterte Suche starten'}
+              {busy ? 'Searching…' : 'Run advanced search'}
             </button>
             <button
               onClick={resetForm}
               className="text-xs text-slate-400 hover:text-slate-600"
             >
-              Zurücksetzen
+              Reset
             </button>
           </div>
         </div>

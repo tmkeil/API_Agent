@@ -10,12 +10,12 @@ import type { WorkItem, ChangeItem } from '../api/types'
 import { formatDate, subtypeBadgeStyle } from '../utils/labels'
 
 const STEP_LABELS: Record<string, string> = {
-  cn_selected: 'CN ausgewählt',
-  parts_loaded: 'Parts geladen',
-  part_selected: 'Part ausgewählt',
-  bom_exported: 'BOM exportiert',
-  bom_edited: 'BOM bearbeitet',
-  csv_generated: 'CSV erzeugt',
+  cn_selected: 'CN selected',
+  parts_loaded: 'Parts loaded',
+  part_selected: 'Part selected',
+  bom_exported: 'BOM exported',
+  bom_edited: 'BOM edited',
+  csv_generated: 'CSV generated',
 }
 
 export default function WorkItemPage() {
@@ -117,13 +117,13 @@ export default function WorkItemPage() {
   }
 
   if (loading) {
-    return <div className="text-sm text-slate-500 py-10 text-center animate-pulse">Laden…</div>
+    return <div className="text-sm text-slate-500 py-10 text-center animate-pulse">Loading…</div>
   }
 
   if (!wi) {
     return (
       <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded p-4">
-        WorkItem nicht gefunden. {error}
+        WorkItem not found. {error}
       </div>
     )
   }
@@ -142,16 +142,16 @@ export default function WorkItemPage() {
                 ? 'bg-green-50 text-green-700 border border-green-300'
                 : 'bg-amber-50 text-amber-700 border border-amber-300'
             }`}>
-              {wi.status === 'completed' ? 'Abgeschlossen' : 'In Bearbeitung'}
+              {wi.status === 'completed' ? 'Completed' : 'In progress'}
             </span>
           </div>
-          <p className="text-xs text-slate-400">Erstellt: {formatDate(wi.createdAt)}</p>
+          <p className="text-xs text-slate-400">Created: {formatDate(wi.createdAt)}</p>
         </div>
         <div className="flex items-center gap-2">
           <button
             onClick={handleDownloadJson}
             className="text-xs px-2.5 py-1 font-medium rounded bg-slate-50 text-slate-700 border border-slate-300 hover:bg-slate-100 transition-colors"
-            title="WorkItem als JSON-Datei herunterladen"
+            title="Download WorkItem as JSON file"
           >
             ⬇ JSON
           </button>
@@ -159,15 +159,15 @@ export default function WorkItemPage() {
             onClick={handleComplete}
             disabled={wi.status === 'completed'}
             className="text-xs px-2.5 py-1 font-medium rounded bg-green-50 text-green-700 border border-green-300 hover:bg-green-100 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-            title={wi.status === 'completed' ? 'Bereits abgeschlossen' : 'WorkItem als abgeschlossen markieren'}
+            title={wi.status === 'completed' ? 'Already completed' : 'Mark WorkItem as completed'}
           >
-            ✓ Abschließen
+            ✓ Complete
           </button>
           <button
             onClick={() => navigate('/change-notices')}
             className="text-xs text-slate-500 hover:text-indigo-600 transition-colors ml-1"
           >
-            ← Zurück
+            ← Back
           </button>
         </div>
       </div>
@@ -181,7 +181,7 @@ export default function WorkItemPage() {
         <h2 className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2">Change Notice</h2>
         <div className="grid grid-cols-2 gap-2 text-sm">
           <div>
-            <span className="text-slate-400 text-xs">Nummer:</span>
+            <span className="text-slate-400 text-xs">Number:</span>
             <span className="ml-2 font-mono text-indigo-600 cursor-pointer hover:underline"
               onClick={() => navigate(`/detail/change_notice/${encodeURIComponent(cn.number)}`)}
             >
@@ -189,7 +189,7 @@ export default function WorkItemPage() {
             </span>
           </div>
           <div>
-            <span className="text-slate-400 text-xs">Typ:</span>
+            <span className="text-slate-400 text-xs">Type:</span>
             <span className={`ml-2 inline-block px-1.5 py-0.5 rounded border text-[10px] font-medium ${subtypeBadgeStyle(cn.subType || 'Change Notice')}`}>
               {cn.subType || 'Change Notice'}
             </span>
@@ -207,7 +207,7 @@ export default function WorkItemPage() {
 
       {/* Steps Timeline */}
       <section className="bg-white rounded shadow-sm border border-slate-200 p-4">
-        <h2 className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-3">Arbeitsschritte</h2>
+        <h2 className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-3">Work steps</h2>
         <div className="space-y-2">
           {wi.steps.map((s, i) => (
             <div key={i} className="flex items-center gap-3 text-sm">
@@ -230,7 +230,7 @@ export default function WorkItemPage() {
             disabled={partsLoading}
             className="px-2.5 py-1 text-[11px] font-medium rounded bg-indigo-50 text-indigo-700 border border-indigo-300 hover:bg-indigo-100 transition-colors disabled:opacity-50"
           >
-            {partsLoading ? 'Lade…' : parts.length > 0 ? 'Neu laden' : 'Parts laden'}
+            {partsLoading ? 'Loading…' : parts.length > 0 ? 'Reload' : 'Load parts'}
           </button>
         </div>
 
@@ -239,11 +239,11 @@ export default function WorkItemPage() {
             <table className="w-full text-sm">
               <thead className="bg-slate-50 text-slate-500 text-xs border-b border-slate-200">
                 <tr>
-                  <th className="text-left px-3 py-1.5 font-medium">Nummer</th>
+                  <th className="text-left px-3 py-1.5 font-medium">Number</th>
                   <th className="text-left px-3 py-1.5 font-medium">Name</th>
                   <th className="text-left px-3 py-1.5 font-medium">Version</th>
-                  <th className="text-left px-3 py-1.5 font-medium">Status</th>
-                  <th className="text-left px-3 py-1.5 font-medium">Subtyp</th>
+                  <th className="text-left px-3 py-1.5 font-medium">State</th>
+                  <th className="text-left px-3 py-1.5 font-medium">Subtype</th>
                   <th className="w-16"></th>
                 </tr>
               </thead>
@@ -264,7 +264,7 @@ export default function WorkItemPage() {
                         onClick={() => handleSelectPart(p)}
                         className="px-2 py-0.5 text-[10px] font-medium rounded bg-emerald-50 text-emerald-700 border border-emerald-300 hover:bg-emerald-100 transition-colors"
                       >
-                        Auswählen
+                        Select
                       </button>
                     </td>
                   </tr>
@@ -275,8 +275,8 @@ export default function WorkItemPage() {
         ) : (
           <p className="text-xs text-slate-400">
             {(wi.resultingParts?.length || 0) > 0
-              ? `${wi.resultingParts.length} Parts gespeichert — klicke "Parts laden" zum Anzeigen.`
-              : 'Noch keine Parts geladen.'
+              ? `${wi.resultingParts.length} parts saved — click "Load parts" to display.`
+              : 'No parts loaded yet.'
             }
           </p>
         )}

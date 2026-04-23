@@ -325,7 +325,7 @@ export default function DashboardPage() {
               : 'text-slate-500 hover:text-slate-700'
           }`}
         >
-          Suche
+          Search
         </button>
         <button
           onClick={() => setSearchParams({ mode: 'cn' }, { replace: true })}
@@ -348,7 +348,7 @@ export default function DashboardPage() {
           onSearch={handleSearch}
           loading={searching}
           initialQuery={urlQuery}
-          placeholder="Suchen — Nummer, Name oder Wildcard (z.B. S2200*, Z03*, *287364)"
+          placeholder="Search — number, name or wildcard (e.g. S2200*, Z03*, *287364)"
         />
         {/* Advanced Search Panel */}
         <AdvancedSearchPanel
@@ -376,7 +376,7 @@ export default function DashboardPage() {
       {/* Empty state */}
       {searchDone && results.length === 0 && (
         <div className="text-sm text-slate-600 bg-amber-50 border border-amber-200 rounded p-3">
-          Keine Ergebnisse gefunden.
+          No results found.
         </div>
       )}
 
@@ -385,13 +385,13 @@ export default function DashboardPage() {
         <section>
           <div className="flex items-center justify-between mb-2">
             <h2 className="text-xs font-semibold text-slate-400 uppercase tracking-wide">
-              {displayResults.length} Ergebnis{displayResults.length !== 1 ? 'se' : ''}
+              {displayResults.length} result{displayResults.length !== 1 ? 's' : ''}
               {cnPartsFilter && displayResults.length !== results.length && (
-                <span className="ml-1 text-emerald-500">(gefiltert von {results.length})</span>
+                <span className="ml-1 text-emerald-500">(filtered from {results.length})</span>
               )}
               {searching && (
                 <span className="ml-2 text-indigo-500 animate-pulse">
-                  — Lade weitere…
+                  — loading more…
                 </span>
               )}
             </h2>
@@ -405,7 +405,7 @@ export default function DashboardPage() {
                     : 'bg-white text-slate-500 border-slate-300 hover:bg-slate-50'
                 }`}
               >
-                {cnCheckLoading ? '…' : cnPartsFilter ? '✓ mit Parts' : 'mit Parts'}
+                {cnCheckLoading ? '…' : cnPartsFilter ? '✓ with parts' : 'with parts'}
               </button>
             )}
           </div>
@@ -415,17 +415,17 @@ export default function DashboardPage() {
               <table className="w-full text-sm">
                 <thead className="bg-slate-50 text-slate-500 text-xs border-b border-slate-200 sticky top-0 z-10">
                   <tr>
-                    <th className="text-left px-3 py-2 font-medium">Typ</th>
-                    <th className="text-left px-3 py-2 font-medium">Nummer</th>
+                    <th className="text-left px-3 py-2 font-medium">Type</th>
+                    <th className="text-left px-3 py-2 font-medium">Number</th>
                     <th className="text-left px-3 py-2 font-medium">Name</th>
                     <th className="text-left px-3 py-2 font-medium">Version</th>
-                    <th className="text-left px-3 py-2 font-medium">Status</th>
-                    <th className="text-left px-3 py-2 font-medium">Kontext</th>
+                    <th className="text-left px-3 py-2 font-medium">State</th>
+                    <th className="text-left px-3 py-2 font-medium">Context</th>
                     <th className="text-left px-3 py-2 font-medium">Organization ID</th>
                     {allParts && <th className="text-left px-3 py-2 font-medium">Is Variant</th>}
                     {allParts && <th className="text-left px-3 py-2 font-medium">Classification</th>}
-                    <th className="text-left px-3 py-2 font-medium">Geändert</th>
-                    <th className="text-left px-3 py-2 font-medium">Erstellt</th>
+                    <th className="text-left px-3 py-2 font-medium">Modified</th>
+                    <th className="text-left px-3 py-2 font-medium">Created</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -469,12 +469,12 @@ export default function DashboardPage() {
           {/* CN Header — progressive count */}
           <h2 className="text-xs font-semibold text-slate-400 uppercase tracking-wide">
             {cnFilteredItems.length !== cnState.items.length
-              ? `${cnFilteredItems.length} von ${cnState.items.length} Change Notices (gefiltert)`
+              ? `${cnFilteredItems.length} of ${cnState.items.length} Change Notices (filtered)`
               : `${cnState.items.length} Change Notice${cnState.items.length !== 1 ? 's' : ''}`
             }
             {cnState.loading && (
               <span className="ml-2 text-indigo-500 animate-pulse">
-                — Lade weitere…
+                — loading more…
               </span>
             )}
             {cnState.done && cnState.durationMs > 0 && (
@@ -504,16 +504,16 @@ export default function DashboardPage() {
                         className={`flex items-center gap-1 transition-colors ${
                           cnErpOnly ? 'text-indigo-600' : 'text-slate-500 hover:text-slate-700'
                         }`}
-                        title={cnErpOnly ? 'Filter aufheben' : 'Nur ERP Transfer anzeigen'}
+                        title={cnErpOnly ? 'Clear filter' : 'Show only ERP Transfer'}
                       >
-                        Typ
+                        Type
                         {cnErpOnly && <span className="text-[9px]">✕</span>}
                         <svg className="w-3 h-3 opacity-40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
                         </svg>
                       </button>
                     </th>
-                    <th className="text-left px-3 py-2 font-medium">Nummer</th>
+                    <th className="text-left px-3 py-2 font-medium">Number</th>
                     <th className="text-left px-3 py-2 font-medium">Name</th>
                     <th className="text-left px-3 py-2 font-medium">Version</th>
                     {/* Status — dropdown filter */}
@@ -526,7 +526,7 @@ export default function DashboardPage() {
                             cnStateFilter ? 'text-indigo-600' : 'text-slate-500'
                           }`}
                         >
-                          <option value="">Status ▾</option>
+                          <option value="">State ▾</option>
                           {CN_STATES.map((s) => (
                             <option key={s} value={s}>{s}</option>
                           ))}
@@ -535,13 +535,13 @@ export default function DashboardPage() {
                           <button
                             onClick={(e) => { e.stopPropagation(); setCnStateFilter('') }}
                             className="absolute right-0 top-1/2 -translate-y-1/2 text-[9px] text-indigo-400 hover:text-indigo-600"
-                            title="Filter zurücksetzen"
+                            title="Clear filter"
                           >✕</button>
                         )}
                       </div>
                     </th>
-                    <th className="text-left px-3 py-2 font-medium">Ersteller</th>
-                    <th className="text-left px-3 py-2 font-medium">Geändert</th>
+                    <th className="text-left px-3 py-2 font-medium">Creator</th>
+                    <th className="text-left px-3 py-2 font-medium">Modified</th>
                     {/* Resulting Parts — click to filter */}
                     <th className="text-center px-3 py-2 font-medium w-10">
                       <button
@@ -550,7 +550,7 @@ export default function DashboardPage() {
                         className={`transition-colors disabled:opacity-30 ${
                           cnOnlyWithParts ? 'text-emerald-600' : 'text-slate-400 hover:text-slate-600'
                         }`}
-                        title={cnOnlyWithParts ? 'Filter aufheben' : 'Nur CNs mit Part Resulting Items'}
+                        title={cnOnlyWithParts ? 'Clear filter' : 'Only CNs with Part Resulting Items'}
                       >
                         {cnPartsCheckLoading ? (
                           <span className="animate-pulse text-[10px]">…</span>
@@ -606,13 +606,13 @@ export default function DashboardPage() {
                   {cnFilteredItems.length === 0 && !cnState.loading && (
                     <tr>
                       <td colSpan={8} className="px-3 py-8 text-center text-sm text-slate-400">
-                        Keine Change Notices gefunden.
+                        No Change Notices found.
                         {(cnStateFilter || cnErpOnly) && (
                           <button
                             onClick={() => { setCnStateFilter(''); setCnErpOnly(false) }}
                             className="ml-2 text-indigo-500 hover:text-indigo-700 underline"
                           >
-                            Filter zurücksetzen
+                            Clear filters
                           </button>
                         )}
                       </td>

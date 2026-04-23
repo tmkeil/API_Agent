@@ -5,9 +5,9 @@ import { useAuth } from '../contexts/AuthContext'
 
 // Hardcoded fallback so the dropdown always works, even when the API is unreachable.
 const FALLBACK_SYSTEMS: SystemInfo[] = [
-  { key: 'dev',  label: 'DEV — Entwicklung',  url: 'https://plm-dev.neuhausen.balluff.net/Windchill' },
+  { key: 'dev',  label: 'DEV — Development',  url: 'https://plm-dev.neuhausen.balluff.net/Windchill' },
   { key: 'test', label: 'TEST — Test',         url: 'https://plm-test.neuhausen.balluff.net/Windchill' },
-  { key: 'prod', label: 'PROD — Produktion',  url: 'https://plm-prod.neuhausen.balluff.net/Windchill' },
+  { key: 'prod', label: 'PROD — Production',  url: 'https://plm-prod.neuhausen.balluff.net/Windchill' },
 ]
 
 export default function LoginPage() {
@@ -60,7 +60,7 @@ export default function LoginPage() {
         )}
 
         <label htmlFor="wc-system" className="block text-sm font-medium text-slate-700 mb-1">
-          Windchill-Umgebung
+          Windchill environment
         </label>
         <select
           id="wc-system"
@@ -75,7 +75,7 @@ export default function LoginPage() {
           ))}
         </select>
 
-        <label htmlFor="wc-user" className="block text-sm font-medium text-slate-700 mb-1">Benutzer</label>
+        <label htmlFor="wc-user" className="block text-sm font-medium text-slate-700 mb-1">User</label>
         <input
           id="wc-user"
           type="text"
@@ -87,7 +87,7 @@ export default function LoginPage() {
           required
         />
 
-        <label htmlFor="wc-password" className="block text-sm font-medium text-slate-700 mb-1">Passwort</label>
+        <label htmlFor="wc-password" className="block text-sm font-medium text-slate-700 mb-1">Password</label>
         <input
           id="wc-password"
           type="password"
@@ -103,7 +103,7 @@ export default function LoginPage() {
           disabled={submitting}
           className="w-full bg-indigo-600 text-white font-medium py-2 rounded hover:bg-indigo-700 disabled:opacity-40 text-sm transition-colors"
         >
-          {submitting ? 'Verbinde...' : 'Anmelden'}
+          {submitting ? 'Connecting…' : 'Sign in'}
         </button>
       </form>
     </div>

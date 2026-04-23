@@ -29,10 +29,10 @@ export default class ErrorBoundary extends Component<Props, State> {
         <div className="min-h-screen flex items-center justify-center bg-slate-100">
           <div className="bg-white shadow-lg rounded-lg p-8 w-full max-w-md border border-red-200">
             <h1 className="text-lg font-semibold text-red-700 mb-2">
-              Unerwarteter Fehler
+              Unexpected error
             </h1>
             <p className="text-sm text-slate-600 mb-4">
-              {this.state.error?.message || 'Ein unbekannter Fehler ist aufgetreten.'}
+              {this.state.error?.message || 'An unknown error occurred.'}
             </p>
             <button
               onClick={() => {

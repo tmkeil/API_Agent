@@ -110,14 +110,14 @@ export default function WriteActionsPanel({ typeKey, code, objectId, onSuccess }
           disabled={busy}
           className="px-3 py-1.5 text-xs font-medium rounded bg-amber-500 text-white hover:bg-amber-600 disabled:opacity-50 transition-colors"
         >
-          Auschecken
+          Check out
         </button>
         <button
           onClick={handleCheckin}
           disabled={busy}
           className="px-3 py-1.5 text-xs font-medium rounded bg-emerald-500 text-white hover:bg-emerald-600 disabled:opacity-50 transition-colors"
         >
-          Einchecken
+          Check in
         </button>
         <button
           onClick={() => setAction(action === 'state' ? null : 'state')}
@@ -127,7 +127,7 @@ export default function WriteActionsPanel({ typeKey, code, objectId, onSuccess }
               : 'bg-white text-slate-600 border-slate-300 hover:border-indigo-400'
           }`}
         >
-          Status ändern
+          Change state
         </button>
         <button
           onClick={() => setAction(action === 'attributes' ? null : 'attributes')}
@@ -137,14 +137,14 @@ export default function WriteActionsPanel({ typeKey, code, objectId, onSuccess }
               : 'bg-white text-slate-600 border-slate-300 hover:border-indigo-400'
           }`}
         >
-          Attribut ändern
+          Change attribute
         </button>
         <button
           onClick={handleRevise}
           disabled={busy}
           className="px-3 py-1.5 text-xs font-medium rounded bg-blue-500 text-white hover:bg-blue-600 disabled:opacity-50 transition-colors"
         >
-          Revisionieren
+          Revise
         </button>
         {typeKey === 'part' && (
           <>
@@ -156,7 +156,7 @@ export default function WriteActionsPanel({ typeKey, code, objectId, onSuccess }
                   : 'bg-white text-slate-600 border-slate-300 hover:border-indigo-400'
               }`}
             >
-              + BOM Kind
+              + BOM Child
             </button>
             <button
               onClick={() => setAction(action === 'removeChild' ? null : 'removeChild')}
@@ -166,7 +166,7 @@ export default function WriteActionsPanel({ typeKey, code, objectId, onSuccess }
                   : 'bg-white text-slate-600 border-slate-300 hover:border-indigo-400'
               }`}
             >
-              − BOM Kind
+              − BOM Child
             </button>
           </>
         )}
@@ -176,20 +176,20 @@ export default function WriteActionsPanel({ typeKey, code, objectId, onSuccess }
       {action === 'state' && (
         <div className="flex items-end gap-2 bg-slate-50 rounded p-3 border border-slate-200">
           <div className="flex flex-col gap-1">
-            <label className="text-xs text-slate-500">Zielstatus</label>
+            <label className="text-xs text-slate-500">Target state</label>
             <input
               value={targetState}
               onChange={(e) => setTargetState(e.target.value)}
-              placeholder="z.B. RELEASED"
+              placeholder="e.g. RELEASED"
               className="px-2 py-1 text-sm border border-slate-300 rounded w-40 focus:outline-none focus:ring-1 focus:ring-indigo-400"
             />
           </div>
           <div className="flex flex-col gap-1">
-            <label className="text-xs text-slate-500">Kommentar (optional)</label>
+            <label className="text-xs text-slate-500">Comment (optional)</label>
             <input
               value={stateComment}
               onChange={(e) => setStateComment(e.target.value)}
-              placeholder="Kommentar"
+              placeholder="Comment"
               className="px-2 py-1 text-sm border border-slate-300 rounded w-48 focus:outline-none focus:ring-1 focus:ring-indigo-400"
             />
           </div>
@@ -198,10 +198,10 @@ export default function WriteActionsPanel({ typeKey, code, objectId, onSuccess }
             disabled={busy || !targetState.trim()}
             className="px-3 py-1.5 text-xs font-medium rounded bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50 transition-colors"
           >
-            Anwenden
+            Apply
           </button>
           <button onClick={reset} className="px-2 py-1.5 text-xs text-slate-400 hover:text-slate-600">
-            Abbrechen
+            Cancel
           </button>
         </div>
       )}
@@ -209,20 +209,20 @@ export default function WriteActionsPanel({ typeKey, code, objectId, onSuccess }
       {action === 'attributes' && (
         <div className="flex items-end gap-2 bg-slate-50 rounded p-3 border border-slate-200">
           <div className="flex flex-col gap-1">
-            <label className="text-xs text-slate-500">Attribut-Name</label>
+            <label className="text-xs text-slate-500">Attribute name</label>
             <input
               value={attrKey}
               onChange={(e) => setAttrKey(e.target.value)}
-              placeholder="z.B. Name"
+              placeholder="e.g. Name"
               className="px-2 py-1 text-sm border border-slate-300 rounded w-40 focus:outline-none focus:ring-1 focus:ring-indigo-400"
             />
           </div>
           <div className="flex flex-col gap-1">
-            <label className="text-xs text-slate-500">Neuer Wert</label>
+            <label className="text-xs text-slate-500">New value</label>
             <input
               value={attrVal}
               onChange={(e) => setAttrVal(e.target.value)}
-              placeholder="Wert"
+              placeholder="Value"
               className="px-2 py-1 text-sm border border-slate-300 rounded w-48 focus:outline-none focus:ring-1 focus:ring-indigo-400"
             />
           </div>
@@ -231,10 +231,10 @@ export default function WriteActionsPanel({ typeKey, code, objectId, onSuccess }
             disabled={busy || !attrKey.trim()}
             className="px-3 py-1.5 text-xs font-medium rounded bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50 transition-colors"
           >
-            Speichern
+            Save
           </button>
           <button onClick={reset} className="px-2 py-1.5 text-xs text-slate-400 hover:text-slate-600">
-            Abbrechen
+            Cancel
           </button>
         </div>
       )}
@@ -242,16 +242,16 @@ export default function WriteActionsPanel({ typeKey, code, objectId, onSuccess }
       {action === 'addChild' && (
         <div className="flex items-end gap-2 bg-slate-50 rounded p-3 border border-slate-200">
           <div className="flex flex-col gap-1">
-            <label className="text-xs text-slate-500">Kind-Teilenummer</label>
+            <label className="text-xs text-slate-500">Child part number</label>
             <input
               value={childNumber}
               onChange={(e) => setChildNumber(e.target.value)}
-              placeholder="z.B. 000001234"
+              placeholder="e.g. 000001234"
               className="px-2 py-1 text-sm border border-slate-300 rounded w-40 focus:outline-none focus:ring-1 focus:ring-indigo-400"
             />
           </div>
           <div className="flex flex-col gap-1">
-            <label className="text-xs text-slate-500">Menge</label>
+            <label className="text-xs text-slate-500">Quantity</label>
             <input
               type="number"
               min="0"
@@ -262,7 +262,7 @@ export default function WriteActionsPanel({ typeKey, code, objectId, onSuccess }
             />
           </div>
           <div className="flex flex-col gap-1">
-            <label className="text-xs text-slate-500">Einheit</label>
+            <label className="text-xs text-slate-500">Unit</label>
             <input
               value={childUnit}
               onChange={(e) => setChildUnit(e.target.value)}
@@ -274,10 +274,10 @@ export default function WriteActionsPanel({ typeKey, code, objectId, onSuccess }
             disabled={busy || !childNumber.trim()}
             className="px-3 py-1.5 text-xs font-medium rounded bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50 transition-colors"
           >
-            Hinzufügen
+            Add
           </button>
           <button onClick={reset} className="px-2 py-1.5 text-xs text-slate-400 hover:text-slate-600">
-            Abbrechen
+            Cancel
           </button>
         </div>
       )}
@@ -285,11 +285,11 @@ export default function WriteActionsPanel({ typeKey, code, objectId, onSuccess }
       {action === 'removeChild' && (
         <div className="flex items-end gap-2 bg-slate-50 rounded p-3 border border-slate-200">
           <div className="flex flex-col gap-1">
-            <label className="text-xs text-slate-500">UsageLink-ID</label>
+            <label className="text-xs text-slate-500">UsageLink ID</label>
             <input
               value={linkId}
               onChange={(e) => setLinkId(e.target.value)}
-              placeholder="z.B. OR:wt.part.WTPartUsageLink:12345"
+              placeholder="e.g. OR:wt.part.WTPartUsageLink:12345"
               className="px-2 py-1 text-sm border border-slate-300 rounded w-72 focus:outline-none focus:ring-1 focus:ring-indigo-400"
             />
           </div>
@@ -298,10 +298,10 @@ export default function WriteActionsPanel({ typeKey, code, objectId, onSuccess }
             disabled={busy || !linkId.trim()}
             className="px-3 py-1.5 text-xs font-medium rounded bg-red-600 text-white hover:bg-red-700 disabled:opacity-50 transition-colors"
           >
-            Entfernen
+            Remove
           </button>
           <button onClick={reset} className="px-2 py-1.5 text-xs text-slate-400 hover:text-slate-600">
-            Abbrechen
+            Cancel
           </button>
         </div>
       )}

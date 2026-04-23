@@ -19,14 +19,14 @@ type RuleConfig = Record<string, boolean>
 const RULE_DEFS: { key: string; label: string; description: string; defaultValue: boolean }[] = [
   {
     key: 'ApplyPrintingGoodRule',
-    label: 'Printing-Good-Regel',
-    description: 'Enclosed Documentation mit Printing Good = NO entfernen',
+    label: 'Printing Good rule',
+    description: 'Remove Enclosed Documentation with Printing Good = NO',
     defaultValue: true,
   },
   {
     key: 'FilterQepDrwDocTypes',
-    label: 'QEP/DRW Filter',
-    description: 'Zeilen mit DocType QEP oder DRW entfernen',
+    label: 'QEP/DRW filter',
+    description: 'Remove rows with DocType QEP or DRW',
     defaultValue: true,
   },
 ]
@@ -461,7 +461,7 @@ export default function BalluffExportModal({ partNumber, onClose }: Props) {
                         <button
                           onClick={() => toggleCollapse(tab, ri)}
                           className="text-slate-500 hover:text-slate-700 text-[10px] leading-none w-3"
-                          title={isCollapsed ? 'Aufklappen' : 'Zuklappen'}
+                          title={isCollapsed ? 'Expand' : 'Collapse'}
                         >
                           {isCollapsed ? '▸' : '▾'}
                         </button>
@@ -472,12 +472,12 @@ export default function BalluffExportModal({ partNumber, onClose }: Props) {
                         <button
                           onClick={() => addRowAfter(tab, ri)}
                           className="text-emerald-500 hover:text-emerald-700 text-[10px] leading-none"
-                          title="Zeile einfügen"
+                          title="Insert row"
                         >+</button>
                         <button
                           onClick={() => removeRow(tab, ri)}
                           className="text-red-400 hover:text-red-600 text-[10px] leading-none"
-                          title="Zeile entfernen"
+                          title="Remove row"
                         >×</button>
                       </span>
                     </div>
@@ -543,7 +543,7 @@ export default function BalluffExportModal({ partNumber, onClose }: Props) {
                     : 'text-slate-500 hover:text-slate-700'
                 }`}
               >
-                Ausgangsdaten
+                Raw data
                 {rawData && (
                   <span className="ml-1.5 text-slate-400">{rawData.rows.length}</span>
                 )}
@@ -556,7 +556,7 @@ export default function BalluffExportModal({ partNumber, onClose }: Props) {
                     : 'text-slate-500 hover:text-slate-700'
                 }`}
               >
-                SAP Vorschau
+                SAP preview
                 {sapLoading && (
                   <span className="ml-1.5 animate-pulse text-slate-400">…</span>
                 )}
@@ -578,7 +578,7 @@ export default function BalluffExportModal({ partNumber, onClose }: Props) {
                     : 'text-slate-500 hover:text-slate-700'
                 }`}
               >
-                Regeln
+                Rules
               </button>
             </div>
           </div>
@@ -593,16 +593,16 @@ export default function BalluffExportModal({ partNumber, onClose }: Props) {
         {/* ── Tab Content ── */}
         <div className="flex-1 flex flex-col overflow-hidden px-5 py-3">
 
-          {/* ── Ausgangsdaten Tab ── */}
+          {/* ── Raw data Tab ── */}
           {activeTab === 'raw' && (
             !bomLoaded && !rawLoading && !rawError ? (
               <div className="flex-1 flex flex-col items-center justify-center gap-5">
                 <div className="flex items-center gap-3">
-                  <label className="text-xs text-slate-500">Tiefe:</label>
+                  <label className="text-xs text-slate-500">Depth:</label>
                   <input
                     type="number"
                     min={1}
-                    placeholder="Alle"
+                    placeholder="All"
                     value={depthInput}
                     onChange={e => handleDepthInputChange(e.target.value)}
                     className="w-20 px-2 py-1.5 text-sm border border-slate-300 rounded-lg text-center focus:border-indigo-400 focus:outline-none"
@@ -615,14 +615,14 @@ export default function BalluffExportModal({ partNumber, onClose }: Props) {
                         : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                     }`}
                   >
-                    Alle
+                    All
                   </button>
                 </div>
                 <button
                   onClick={() => loadBom(maxDepth)}
                   className="px-6 py-2 text-sm font-semibold rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 shadow transition-colors"
                 >
-                  BOM laden
+                  Load BOM
                 </button>
               </div>
             ) : rawLoading ? (
@@ -632,32 +632,32 @@ export default function BalluffExportModal({ partNumber, onClose }: Props) {
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                 </svg>
                 <span className="text-sm text-slate-600">
-                  Lade BOM{maxDepth !== null ? ` (${maxDepth} Ebenen)` : ''}…
+                  Loading BOM{maxDepth !== null ? ` (${maxDepth} levels)` : ''}…
                 </span>
               </div>
             ) : rawError ? (
                 <div className="bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-2 rounded-md">
                   {rawError}
-                  <button onClick={handleReload} className="ml-3 underline">Erneut versuchen</button>
+                  <button onClick={handleReload} className="ml-3 underline">Retry</button>
                 </div>
               ) : rawData ? (
                 <>
                   <div className="flex items-center gap-3 mb-2 shrink-0">
                     <span className="text-xs text-slate-500">
-                      {rawData.rows.length} Zeilen · {rawData.rows.filter(r => r['PTp'] === 'L').length} Parts · {rawData.rows.filter(r => r['PTp'] === 'D').length} Docs
-                      {maxDepth !== null && <> · Tiefe: {maxDepth}</>}
+                      {rawData.rows.length} rows · {rawData.rows.filter(r => r['PTp'] === 'L').length} parts · {rawData.rows.filter(r => r['PTp'] === 'D').length} docs
+                      {maxDepth !== null && <> · Depth: {maxDepth}</>}
                     </span>
                     <button onClick={handleDownloadRaw} className="px-3 py-1 text-xs font-medium rounded bg-emerald-600 text-white hover:bg-emerald-700 transition-colors disabled:bg-emerald-300 disabled:text-white/70 disabled:cursor-not-allowed disabled:hover:bg-emerald-300">
                       CSV
                     </button>
                     <button onClick={handleReload} disabled={rawLoading} className="px-2 py-1 text-xs font-medium rounded border border-slate-300 text-slate-500 hover:bg-slate-100 transition-colors disabled:opacity-40 disabled:bg-emerald-300">
-                      Neu laden
+                      Reload
                     </button>
                     <button
                       onClick={() => { setBomLoaded(false); setRawData(null); setSapData(null); setSapValidation([]); setSapPreviewStats(null); setExportResult(null); setExportError(''); setValidationStale(false); sapPreviewTriggered.current = false }}
                       className="px-2 py-1 text-xs font-medium rounded border border-slate-300 text-slate-500 hover:bg-slate-100 transition-colors"
                     >
-                      Tiefe ändern
+                      Change depth
                     </button>
                   </div>
                   {renderTable('raw', rawData)}
@@ -665,7 +665,7 @@ export default function BalluffExportModal({ partNumber, onClose }: Props) {
               ) : null
           )}
 
-          {/* ── SAP Vorschau Tab ── */}
+          {/* ── SAP preview Tab ── */}
           {activeTab === 'sap' && (
             sapLoading ? (
               <div className="flex-1 flex flex-col items-center justify-center gap-3">
@@ -673,12 +673,12 @@ export default function BalluffExportModal({ partNumber, onClose }: Props) {
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                 </svg>
-                <span className="text-sm text-slate-600">SAP-Vorschau wird berechnet…</span>
+                <span className="text-sm text-slate-600">Computing SAP preview…</span>
               </div>
             ) : sapError ? (
               <div className="bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-2 rounded-md mb-2">
                 {sapError}
-                <button onClick={handleRefreshPreview} className="ml-3 underline">Erneut versuchen</button>
+                <button onClick={handleRefreshPreview} className="ml-3 underline">Retry</button>
               </div>
             ) : sapData ? (
                 <>
@@ -686,7 +686,7 @@ export default function BalluffExportModal({ partNumber, onClose }: Props) {
                   {sapValidation.length > 0 && (
                     <div className="bg-amber-50 border border-amber-200 rounded-md px-4 py-2 mb-2 shrink-0">
                       <div className="text-xs font-semibold text-amber-800 mb-1">
-                        Validierung — {sapValidation.length} Hinweis{sapValidation.length !== 1 ? 'e' : ''}
+                        Validation — {sapValidation.length} issue{sapValidation.length !== 1 ? 's' : ''}
                       </div>
                       <ul className="text-xs text-amber-700 space-y-0.5 max-h-24 overflow-auto">
                         {sapValidation.map((msg, i) => (
@@ -700,25 +700,25 @@ export default function BalluffExportModal({ partNumber, onClose }: Props) {
                   )}
                   {sapValidation.length === 0 && !validationStale && (
                     <div className="bg-emerald-50 border border-emerald-200 rounded-md px-4 py-1.5 mb-2 text-xs text-emerald-700 shrink-0">
-                      ✓ Keine Validierungsfehler
+                      ✓ No validation errors
                     </div>
                   )}
                   {validationStale && (
                     <div className="bg-orange-50 border border-orange-200 rounded-md px-4 py-1.5 mb-2 text-xs text-orange-700 shrink-0">
-                      Validierung veraltet — vor Export erneut prüfen
+                      Validation stale — re-check before export
                     </div>
                   )}
 
                   {/* Actions */}
                   <div className="flex items-center gap-3 mb-2 shrink-0">
                     <span className="text-xs text-slate-500">
-                      {sapData.rows.length} Zeilen
+                      {sapData.rows.length} rows
                       {sapPreviewStats && sapPreviewStats.removedRows > 0 && (
-                        <> · {sapPreviewStats.removedRows} entfernt</>
+                        <> · {sapPreviewStats.removedRows} removed</>
                       )}
                     </span>
                     <button onClick={handleRefreshPreview} disabled={sapLoading} className="px-2 py-1 text-xs font-medium rounded border border-slate-300 text-slate-500 hover:bg-slate-100 transition-colors disabled:opacity-40">
-                      Vorschau aktualisieren
+                      Refresh preview
                     </button>
                     <button
                       onClick={handleRevalidate}
@@ -728,7 +728,7 @@ export default function BalluffExportModal({ partNumber, onClose }: Props) {
                           : 'border border-slate-300 text-slate-500 hover:bg-slate-100'
                       }`}
                     >
-                      Validierung prüfen
+                      Check validation
                     </button>
                     <button onClick={handleDownloadSap} className="px-3 py-1 text-xs font-medium rounded bg-emerald-600 text-white hover:bg-emerald-700 transition-colors disabled:bg-emerald-300 disabled:text-white/70 disabled:cursor-not-allowed disabled:hover:bg-emerald-300">
                       CSV
@@ -741,13 +741,13 @@ export default function BalluffExportModal({ partNumber, onClose }: Props) {
                           ? 'bg-slate-400 text-white cursor-not-allowed'
                           : 'bg-indigo-600 text-white hover:bg-indigo-700'
                       }`}
-                      title={exportBlocked ? (validationStale ? 'Validierung veraltet' : 'Validierungsfehler beheben') : undefined}
+                      title={exportBlocked ? (validationStale ? 'Validation stale' : 'Fix validation errors') : undefined}
                     >
                       {exportLoading ? 'Export…' : 'SAP Export'}
                     </button>
                     {exportBlocked && (
                       <span className="text-xs text-amber-600">
-                        {validationStale ? 'Validierung prüfen' : 'Fehler beheben'}
+                        {validationStale ? 'Check validation' : 'Fix errors'}
                       </span>
                     )}
                   </div>
@@ -762,15 +762,15 @@ export default function BalluffExportModal({ partNumber, onClose }: Props) {
                     <div className="border border-slate-200 rounded-md mb-2 shrink-0">
                       <div className="flex items-center justify-between px-3 py-2 bg-slate-50 border-b border-slate-200">
                         <span className="text-xs font-semibold text-slate-700">
-                          SAP CSV-Dateien ({exportResult.files.length})
+                          SAP CSV files ({exportResult.files.length})
                         </span>
                         <div className="flex items-center gap-2">
                           <span className="text-xs text-slate-500">
-                            {exportResult.stats.totalOutputRows} Zeilen · {exportResult.stats.skippedRows} übersprungen
+                            {exportResult.stats.totalOutputRows} rows · {exportResult.stats.skippedRows} skipped
                           </span>
                           {exportResult.files.length > 0 && (
                             <button onClick={handleDownloadAllSapFiles} className="px-2 py-0.5 text-xs font-medium rounded bg-indigo-600 text-white hover:bg-indigo-700">
-                              Alle herunterladen
+                              Download all
                             </button>
                           )}
                         </div>
@@ -778,7 +778,7 @@ export default function BalluffExportModal({ partNumber, onClose }: Props) {
                       {exportResult.validation.length > 0 && (
                         <div className="px-3 py-2 bg-amber-50 border-b border-amber-200">
                           <div className="text-xs font-semibold text-amber-800 mb-1">
-                            Validierung — {exportResult.validation.length} Hinweis{exportResult.validation.length !== 1 ? 'e' : ''}
+                            Validation — {exportResult.validation.length} issue{exportResult.validation.length !== 1 ? 's' : ''}
                           </div>
                           <ul className="text-xs text-amber-700 space-y-0.5 max-h-20 overflow-auto">
                             {exportResult.validation.map((msg, i) => (
@@ -797,7 +797,7 @@ export default function BalluffExportModal({ partNumber, onClose }: Props) {
                       </div>
                       {exportResult.files.length === 0 && (
                         <div className="text-xs text-slate-500 py-3 text-center">
-                          Keine SAP-Dateien erzeugt (keine Zeilen mit gesetzter Pos).
+                          No SAP files generated (no rows with Pos set).
                         </div>
                       )}
                     </div>
@@ -807,17 +807,17 @@ export default function BalluffExportModal({ partNumber, onClose }: Props) {
                 </>
               ) : !rawData ? (
                 <div className="flex-1 flex items-center justify-center text-sm text-slate-400">
-                  Zuerst BOM im Tab "Ausgangsdaten" laden
+                  Load BOM first on the "Raw data" tab
                 </div>
               ) : null
           )}
 
-          {/* ── Regeln Tab ── */}
+          {/* ── Rules Tab ── */}
           {activeTab === 'config' && (
             <div className="flex-1 flex flex-col gap-4 max-w-lg mx-auto py-6">
-              <h3 className="text-sm font-semibold text-slate-700">Transformationsregeln</h3>
+              <h3 className="text-sm font-semibold text-slate-700">Transformation rules</h3>
               <p className="text-xs text-slate-400">
-                Regeln steuern die SAP-Vorschau-Transformation. Änderungen werden beim nächsten "Vorschau aktualisieren" angewendet.
+                Rules control the SAP preview transformation. Changes take effect on the next "Refresh preview".
               </p>
               <div className="space-y-3">
                 {RULE_DEFS.map(def => (
@@ -839,7 +839,7 @@ export default function BalluffExportModal({ partNumber, onClose }: Props) {
                 onClick={() => setRules(defaultRules())}
                 className="self-start px-3 py-1 text-xs font-medium rounded border border-slate-300 text-slate-500 hover:bg-slate-100 transition-colors"
               >
-                Standardwerte zurücksetzen
+                Reset to defaults
               </button>
             </div>
           )}

@@ -321,7 +321,7 @@ export default function CreatePartPage() {
 
       try {
         const resp = await createObject('part', attrs)
-        setSuccess(resp.message || `Part '${resp.number}' erstellt`)
+        setSuccess(resp.message || `Part '${resp.number}' created`)
         setTimeout(() => {
           navigate(`/detail/part/${encodeURIComponent(resp.number)}`)
         }, 1200)
@@ -330,7 +330,7 @@ export default function CreatePartPage() {
         if (msg.includes('403') || msg.toLowerCase().includes('secured action') || msg.toLowerCase().includes('authorization')) {
           const typeName = TYPE_DISPLAY_NAMES[form.TypeId] || form.TypeId
           const containerName = containers.find((c) => c.odataBinding === form.ContainerBinding)?.name || form.ContainerBinding
-          setError(`Keine Berechtigung: Der Typ "${typeName}" darf im Container "${containerName}" nicht erstellt werden. Bitte einen anderen Typ oder Container wählen.`)
+          setError(`No permission: type "${typeName}" cannot be created in container "${containerName}". Please choose a different type or container.`)
         } else {
           setError(msg)
         }
@@ -346,12 +346,12 @@ export default function CreatePartPage() {
   return (
     <div className="max-w-2xl mx-auto">
       <div className="flex items-center justify-between mb-5">
-        <h1 className="text-lg font-semibold text-slate-800">Neues Part erstellen</h1>
+        <h1 className="text-lg font-semibold text-slate-800">Create new part</h1>
         <button
           onClick={() => navigate(-1)}
           className="text-xs text-slate-400 hover:text-slate-600 transition-colors"
         >
-          ← Zurück
+          ← Back
         </button>
       </div>
 
@@ -371,12 +371,12 @@ export default function CreatePartPage() {
             </Field>
           ) : containersLoaded ? (
             <div className="bg-amber-50 border border-amber-200 text-amber-700 text-sm rounded p-3">
-              Keine Container gefunden. Bitte Windchill-Verbindung prüfen.
+              No containers found. Please check the Windchill connection.
             </div>
           ) : (
             <Field label="Product / Container" required>
               <select disabled className="input opacity-50">
-                <option>Lade…</option>
+                <option>Loading…</option>
               </select>
             </Field>
           )}
@@ -398,12 +398,12 @@ export default function CreatePartPage() {
             </Field>
           ) : subtypesLoaded ? (
             <div className="bg-amber-50 border border-amber-200 text-amber-700 text-sm rounded p-3">
-              Keine Part-Subtypes gefunden.
+              No part subtypes found.
             </div>
           ) : (
             <Field label="Type" required>
               <select disabled className="input opacity-50">
-                <option>Lade…</option>
+                <option>Loading…</option>
               </select>
             </Field>
           )}
@@ -518,7 +518,7 @@ export default function CreatePartPage() {
               <span>{form.Classification
                 ? (clfNodes.find((n) => n.internalName === form.Classification)?.displayName || form.Classification)
                 : '—'}</span>
-              <span className="text-xs text-slate-400">automatisch via Type</span>
+              <span className="text-xs text-slate-400">determined automatically by type</span>
             </div>
           </Field>
         </Section>
@@ -530,7 +530,7 @@ export default function CreatePartPage() {
             disabled={!canSubmit}
             className="w-full px-4 py-2.5 text-sm font-medium rounded bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50 transition-colors"
           >
-            {busy ? 'Wird erstellt…' : 'Part erstellen'}
+            {busy ? 'Creating…' : 'Create part'}
           </button>
         </div>
 
@@ -683,7 +683,7 @@ function ClassificationPicker({ nodes, loaded, value, onChange }: {
   if (!loaded) {
     return (
       <select disabled className="input opacity-50">
-        <option>Lade Classifications…</option>
+        <option>Loading classifications…</option>
       </select>
     )
   }
@@ -698,13 +698,13 @@ function ClassificationPicker({ nodes, loaded, value, onChange }: {
           !value ? 'text-slate-400' : 'text-slate-800'
         }`}
       >
-        <span className="truncate">{value ? selectedDisplay : 'Classification wählen…'}</span>
+        <span className="truncate">{value ? selectedDisplay : 'Select classification…'}</span>
         <span className="flex items-center gap-1 ml-2 shrink-0">
           {value && (
             <span
               onClick={handleClear}
               className="text-slate-400 hover:text-red-500 cursor-pointer text-base leading-none"
-              title="Zurücksetzen"
+              title="Reset"
             >×</span>
           )}
           <svg className={`w-4 h-4 text-slate-400 transition-transform ${open ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -722,7 +722,7 @@ function ClassificationPicker({ nodes, loaded, value, onChange }: {
               ref={searchRef}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Suchen…"
+              placeholder="Search…"
               className="w-full text-sm px-2.5 py-1.5 border border-slate-200 rounded focus:outline-none focus:ring-1 focus:ring-indigo-400"
             />
           </div>
@@ -846,7 +846,7 @@ function ContainerPicker({ containers, value, onChange }: {
           !value ? 'text-slate-400' : 'text-slate-800'
         }`}
       >
-        <span className="truncate">{selectedName || 'Container wählen…'}</span>
+        <span className="truncate">{selectedName || 'Select container…'}</span>
         <svg className={`w-4 h-4 text-slate-400 transition-transform shrink-0 ${open ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
         </svg>
@@ -859,7 +859,7 @@ function ContainerPicker({ containers, value, onChange }: {
               ref={searchRef}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Container suchen…"
+              placeholder="Search container…"
               className="w-full text-sm px-2.5 py-1.5 border border-slate-200 rounded focus:outline-none focus:ring-1 focus:ring-indigo-400"
             />
           </div>

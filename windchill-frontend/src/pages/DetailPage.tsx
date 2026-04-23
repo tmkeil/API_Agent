@@ -36,59 +36,59 @@ interface TabDef {
 const TABS_BY_TYPE: Record<string, TabDef[]> = {
   part: [
     { key: 'details', label: 'Details' },
-    { key: 'attributes', label: 'Attribute' },
-    { key: 'structure', label: 'Struktur (BOM)' },
-    { key: 'allDocuments', label: 'Dokumente' },
+    { key: 'attributes', label: 'Attributes' },
+    { key: 'structure', label: 'Structure (BOM)' },
+    { key: 'allDocuments', label: 'Documents' },
     { key: 'whereUsed', label: 'Where-Used' },
-    { key: 'occurrences', label: 'Vorkommen' },
+    { key: 'occurrences', label: 'Occurrences' },
     { key: 'equivalence', label: 'Equivalence Network' },
-    { key: 'versions', label: 'Versionen' },
+    { key: 'versions', label: 'Versions' },
     { key: 'lifecycle', label: 'Lifecycle' },
-    { key: 'actions', label: 'Aktionen' },
+    { key: 'actions', label: 'Actions' },
   ],
   document: [
     { key: 'details', label: 'Details' },
-    { key: 'attributes', label: 'Attribute' },
-    { key: 'referencingParts', label: 'Referenzierende Parts' },
-    { key: 'files', label: 'Dateien' },
-    { key: 'versions', label: 'Versionen' },
+    { key: 'attributes', label: 'Attributes' },
+    { key: 'referencingParts', label: 'Referencing Parts' },
+    { key: 'files', label: 'Files' },
+    { key: 'versions', label: 'Versions' },
     { key: 'lifecycle', label: 'Lifecycle' },
-    { key: 'actions', label: 'Aktionen' },
+    { key: 'actions', label: 'Actions' },
   ],
   cad_document: [
     { key: 'details', label: 'Details' },
-    { key: 'attributes', label: 'Attribute' },
-    { key: 'cadStructure', label: 'Struktur' },
-    { key: 'referencingParts', label: 'Verknüpftes Part' },
-    { key: 'files', label: 'Dateien' },
-    { key: 'versions', label: 'Versionen' },
+    { key: 'attributes', label: 'Attributes' },
+    { key: 'cadStructure', label: 'Structure' },
+    { key: 'referencingParts', label: 'Linked Part' },
+    { key: 'files', label: 'Files' },
+    { key: 'versions', label: 'Versions' },
     { key: 'lifecycle', label: 'Lifecycle' },
-    { key: 'actions', label: 'Aktionen' },
+    { key: 'actions', label: 'Actions' },
   ],
   change_notice: [
     { key: 'details', label: 'Details' },
-    { key: 'attributes', label: 'Attribute' },
+    { key: 'attributes', label: 'Attributes' },
     { key: 'affected', label: 'Affected Items' },
     { key: 'resulting', label: 'Resulting Items' },
-    { key: 'versions', label: 'Versionen' },
+    { key: 'versions', label: 'Versions' },
     { key: 'lifecycle', label: 'Lifecycle' },
-    { key: 'actions', label: 'Aktionen' },
+    { key: 'actions', label: 'Actions' },
   ],
   change_request: [
     { key: 'details', label: 'Details' },
-    { key: 'attributes', label: 'Attribute' },
+    { key: 'attributes', label: 'Attributes' },
     { key: 'affected', label: 'Affected Items' },
-    { key: 'versions', label: 'Versionen' },
+    { key: 'versions', label: 'Versions' },
     { key: 'lifecycle', label: 'Lifecycle' },
-    { key: 'actions', label: 'Aktionen' },
+    { key: 'actions', label: 'Actions' },
   ],
   problem_report: [
     { key: 'details', label: 'Details' },
-    { key: 'attributes', label: 'Attribute' },
+    { key: 'attributes', label: 'Attributes' },
     { key: 'affected', label: 'Affected Items' },
-    { key: 'versions', label: 'Versionen' },
+    { key: 'versions', label: 'Versions' },
     { key: 'lifecycle', label: 'Lifecycle' },
-    { key: 'actions', label: 'Aktionen' },
+    { key: 'actions', label: 'Actions' },
   ],
 }
 
@@ -130,7 +130,7 @@ export default function DetailPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <p className="text-sm text-slate-500 animate-pulse">Lade Daten…</p>
+        <p className="text-sm text-slate-500 animate-pulse">Loading data…</p>
       </div>
     )
   }
@@ -139,14 +139,14 @@ export default function DetailPage() {
     return (
       <div className="space-y-4">
         <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded p-4">
-          <p className="font-medium mb-1">Fehler beim Laden von „{code}"</p>
+          <p className="font-medium mb-1">Failed to load „{code}"</p>
           <p>{error}</p>
         </div>
         <button
           onClick={() => navigate('/')}
           className="text-sm text-indigo-600 hover:underline"
         >
-          ← Zurück zur Suche
+          ← Back to search
         </button>
       </div>
     )
@@ -168,7 +168,7 @@ export default function DetailPage() {
       })
       navigate(`/workitem/${wi.id}`)
     } catch (e: unknown) {
-      setError((e as Error).message || 'Fehler beim Erstellen des WorkItems')
+      setError((e as Error).message || 'Failed to create WorkItem')
     }
   }
 
@@ -181,9 +181,9 @@ export default function DetailPage() {
           <button
             onClick={handleStartWorkItem}
             className="shrink-0 ml-4 px-3 py-1.5 text-xs font-medium rounded bg-emerald-50 text-emerald-700 border border-emerald-300 hover:bg-emerald-100 transition-colors"
-            title="WorkItem für dieses Change Notice erstellen"
+            title="Create WorkItem for this Change Notice"
           >
-            ▶ WorkItem starten
+            ▶ Start WorkItem
           </button>
         )}
       </div>

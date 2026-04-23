@@ -48,14 +48,14 @@ export default function FileInfoTab({ typeKey, code }: Props) {
   const downloadUrl = getDocumentDownloadUrl(typeKey, code)
 
   if (loading) {
-    return <p className="text-sm text-slate-500 animate-pulse py-4">Dateien werden geladen…</p>
+    return <p className="text-sm text-slate-500 animate-pulse py-4">Loading files…</p>
   }
 
   if (error) {
     return (
       <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded p-3">
         {error}
-        <button onClick={() => load()} className="ml-3 underline">Erneut versuchen</button>
+        <button onClick={() => load()} className="ml-3 underline">Retry</button>
       </div>
     )
   }
@@ -63,7 +63,7 @@ export default function FileInfoTab({ typeKey, code }: Props) {
   if (files.length === 0) {
     return (
       <p className="text-sm text-slate-400 py-4">
-        Keine Dateien vorhanden.
+        No files available.
       </p>
     )
   }
@@ -77,7 +77,7 @@ export default function FileInfoTab({ typeKey, code }: Props) {
           className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded bg-indigo-600 text-white hover:bg-indigo-700 transition-colors"
           download
         >
-          ↓ Primärdatei herunterladen
+          ↓ Download primary file
         </a>
       </div>
 
@@ -85,11 +85,11 @@ export default function FileInfoTab({ typeKey, code }: Props) {
       <table className="w-full text-sm">
         <thead className="bg-slate-50 text-slate-500 text-xs border-b border-slate-200">
           <tr>
-            <th className="text-left px-3 py-2 font-medium">Dateiname</th>
+            <th className="text-left px-3 py-2 font-medium">File name</th>
             <th className="text-left px-3 py-2 font-medium">Größe</th>
             <th className="text-left px-3 py-2 font-medium">Typ</th>
             <th className="text-left px-3 py-2 font-medium">Rolle</th>
-            <th className="text-left px-3 py-2 font-medium">Geändert</th>
+            <th className="text-left px-3 py-2 font-medium">Modified</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-slate-100">

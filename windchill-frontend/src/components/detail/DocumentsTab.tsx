@@ -9,7 +9,7 @@ interface Props {
 export default function DocumentsTab({ partCode }: Props) {
   return (
     <DocumentListTab
-      label="Dokumente"
+      label="Documents"
       partCode={partCode}
       fetchFn={getPartDocuments}
       badge="Doc"

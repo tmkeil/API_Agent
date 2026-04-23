@@ -37,14 +37,14 @@ export default function LifecycleTab({ typeKey, code }: Props) {
   }, [load])
 
   if (loading) {
-    return <p className="text-sm text-slate-500 animate-pulse py-4">Lifecycle-History wird geladen…</p>
+    return <p className="text-sm text-slate-500 animate-pulse py-4">Loading lifecycle history…</p>
   }
 
   if (error) {
     return (
       <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded p-3">
         {error}
-        <button onClick={() => load()} className="ml-3 underline">Erneut versuchen</button>
+        <button onClick={() => load()} className="ml-3 underline">Retry</button>
       </div>
     )
   }

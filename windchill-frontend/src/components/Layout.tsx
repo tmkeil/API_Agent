@@ -27,7 +27,7 @@ export default function Layout({ children }: { children: ReactNode }) {
                 onClick={() => navigate('/')}
                 className="px-2.5 py-1 text-xs font-medium rounded text-slate-300 hover:text-white transition-colors"
               >
-                Suche
+                Search
               </button>
               <button
                 onClick={() => navigate('/?mode=cn')}
@@ -39,14 +39,14 @@ export default function Layout({ children }: { children: ReactNode }) {
                 onClick={() => navigate('/create/part')}
                 className="px-2.5 py-1 text-xs font-medium rounded bg-indigo-600 text-white hover:bg-indigo-700 transition-colors"
               >
-                + Neues Part
+                + New Part
               </button>
               <span className="text-slate-300 text-xs">{user.username}</span>
               <button
                 onClick={logout}
                 className="text-slate-400 hover:text-white text-xs transition-colors"
               >
-                Abmelden
+                Sign out
               </button>
             </div>
           )}

@@ -242,6 +242,19 @@ def part_a(
             r["DocPart"] = ""
             r["Version"] = ""
 
+    # 6b) DocType present → Quantity=1, Quantity Unit=ST
+    #     (document rows always ship as 1 piece per SAP convention)
+    for r in result:
+        if _filled(r.get("DocType")):
+            r["Quantity"] = "1"
+            r["Quantity Unit"] = "ST"
+
+    # 6c) Subtyp=Product → clear DisconType
+    #     (Windchill export incorrectly sets DisconType on Product parts)
+    for r in result:
+        if _norm(r.get("Subtyp")).lower() == "product":
+            r["DisconType"] = ""
+
     # 7) Made From → Mat/Doc Number ueberschreiben + PTp='R'
     for r in result:
         if _filled(r.get("Made From")):
@@ -291,50 +304,55 @@ def part_b(rows: list[dict[str, str]]) -> list[str]:
         if sl == "" or sl == "0":
             continue  # Level 0 nicht validieren
 
-        # [Regel] Made From → mind. ein RAW-Feld muss befuellt sein
+        # [Rule] Made From set → at least one RAW field must be filled
         if _filled(r.get("Made From")):
             has_raw = any(_filled(r.get(f)) for f in _RAW_FIELDS)
             if not has_raw:
                 issues.append(
-                    f"Zeile {row_num}: 'Made From' ist gesetzt, aber kein "
-                    f"RAW-Dimension-Feld/Einheit ist befuellt."
+                    f"Row {row_num}: 'Made From' is set, but no "
+                    f"RAW dimension field/unit is filled."
                 )
 
-        # [Regel] Pos gesetzt → State muss RELEASED oder PUBLISHED sein
+        # [Rule] Pos set → State must be RELEASED or PUBLISHED
         if _filled(r.get("Pos")):
             state = _norm(r.get("State")).upper()
             if state not in _OK_STATES:
                 issues.append(
-                    f"Zeile {row_num}: Pos gesetzt, aber State='{r.get('State')}' "
-                    f"(nicht RELEASED/PUBLISHED)."
+                    f"Row {row_num}: Pos is set, but State='{r.get('State')}' "
+                    f"(not RELEASED/PUBLISHED)."
                 )
 
-        # [Regel] Kein Collection-Eintrag mit gesetzter Pos
+        # [Rule] No Collection entry with Pos set
         if _filled(r.get("Pos")):
             subtyp = _norm(r.get("Subtyp")).lower()
             if "collection" in subtyp:
                 issues.append(
-                    f"Zeile {row_num}: 'Collection'-Eintrag mit gesetzter Pos "
-                    f"ist nicht erlaubt."
+                    f"Row {row_num}: 'Collection' entry with Pos set "
+                    f"is not allowed."
                 )
 
-        # [Regel] PTp=D → DocPart/DocType/Version muessen vollstaendig sein
+        # [Rule] PTp=D → DocPart/DocType/Version must be complete
         if _norm(r.get("PTp")).upper() == "D":
             doc_fields = ["DocPart", "DocType", "Version"]
             if not all(_filled(r.get(f)) for f in doc_fields):
                 issues.append(
-                    f"Zeile {row_num}: PTp='D', aber DocPart/DocType/Version "
-                    f"unvollstaendig."
+                    f"Row {row_num}: PTp='D', but DocPart/DocType/Version "
+                    f"is incomplete."
+                )
+            # [Rule] PTp=D → Pos must be set
+            if not _filled(r.get("Pos")):
+                issues.append(
+                    f"Row {row_num}: PTp='D', but 'Pos' is empty."
                 )
 
-        # [Regel] PTp=L oder R → Quantity und Quantity Unit muessen befuellt sein
+        # [Rule] PTp=L or R → Quantity and Quantity Unit must be filled
         ptp = _norm(r.get("PTp")).upper()
         if ptp in ("L", "R"):
             qty_fields = ["Quantity", "Quantity Unit"]
             if not all(_filled(r.get(f)) for f in qty_fields):
                 issues.append(
-                    f"Zeile {row_num}: PTp='{r.get('PTp')}', aber "
-                    f"'Quantity' und/oder 'Quantity Unit' fehlt."
+                    f"Row {row_num}: PTp='{r.get('PTp')}', but "
+                    f"'Quantity' and/or 'Quantity Unit' is missing."
                 )
 
     return issues

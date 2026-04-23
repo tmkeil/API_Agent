@@ -39,14 +39,14 @@ export default function VersionsTab({ typeKey, code }: Props) {
   }, [load])
 
   if (loading) {
-    return <p className="text-sm text-slate-500 animate-pulse py-4">Versionsverlauf wird geladen…</p>
+    return <p className="text-sm text-slate-500 animate-pulse py-4">Loading version history…</p>
   }
 
   if (error) {
     return (
       <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded p-3">
         {error}
-        <button onClick={() => load()} className="ml-3 underline">Erneut versuchen</button>
+        <button onClick={() => load()} className="ml-3 underline">Retry</button>
       </div>
     )
   }
@@ -54,7 +54,7 @@ export default function VersionsTab({ typeKey, code }: Props) {
   if (versions.length === 0) {
     return (
       <p className="text-sm text-slate-400 py-4">
-        Kein Versionsverlauf verfügbar.
+        No version history available.
       </p>
     )
   }
@@ -68,8 +68,8 @@ export default function VersionsTab({ typeKey, code }: Props) {
             <th className="text-left px-3 py-2 font-medium">Iteration</th>
             <th className="text-left px-3 py-2 font-medium">Status</th>
             <th className="text-left px-3 py-2 font-medium">Name</th>
-            <th className="text-left px-3 py-2 font-medium">Geändert</th>
-            <th className="text-left px-3 py-2 font-medium">Erstellt</th>
+            <th className="text-left px-3 py-2 font-medium">Modified</th>
+            <th className="text-left px-3 py-2 font-medium">Created</th>
             <th className="text-left px-3 py-2 font-medium w-16"></th>
           </tr>
         </thead>

@@ -158,7 +158,7 @@ export default function BomExportPage() {
           value={partNumber}
           onChange={e => setPartNumber(e.target.value)}
           onKeyDown={e => e.key === 'Enter' && handleLoad()}
-          placeholder="Part Number eingeben (z.B. S2200297255)"
+          placeholder="Enter part number (e.g. S2200297255)"
           className="flex-1 max-w-md px-3 py-1.5 text-sm border border-slate-300 rounded-md
                      focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
         />
@@ -168,7 +168,7 @@ export default function BomExportPage() {
           className="px-4 py-1.5 text-sm font-medium rounded-md bg-indigo-600 text-white
                      hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
-          {loading ? 'Laden…' : 'Export laden'}
+          {loading ? 'Loading…' : 'Load export'}
         </button>
         {data && (
           <button
@@ -176,7 +176,7 @@ export default function BomExportPage() {
             className="px-4 py-1.5 text-sm font-medium rounded-md bg-emerald-600 text-white
                        hover:bg-emerald-700 transition-colors"
           >
-            CSV herunterladen
+            Download CSV
           </button>
         )}
       </div>
@@ -191,7 +191,7 @@ export default function BomExportPage() {
       {/* Loading */}
       {loading && (
         <div className="text-sm text-slate-500 animate-pulse">
-          BOM wird geladen und aufbereitet…
+          BOM is being loaded and prepared…
         </div>
       )}
 
@@ -200,9 +200,9 @@ export default function BomExportPage() {
         <>
           <div className="flex items-center gap-4 text-xs text-slate-500">
             <span>{data.partNumber}</span>
-            <span>{data.rows.length} Zeilen</span>
-            <span>{data.rows.filter(r => r['PTp'] === 'L').length} Parts</span>
-            <span>{data.rows.filter(r => r['PTp'] === 'D').length} Dokumente</span>
+            <span>{data.rows.length} rows</span>
+            <span>{data.rows.filter(r => r['PTp'] === 'L').length} parts</span>
+            <span>{data.rows.filter(r => r['PTp'] === 'D').length} documents</span>
           </div>
 
           <div className="border border-slate-200 rounded-lg overflow-auto max-h-[calc(100vh-240px)]">
@@ -236,14 +236,14 @@ export default function BomExportPage() {
                         <button
                           onClick={() => addRowAfter(ri)}
                           className="text-emerald-500 hover:text-emerald-700 text-[10px] leading-none"
-                          title="Zeile darunter einfügen"
+                          title="Insert row below"
                         >
                           +
                         </button>
                         <button
                           onClick={() => removeRow(ri)}
                           className="text-red-400 hover:text-red-600 text-[10px] leading-none"
-                          title="Zeile entfernen"
+                          title="Remove row"
                         >
                           ×
                         </button>

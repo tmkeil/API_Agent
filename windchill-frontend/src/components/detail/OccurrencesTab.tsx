@@ -37,20 +37,20 @@ export default function OccurrencesTab({ partCode }: Props) {
   }, [load])
 
   if (loading) {
-    return <p className="text-sm text-slate-500 animate-pulse py-4">Vorkommen werden geladen…</p>
+    return <p className="text-sm text-slate-500 animate-pulse py-4">Loading occurrences…</p>
   }
 
   if (error) {
     return (
       <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded p-3">
         {error}
-        <button onClick={() => load()} className="ml-3 underline">Erneut versuchen</button>
+        <button onClick={() => load()} className="ml-3 underline">Retry</button>
       </div>
     )
   }
 
   if (items.length === 0) {
-    return <p className="text-sm text-slate-400 py-4">Keine Vorkommen gefunden.</p>
+    return <p className="text-sm text-slate-400 py-4">No occurrences found.</p>
   }
 
   return (
@@ -58,7 +58,7 @@ export default function OccurrencesTab({ partCode }: Props) {
       <table className="w-full text-sm">
         <thead className="bg-slate-50 text-slate-500 text-xs border-b border-slate-200">
           <tr>
-            <th className="text-left px-3 py-2 font-medium">Nummer</th>
+            <th className="text-left px-3 py-2 font-medium">Number</th>
             <th className="text-left px-3 py-2 font-medium">Name</th>
             <th className="text-left px-3 py-2 font-medium">Version</th>
             <th className="text-left px-3 py-2 font-medium">Status</th>

@@ -16,8 +16,8 @@ export default function DetailHeader({ detail, onBack }: Props) {
           <button
             onClick={onBack}
             className="text-slate-400 hover:text-slate-600 transition-colors shrink-0"
-            title="Zurück zur Suche"
-            aria-label="Zurück zur Suche"
+            title="Back to search"
+            aria-label="Back to search"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />

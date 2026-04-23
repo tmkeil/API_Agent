@@ -16,8 +16,8 @@ export default function DetailsTab({ detail }: Props) {
     ['Status', detail.state],
     ['Identität', detail.identity],
     ['Kontext', detail.context],
-    ['Zuletzt geändert', formatDate(detail.lastModified)],
-    ['Erstellt', formatDate(detail.createdOn)],
+    ['Last modified', formatDate(detail.lastModified)],
+    ['Created', formatDate(detail.createdOn)],
     ['Objekt-ID', detail.objectId],
   ]
 

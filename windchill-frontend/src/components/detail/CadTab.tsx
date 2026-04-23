@@ -9,7 +9,7 @@ interface Props {
 export default function CadTab({ partCode }: Props) {
   return (
     <DocumentListTab
-      label="CAD-Dokumente"
+      label="CAD documents"
       partCode={partCode}
       fetchFn={getPartCadDocuments}
       badge="CAD"

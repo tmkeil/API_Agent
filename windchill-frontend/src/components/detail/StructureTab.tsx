@@ -17,8 +17,8 @@ const FALLBACK_VIEW: BomViewConfig = {
     { key: 'name', label: 'Name', source: 'part', align: 'left' },
     { key: 'version', label: 'Version', source: 'part', align: 'left' },
     { key: 'state', label: 'Status', source: 'part', align: 'left' },
-    { key: 'quantity', label: 'Menge', source: 'link', align: 'right' },
-    { key: 'quantityUnit', label: 'Einheit', source: 'link', align: 'left' },
+    { key: 'quantity', label: 'Quantity', source: 'link', align: 'right' },
+    { key: 'quantityUnit', label: 'Unit', source: 'link', align: 'left' },
   ],
 }
 
@@ -117,7 +117,7 @@ export default function StructureTab({ partNumber }: Props) {
       a.download = res.filename
       a.click()
     } catch (e) {
-      alert(`Export fehlgeschlagen: ${e instanceof Error ? e.message : String(e)}`)
+      alert(`Export failed: ${e instanceof Error ? e.message : String(e)}`)
     } finally {
       setExporting(null)
     }
@@ -132,14 +132,14 @@ export default function StructureTab({ partNumber }: Props) {
           onClick={() => load()}
           className="px-4 py-2 text-sm font-medium rounded bg-indigo-600 text-white hover:bg-indigo-700 transition-colors"
         >
-          Stückliste laden
+          Load BOM
         </button>
       </div>
     )
   }
 
   if (loading) {
-    return <p className="text-sm text-slate-500 animate-pulse py-4">BOM wird geladen…</p>
+    return <p className="text-sm text-slate-500 animate-pulse py-4">Loading BOM…</p>
   }
 
   if (error) {
@@ -147,7 +147,7 @@ export default function StructureTab({ partNumber }: Props) {
       <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded p-3">
         {error}
         <button onClick={() => { setLoaded(false) }} className="ml-3 underline">
-          Erneut versuchen
+          Retry
         </button>
       </div>
     )
@@ -163,7 +163,7 @@ export default function StructureTab({ partNumber }: Props) {
       {/* View selector bar */}
       <div className="flex items-center justify-between gap-3 px-1">
         <div className="flex items-center gap-3">
-          <label className="text-xs font-medium text-slate-500">BOM-Ansicht:</label>
+          <label className="text-xs font-medium text-slate-500">BOM view:</label>
           <div className="flex gap-1">
             {views.map(v => (
               <button
@@ -188,7 +188,7 @@ export default function StructureTab({ partNumber }: Props) {
               disabled={!!exporting}
               className="px-2 py-1 text-[10px] font-medium rounded border border-slate-300 text-slate-500 hover:bg-slate-100 transition-colors disabled:opacity-40"
             >
-              {exporting ? '⬇ Exportiere…' : '⬇ Export ▾'}
+              {exporting ? '⬇ Exporting…' : '⬇ Export ▾'}
             </button>
             {exportMenuOpen && !exporting && (
               <div className="absolute right-0 mt-1 w-52 bg-white border border-slate-200 rounded shadow-lg z-30 py-1 text-xs">
@@ -196,19 +196,19 @@ export default function StructureTab({ partNumber }: Props) {
                   onClick={() => { setExportMenuOpen(false); handleExport('expandedOnly') }}
                   className="w-full text-left px-3 py-1.5 hover:bg-slate-100 text-slate-700"
                 >
-                  Geladenen Baum exportieren
+                  Export loaded tree
                 </button>
                 <button
                   onClick={() => { setExportMenuOpen(false); handleExport('fullTree') }}
                   className="w-full text-left px-3 py-1.5 hover:bg-slate-100 text-slate-700"
                 >
-                  Vollständiger Export (Server)
+                  Full export (server)
                 </button>
                 <button
                   onClick={() => { setExportMenuOpen(false); handleExport('extended') }}
                   className="w-full text-left px-3 py-1.5 hover:bg-slate-100 text-slate-700"
                 >
-                  Erweiterter Export (Design + Mfg)
+                  Extended export (Design + Mfg)
                 </button>
               </div>
             )}

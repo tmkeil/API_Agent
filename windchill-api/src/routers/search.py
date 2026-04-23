@@ -207,6 +207,8 @@ def advanced_search(
     results = search_service.advanced_search(
         client,
         query=body.query,
+        criteria=[c.model_dump() for c in body.criteria] if body.criteria else None,
+        combinator=body.combinator,
         types=body.types or None,
         contexts=body.contexts or None,
         state=body.state,

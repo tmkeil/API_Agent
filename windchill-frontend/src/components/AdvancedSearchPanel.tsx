@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react'
 import { advancedSearch } from '../api/client'
-import type { AdvancedSearchRequest, PartSearchResult } from '../api/types'
+import type { AdvancedSearchCriterion, AdvancedSearchRequest, PartSearchResult } from '../api/types'
 import MultiSelect from './MultiSelect'
 
 interface Props {
@@ -23,6 +23,14 @@ const DATE_FIELD_OPTIONS = [
   { value: 'created', label: 'Created' },
 ]
 
+type Criterion = AdvancedSearchCriterion & { id: number }
+
+let _critIdSeq = 0
+function _newCriterion(field: 'Number' | 'Name' = 'Number', value = ''): Criterion {
+  _critIdSeq += 1
+  return { id: _critIdSeq, field, value }
+}
+
 /**
  * Collapsible advanced search form with structured filters.
  * Renders below the quick search on the dashboard.
@@ -31,8 +39,10 @@ export default function AdvancedSearchPanel({ contexts, onResults, onError }: Pr
   const [open, setOpen] = useState(false)
   const [busy, setBusy] = useState(false)
 
-  // Form fields
-  const [query, setQuery] = useState('')
+  // Criteria list — at least one row, each with field + value.
+  const [criteria, setCriteria] = useState<Criterion[]>([_newCriterion('Number', '')])
+  const [combinator, setCombinator] = useState<'and' | 'or'>('and')
+
   const [selectedTypes, setSelectedTypes] = useState<string[]>([])
   const [selectedContexts, setSelectedContexts] = useState<string[]>([])
   const [state, setState] = useState('')
@@ -43,8 +53,21 @@ export default function AdvancedSearchPanel({ contexts, onResults, onError }: Pr
 
   const contextOptions = contexts.map((c) => ({ key: c, label: c }))
 
+  const addCriterion = useCallback(() => {
+    setCriteria((prev) => [...prev, _newCriterion('Number', '')])
+  }, [])
+
+  const removeCriterion = useCallback((id: number) => {
+    setCriteria((prev) => (prev.length <= 1 ? prev : prev.filter((c) => c.id !== id)))
+  }, [])
+
+  const updateCriterion = useCallback((id: number, patch: Partial<AdvancedSearchCriterion>) => {
+    setCriteria((prev) => prev.map((c) => (c.id === id ? { ...c, ...patch } : c)))
+  }, [])
+
   const resetForm = useCallback(() => {
-    setQuery('')
+    setCriteria([_newCriterion('Number', '')])
+    setCombinator('and')
     setSelectedTypes([])
     setSelectedContexts([])
     setState('')
@@ -59,7 +82,13 @@ export default function AdvancedSearchPanel({ contexts, onResults, onError }: Pr
     onError('')
     try {
       const body: AdvancedSearchRequest = {}
-      if (query.trim()) body.query = query.trim()
+      const cleaned = criteria
+        .map((c) => ({ field: c.field, value: c.value.trim() }))
+        .filter((c) => c.value.length > 0)
+      if (cleaned.length > 0) {
+        body.criteria = cleaned
+        body.combinator = combinator
+      }
       if (selectedTypes.length > 0) body.types = selectedTypes
       if (selectedContexts.length > 0) body.contexts = selectedContexts
       if (state.trim()) body.state = state.trim()
@@ -75,7 +104,7 @@ export default function AdvancedSearchPanel({ contexts, onResults, onError }: Pr
     } finally {
       setBusy(false)
     }
-  }, [query, selectedTypes, selectedContexts, state, dateFrom, dateTo, dateField, limit, onResults, onError])
+  }, [criteria, combinator, selectedTypes, selectedContexts, state, dateFrom, dateTo, dateField, limit, onResults, onError])
 
   return (
     <div className="mt-2">
@@ -88,26 +117,83 @@ export default function AdvancedSearchPanel({ contexts, onResults, onError }: Pr
 
       {open && (
         <div className="mt-2 bg-slate-50 border border-slate-200 rounded p-4 space-y-3">
-          {/* Row 1: Query + State */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <label className="text-xs text-slate-500 mb-1 block">Number / Name</label>
-              <input
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="Search term"
-                className="w-full px-2 py-1.5 text-sm border border-slate-300 rounded focus:outline-none focus:ring-1 focus:ring-indigo-400"
-              />
+          {/* Criteria list */}
+          <div>
+            <div className="flex items-center justify-between mb-1">
+              <label className="text-xs text-slate-500">Criteria</label>
+              {criteria.length > 1 && (
+                <div className="inline-flex rounded border border-slate-300 overflow-hidden text-[11px]">
+                  {(['and', 'or'] as const).map((op) => (
+                    <button
+                      key={op}
+                      type="button"
+                      onClick={() => setCombinator(op)}
+                      className={`px-2 py-0.5 transition-colors ${
+                        combinator === op
+                          ? 'bg-indigo-600 text-white'
+                          : 'bg-white text-slate-500 hover:bg-slate-100'
+                      }`}
+                    >
+                      {op.toUpperCase()}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
-            <div>
-              <label className="text-xs text-slate-500 mb-1 block">Status</label>
-              <input
-                value={state}
-                onChange={(e) => setState(e.target.value)}
-                placeholder="e.g. INWORK, RELEASED"
-                className="w-full px-2 py-1.5 text-sm border border-slate-300 rounded focus:outline-none focus:ring-1 focus:ring-indigo-400"
-              />
+            <div className="space-y-1.5">
+              {criteria.map((c, i) => (
+                <div key={c.id} className="flex items-center gap-1.5">
+                  <span className="text-[10px] text-slate-400 w-7 text-right select-none">
+                    {i === 0 ? 'WHERE' : combinator.toUpperCase()}
+                  </span>
+                  <select
+                    value={c.field}
+                    onChange={(e) => updateCriterion(c.id, { field: e.target.value as 'Number' | 'Name' })}
+                    className="px-2 py-1.5 text-sm border border-slate-300 rounded bg-white focus:outline-none focus:ring-1 focus:ring-indigo-400"
+                  >
+                    <option value="Number">Number</option>
+                    <option value="Name">Name</option>
+                  </select>
+                  <input
+                    value={c.value}
+                    onChange={(e) => updateCriterion(c.id, { value: e.target.value })}
+                    placeholder={
+                      c.field === 'Number'
+                        ? 'e.g. S2200*, *287364, BES* CI*'
+                        : 'e.g. sensor, *connector*'
+                    }
+                    className="flex-1 px-2 py-1.5 text-sm border border-slate-300 rounded focus:outline-none focus:ring-1 focus:ring-indigo-400"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => removeCriterion(c.id)}
+                    disabled={criteria.length <= 1}
+                    title="Remove criterion"
+                    className="w-7 h-7 flex items-center justify-center text-slate-400 hover:text-red-600 hover:bg-red-50 rounded disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-slate-400 transition-colors"
+                  >
+                    ✕
+                  </button>
+                </div>
+              ))}
             </div>
+            <button
+              type="button"
+              onClick={addCriterion}
+              className="mt-1.5 text-xs text-indigo-500 hover:text-indigo-700 font-medium"
+            >
+              + Add criterion
+            </button>
+          </div>
+
+          {/* State */}
+          <div>
+            <label className="text-xs text-slate-500 mb-1 block">Status</label>
+            <input
+              value={state}
+              onChange={(e) => setState(e.target.value)}
+              placeholder="e.g. INWORK, RELEASED"
+              className="w-full px-2 py-1.5 text-sm border border-slate-300 rounded focus:outline-none focus:ring-1 focus:ring-indigo-400"
+            />
           </div>
 
           {/* Row 2: MultiSelect dropdowns (Types + Contexts) */}

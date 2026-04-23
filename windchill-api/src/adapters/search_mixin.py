@@ -26,19 +26,77 @@ _WC_PAGE_SIZE = 25
 _DEFAULT_SEARCH_MAX_PAGES = 200
 
 
+def _odata_escape(value: str) -> str:
+    """Escape single quotes for OData string literals."""
+    return value.replace("'", "''")
+
+
+def _wildcard_clause(field: str, value: str) -> str:
+    """Build an OData $filter clause for *value* on *field*, supporting wildcards.
+
+    OData has no native wildcard operator. We translate shell-style patterns
+    into ``startswith`` / ``endswith`` / ``contains`` calls.
+
+    Semantics (``*`` = any sequence of characters, also empty; ``?`` ignored
+    because OData has no single-char wildcard — treated as literal):
+
+    * ``"ABC"``       → ``(Field eq 'ABC' or contains(Field,'ABC'))``
+    * ``"ABC*"``      → ``startswith(Field,'ABC')``
+    * ``"*ABC"``      → ``endswith(Field,'ABC')``
+    * ``"*ABC*"``     → ``contains(Field,'ABC')``
+    * ``"A*B"``       → ``startswith(Field,'A') and endswith(Field,'B')``
+    * ``"A*B*C"``     → ``startswith(Field,'A') and contains(Field,'B') and endswith(Field,'C')``
+    * ``"*A*B*"``     → ``contains(Field,'A') and contains(Field,'B')``
+
+    Empty value returns an empty string.
+    """
+    v = (value or "").strip()
+    if not v:
+        return ""
+
+    has_star = "*" in v
+    if not has_star:
+        esc = _odata_escape(v)
+        return f"(contains({field},'{esc}') or {field} eq '{esc}')"
+
+    starts_any = v.startswith("*")
+    ends_any = v.endswith("*")
+    segments = [s for s in v.split("*") if s]
+    if not segments:
+        # Pattern is all wildcards (e.g. "*" or "***") — matches anything.
+        return ""
+
+    parts: list[str] = []
+    n = len(segments)
+    for i, seg in enumerate(segments):
+        esc = _odata_escape(seg)
+        if i == 0 and not starts_any:
+            parts.append(f"startswith({field},'{esc}')")
+        elif i == n - 1 and not ends_any:
+            parts.append(f"endswith({field},'{esc}')")
+        else:
+            parts.append(f"contains({field},'{esc}')")
+    return " and ".join(parts) if len(parts) == 1 else "(" + " and ".join(parts) + ")"
+
+
 def _build_search_filter(mode: str, query: str) -> str:
-    """Build OData $filter for the given search *mode* and *query*."""
-    safe = query.replace("'", "''")
-    number_only = f"(Number eq '{safe}' or contains(Number,'{safe}'))"
-    number_and_name = (
-        f"(Number eq '{safe}' or contains(Number,'{safe}') "
-        f"or contains(Name,'{safe}'))"
-    )
-    _MODES = {"number": number_only, "keyword": number_and_name}
-    if mode in _MODES:
-        return _MODES[mode]
-    # auto: digits → number only, otherwise include Name
-    return number_only if any(c.isdigit() for c in query) else number_and_name
+    """Build OData ``$filter`` for the given search *mode* and *query*.
+
+    Wildcards (``*``) are translated via :func:`_wildcard_clause`. For
+    ``keyword`` (default) the filter matches either ``Number`` or ``Name``.
+    """
+    number_clause = _wildcard_clause("Number", query)
+    if mode == "number":
+        return number_clause or ""
+    # keyword / auto — search in Number and Name.
+    name_clause = _wildcard_clause("Name", query)
+    if not number_clause and not name_clause:
+        return ""
+    if not name_clause:
+        return number_clause
+    if not number_clause:
+        return name_clause
+    return f"({number_clause} or {name_clause})"
 
 
 class SearchMixin:
@@ -172,8 +230,6 @@ class SearchMixin:
                 (k, v) for k, v in self.SEARCHABLE_ENTITIES.items()
                 if k in entity_types
             ]
-
-        safe = query.replace("'", "''")
 
         combined_filter = _build_search_filter(mode, query)
 
@@ -360,8 +416,6 @@ class SearchMixin:
                 if k in entity_types
             ]
 
-        safe = query.replace("'", "''")
-
         combined_filter = _build_search_filter(mode, query)
 
         max_pages = _DEFAULT_SEARCH_MAX_PAGES
@@ -516,6 +570,8 @@ class SearchMixin:
     def advanced_search(
         self: "WRSClientBase",
         query: str = "",
+        criteria: list[dict] | None = None,
+        combinator: str = "and",
         entity_types: list[str] | None = None,
         contexts: list[str] | None = None,
         state: str | None = None,
@@ -526,6 +582,11 @@ class SearchMixin:
         limit: int = 200,
     ) -> list[dict]:
         """Erweiterte Suche mit strukturierten OData-Filtern.
+
+        Supports either a single free-text ``query`` (applied to ``Number`` and
+        ``Name``) or a list of structured ``criteria`` (each with ``field`` and
+        ``value``) joined by ``combinator`` (``and`` / ``or``). Wildcards
+        (``*``) are translated via :func:`_wildcard_clause`.
 
         Gleiche 2-Phasen-Strategie wie search_entities (flacher Pool).
         """
@@ -543,21 +604,30 @@ class SearchMixin:
         # ── Build shared filter clauses ──────────────────────
         clauses: list[str] = []
 
-        if query:
-            safe_q = query.replace("'", "''")
-            _has_digits = any(c.isdigit() for c in query)
-            _has_wildcards = "*" in query or "?" in query
-            _is_exact_number = _has_digits and len(query) >= 5 and not _has_wildcards
-            if _is_exact_number:
-                clauses.append(f"Number eq '{safe_q}'")
-            elif _has_digits:
-                clauses.append(
-                    f"(contains(Number,'{safe_q}'))"
-                )
-            else:
-                clauses.append(
-                    f"(contains(Number,'{safe_q}') or contains(Name,'{safe_q}'))"
-                )
+        # Structured criteria take precedence over free-text query.
+        if criteria:
+            allowed_fields = {"Number", "Name"}
+            criterion_clauses: list[str] = []
+            for c in criteria:
+                field = (c.get("field") or "Number").strip()
+                if field not in allowed_fields:
+                    continue
+                value = (c.get("value") or "").strip()
+                clause = _wildcard_clause(field, value)
+                if clause:
+                    criterion_clauses.append(clause)
+            if criterion_clauses:
+                joiner = " or " if (combinator or "and").lower() == "or" else " and "
+                clauses.append("(" + joiner.join(criterion_clauses) + ")")
+        elif query:
+            q_clause_number = _wildcard_clause("Number", query)
+            q_clause_name = _wildcard_clause("Name", query)
+            if q_clause_number and q_clause_name:
+                clauses.append(f"({q_clause_number} or {q_clause_name})")
+            elif q_clause_number:
+                clauses.append(q_clause_number)
+            elif q_clause_name:
+                clauses.append(q_clause_name)
 
         if state:
             safe_st = state.strip().replace("'", "''")

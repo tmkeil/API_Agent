@@ -477,9 +477,18 @@ class BulkResponse(BaseModel):
 # ── Advanced Search ─────────────────────────────────────────
 
 
+class AdvancedSearchCriterion(BaseModel):
+    """One criterion of an advanced search (field + value)."""
+    field: str = "Number"   # 'Number' or 'Name'
+    value: str = ""
+
+
 class AdvancedSearchRequest(BaseModel):
     """Request body for advanced search with structured filters."""
     query: str = ""
+    # Structured criteria (preferred over ``query``). Empty list = use ``query``.
+    criteria: list[AdvancedSearchCriterion] = []
+    combinator: str = "and"  # 'and' or 'or' — how to join criteria
     types: list[str] = []
     contexts: list[str] = []
     state: str = ""

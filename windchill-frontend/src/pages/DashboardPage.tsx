@@ -2,8 +2,10 @@ import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from '
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { searchPartsStream, checkCnPartResults, streamChangeNotices } from '../api/client'
 import type { PartSearchResult, ChangeNoticeListItem } from '../api/types'
-import SearchBar, { type SearchMode } from '../components/SearchBar'
+import SearchBar from '../components/SearchBar'
 import AdvancedSearchPanel from '../components/AdvancedSearchPanel'
+import RowActionsMenu, { type RowAction } from '../components/RowActionsMenu'
+import BalluffExportModal from '../components/detail/BalluffExportModal'
 import { TYPE_KEY_MAP, formatDate, typeLabel, subtypeBadgeStyle } from '../utils/labels'
 
 const CN_STATES = ['OPEN', 'RESOLVED', 'CANCELLED', 'IMPLEMENTATION'] as const
@@ -51,7 +53,7 @@ function subscribeStore(cb: () => void): () => void {
   return () => { _listeners.delete(cb) }
 }
 
-function startSearch(query: string, types?: string[], mode?: SearchMode) {
+function startSearch(query: string, types?: string[]) {
   // Abort previous stream
   _abortCtrl?.abort()
 
@@ -72,7 +74,7 @@ function startSearch(query: string, types?: string[], mode?: SearchMode) {
       _store = { ..._store, searching: false, done: true, error: msg }
       _notify()
     },
-    { types, mode },
+    { types },
   )
   _abortCtrl = ctrl
 }
@@ -188,6 +190,9 @@ export default function DashboardPage() {
   const [activeTypes] = useState<string[]>([])
   const hasRestoredRef = useRef(false)
 
+  // Row-level action: open Balluff BOM export modal for a WTPart.
+  const [balluffPart, setBalluffPart] = useState<string | null>(null)
+
   // CN "has Part results" filter state (for search results containing CNs)
   const [cnPartsFilter, setCnPartsFilter] = useState(false)
   const [cnWithParts, setCnWithParts] = useState<Set<string>>(new Set())
@@ -241,10 +246,10 @@ export default function DashboardPage() {
 
   // ── Search ──────────────────────────────────────────────
 
-  const handleSearch = useCallback((query: string, mode?: SearchMode) => {
+  const handleSearch = useCallback((query: string) => {
     // Persist query in URL so "Back" restores state
     setSearchParams(query ? { q: query } : {}, { replace: true })
-    startSearch(query, activeTypes.length > 0 ? activeTypes : undefined, mode)
+    startSearch(query, activeTypes.length > 0 ? activeTypes : undefined)
   }, [activeTypes, setSearchParams])
 
   // Restore search from URL params (e.g. after navigating back from detail page)
@@ -310,6 +315,23 @@ export default function DashboardPage() {
   const displayResults = cnPartsFilter
     ? results.filter((r) => r.objectType !== 'WTChangeOrder2' || cnWithParts.has(r.number))
     : results
+
+  // Build the per-row action list. Kept local to DashboardPage so actions can
+  // depend on component state (modals, navigation). Actions which do not
+  // apply to a given row are simply omitted — RowActionsMenu hides the
+  // trigger when the list is empty.
+  const buildRowActions = useCallback((r: PartSearchResult): RowAction[] => {
+    const list: RowAction[] = []
+    if (r.objectType === 'WTPart') {
+      list.push({
+        key: 'balluff-bom',
+        label: 'Balluff BOM export…',
+        description: 'Open the BOM export modal for this part',
+        onSelect: () => setBalluffPart(r.number),
+      })
+    }
+    return list
+  }, [])
 
   // ── Render ─────────────────────────────────────────────
 
@@ -426,6 +448,7 @@ export default function DashboardPage() {
                     {allParts && <th className="text-left px-3 py-2 font-medium">Classification</th>}
                     <th className="text-left px-3 py-2 font-medium">Modified</th>
                     <th className="text-left px-3 py-2 font-medium">Created</th>
+                    <th className="px-2 py-2 font-medium w-10" aria-label="Actions"></th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -452,6 +475,9 @@ export default function DashboardPage() {
                       {allParts && <td className="px-3 py-2 text-slate-500 whitespace-nowrap text-xs">{r.classification || '—'}</td>}
                       <td className="px-3 py-2 text-slate-400 whitespace-nowrap text-xs">{formatDate(r.lastModified)}</td>
                       <td className="px-3 py-2 text-slate-400 whitespace-nowrap text-xs">{formatDate(r.createdOn)}</td>
+                      <td className="px-1 py-1 whitespace-nowrap text-right">
+                        <RowActionsMenu actions={buildRowActions(r)} />
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -623,6 +649,14 @@ export default function DashboardPage() {
             </div>
           </div>
         </>
+      )}
+
+      {/* ── Balluff BOM Export Modal (triggered from row actions) ── */}
+      {balluffPart && (
+        <BalluffExportModal
+          partNumber={balluffPart}
+          onClose={() => setBalluffPart(null)}
+        />
       )}
     </div>
   )

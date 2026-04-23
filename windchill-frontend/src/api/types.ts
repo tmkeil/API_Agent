@@ -419,8 +419,15 @@ export interface ClassificationNodeListResponse {
 
 // ── Advanced Search ─────────────────────────────────────────
 
+export interface AdvancedSearchCriterion {
+  field: 'Number' | 'Name'
+  value: string
+}
+
 export interface AdvancedSearchRequest {
   query?: string
+  criteria?: AdvancedSearchCriterion[]
+  combinator?: 'and' | 'or'
   types?: string[]
   contexts?: string[]
   state?: string

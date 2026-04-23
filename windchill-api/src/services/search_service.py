@@ -181,6 +181,8 @@ def get_object_detail(
 def advanced_search(
     client: WRSClient,
     query: str = "",
+    criteria: list[dict] | None = None,
+    combinator: str = "and",
     types: list[str] | None = None,
     contexts: list[str] | None = None,
     state: str = "",
@@ -199,6 +201,8 @@ def advanced_search(
 
     raw_items = client.advanced_search(
         query=query,
+        criteria=criteria or None,
+        combinator=combinator,
         entity_types=types if types else None,
         contexts=contexts or None,
         state=state or None,

@@ -123,14 +123,15 @@ export function searchPartsStream(
   onBatch: (items: PartSearchResult[]) => void,
   onDone: (info: { total: number; durationMs: number }) => void,
   onError: (err: string) => void,
-  opts?: { limit?: number; types?: string[]; mode?: string },
+  opts?: { limit?: number; types?: string[] },
 ): AbortController {
   const params = new URLSearchParams({ q })
   if (opts?.limit && opts.limit > 0) params.set('limit', String(opts.limit))
   if (opts?.types && opts.types.length > 0) {
     params.set('types', opts.types.join(','))
   }
-  if (opts?.mode) params.set('mode', opts.mode)
+  // Always use keyword mode on the backend (Number OR Name with wildcards).
+  params.set('mode', 'keyword')
 
   const controller = new AbortController()
 

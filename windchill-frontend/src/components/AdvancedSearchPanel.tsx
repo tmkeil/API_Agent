@@ -1,11 +1,16 @@
-import { useCallback, useState } from 'react'
-import { advancedSearch } from '../api/client'
+import { useCallback, useRef, useState } from 'react'
+import { advancedSearchStream } from '../api/client'
 import type { AdvancedSearchCriterion, AdvancedSearchRequest, PartSearchResult } from '../api/types'
 import MultiSelect from './MultiSelect'
 
 interface Props {
   contexts: string[]
+  /** Called once when streaming starts — parent should reset the result store. */
+  onStart?: () => void
+  /** Called for every batch of results streamed in. Parent should append. */
   onResults: (items: PartSearchResult[]) => void
+  /** Called once when streaming finishes successfully. */
+  onDone?: (info: { total: number; durationMs: number }) => void
   onError: (msg: string) => void
 }
 
@@ -35,9 +40,10 @@ function _newCriterion(field: 'Number' | 'Name' = 'Number', value = ''): Criteri
  * Collapsible advanced search form with structured filters.
  * Renders below the quick search on the dashboard.
  */
-export default function AdvancedSearchPanel({ contexts, onResults, onError }: Props) {
+export default function AdvancedSearchPanel({ contexts, onStart, onResults, onDone, onError }: Props) {
   const [open, setOpen] = useState(false)
   const [busy, setBusy] = useState(false)
+  const abortRef = useRef<AbortController | null>(null)
 
   // Criteria list — at least one row, each with field + value.
   const [criteria, setCriteria] = useState<Criterion[]>([_newCriterion('Number', '')])
@@ -78,6 +84,9 @@ export default function AdvancedSearchPanel({ contexts, onResults, onError }: Pr
   }, [])
 
   const handleSubmit = useCallback(async () => {
+    // Cancel any previous in-flight advanced stream.
+    abortRef.current?.abort()
+
     setBusy(true)
     onError('')
     try {
@@ -97,14 +106,26 @@ export default function AdvancedSearchPanel({ contexts, onResults, onError }: Pr
       if (dateFrom || dateTo) body.dateField = dateField
       if (limit && limit > 0) body.limit = limit
 
-      const items = await advancedSearch(body)
-      onResults(items)
+      onStart?.()
+      abortRef.current = advancedSearchStream(
+        body,
+        (items) => onResults(items),
+        (info) => {
+          abortRef.current = null
+          setBusy(false)
+          onDone?.(info)
+        },
+        (msg) => {
+          abortRef.current = null
+          setBusy(false)
+          onError(msg)
+        },
+      )
     } catch (e: unknown) {
-      onError(e instanceof Error ? e.message : String(e))
-    } finally {
       setBusy(false)
+      onError(e instanceof Error ? e.message : String(e))
     }
-  }, [criteria, combinator, selectedTypes, selectedContexts, state, dateFrom, dateTo, dateField, limit, onResults, onError])
+  }, [criteria, combinator, selectedTypes, selectedContexts, state, dateFrom, dateTo, dateField, limit, onStart, onResults, onDone, onError])
 
   return (
     <div className="mt-2">

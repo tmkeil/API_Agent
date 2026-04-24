@@ -221,6 +221,120 @@ def advanced_search(
     return SearchResponse(items=results)
 
 
+# ── Streaming Advanced Search (SSE) ──────────────────────────
+
+
+@router.post(
+    "/search/advanced/stream",
+    summary="Erweiterte Suche als Server-Sent Events",
+)
+async def advanced_search_stream(
+    body: AdvancedSearchRequest,
+    request: Request,
+    _: None = Depends(require_auth),
+):
+    """SSE variant of :func:`advanced_search` — yields result batches as they arrive."""
+    client = get_client(request)
+
+    def _to_search_result(item: dict) -> dict | None:
+        n = normalize_item(item)
+        if not n["id"]:
+            return None
+        obj_type = n.get("_entity_type", WcType.PART)
+        sub_type = str(item.get("ObjectType") or "")
+        return {
+            "partId": n["id"],
+            "objectType": obj_type,
+            "subType": sub_type,
+            "number": n["number"],
+            "name": n["name"],
+            "version": n["version"],
+            "iteration": n["iteration"],
+            "state": n["state"],
+            "identity": n["identity"],
+            "context": n["context"],
+            "lastModified": n["last_modified"],
+            "createdOn": n["created_on"],
+            "isVariant": n.get("is_variant", ""),
+            "organizationId": n.get("organization_id", ""),
+            "classification": n.get("classification", ""),
+        }
+
+    criteria = [c.model_dump() for c in body.criteria] if body.criteria else None
+    entity_types = body.types or None
+    contexts = body.contexts or None
+
+    async def _generate():
+        total = 0
+        t0 = time.perf_counter()
+        queue: asyncio.Queue[list[dict] | None] = asyncio.Queue()
+        cancelled = threading.Event()
+        loop = asyncio.get_event_loop()
+
+        def _producer():
+            try:
+                for batch in client.advanced_search_stream(
+                    query=body.query,
+                    criteria=criteria,
+                    combinator=body.combinator,
+                    entity_types=entity_types,
+                    contexts=contexts,
+                    state=body.state or None,
+                    date_from=body.dateFrom or None,
+                    date_to=body.dateTo or None,
+                    date_field=body.dateField or "modified",
+                    attributes=body.attributes or None,
+                    limit=body.limit,
+                    cancelled=cancelled,
+                ):
+                    if cancelled.is_set():
+                        break
+                    results = [r for item in batch if (r := _to_search_result(item)) is not None]
+                    if results:
+                        loop.call_soon_threadsafe(queue.put_nowait, results)
+            except Exception:
+                logger.debug("SSE advanced producer error", exc_info=True)
+            finally:
+                loop.call_soon_threadsafe(queue.put_nowait, None)
+
+        thread = threading.Thread(target=_producer, daemon=True)
+        thread.start()
+
+        try:
+            while True:
+                while True:
+                    if await request.is_disconnected():
+                        logger.info("SSE advanced client disconnected, cancelling")
+                        cancelled.set()
+                        return
+                    try:
+                        batch = await asyncio.wait_for(queue.get(), timeout=0.5)
+                        break
+                    except asyncio.TimeoutError:
+                        continue
+
+                if batch is None:
+                    break
+
+                total += len(batch)
+                yield f"data: {json.dumps(batch, ensure_ascii=False)}\n\n"
+
+            duration_ms = int((time.perf_counter() - t0) * 1000)
+            yield f"event: done\ndata: {json.dumps({'total': total, 'durationMs': duration_ms})}\n\n"
+        finally:
+            cancelled.set()
+            thread.join(timeout=5)
+
+    return StreamingResponse(
+        _generate(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "X-Accel-Buffering": "no",
+        },
+    )
+
+
 # ── Generic Object Detail ────────────────────────────────────
 
 

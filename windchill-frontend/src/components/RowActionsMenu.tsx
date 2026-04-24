@@ -50,8 +50,6 @@ export default function RowActionsMenu({ title = 'Actions', actions }: Props) {
     }
   }, [open])
 
-  if (actions.length === 0) return null
-
   return (
     <div ref={ref} className="relative inline-block" onClick={(e) => e.stopPropagation()}>
       <button
@@ -74,8 +72,11 @@ export default function RowActionsMenu({ title = 'Actions', actions }: Props) {
       {open && (
         <div
           role="menu"
-          className="absolute right-0 mt-1 z-20 min-w-[220px] bg-white border border-slate-200 rounded shadow-lg py-1 text-sm"
+          className="absolute left-0 mt-1 z-20 min-w-[220px] bg-white border border-slate-200 rounded shadow-lg py-1 text-sm"
         >
+          {actions.length === 0 && (
+            <div className="px-3 py-1.5 text-xs text-slate-400 italic">No actions available</div>
+          )}
           {actions.map((a) => (
             <button
               key={a.key}

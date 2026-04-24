@@ -79,6 +79,66 @@ def _wildcard_clause(field: str, value: str) -> str:
     return " and ".join(parts) if len(parts) == 1 else "(" + " and ".join(parts) + ")"
 
 
+def _build_advanced_filter(
+    query: str = "",
+    criteria: list[dict] | None = None,
+    combinator: str = "and",
+    state: str | None = None,
+    date_from: str | None = None,
+    date_to: str | None = None,
+    date_field: str = "modified",
+    attributes: dict[str, str] | None = None,
+) -> str:
+    """Build OData ``$filter`` for an advanced search.
+
+    Shared by :meth:`advanced_search` and :meth:`advanced_search_stream`.
+    """
+    clauses: list[str] = []
+
+    # Structured criteria take precedence over free-text query.
+    if criteria:
+        allowed_fields = {"Number", "Name"}
+        criterion_clauses: list[str] = []
+        for c in criteria:
+            field = (c.get("field") or "Number").strip()
+            if field not in allowed_fields:
+                continue
+            value = (c.get("value") or "").strip()
+            clause = _wildcard_clause(field, value)
+            if clause:
+                criterion_clauses.append(clause)
+        if criterion_clauses:
+            joiner = " or " if (combinator or "and").lower() == "or" else " and "
+            clauses.append("(" + joiner.join(criterion_clauses) + ")")
+    elif query:
+        q_clause_number = _wildcard_clause("Number", query)
+        q_clause_name = _wildcard_clause("Name", query)
+        if q_clause_number and q_clause_name:
+            clauses.append(f"({q_clause_number} or {q_clause_name})")
+        elif q_clause_number:
+            clauses.append(q_clause_number)
+        elif q_clause_name:
+            clauses.append(q_clause_name)
+
+    if state:
+        safe_st = state.strip().replace("'", "''")
+        clauses.append(f"State eq '{safe_st}'")
+
+    _date_odata_field = "CreateStamp" if date_field == "created" else "ModifyStamp"
+    if date_from:
+        clauses.append(f"{_date_odata_field} ge {date_from}T00:00:00Z")
+    if date_to:
+        clauses.append(f"{_date_odata_field} le {date_to}T23:59:59Z")
+
+    if attributes:
+        for attr_name, attr_val in attributes.items():
+            safe_name = attr_name.replace("'", "''")
+            safe_val = attr_val.replace("'", "''")
+            clauses.append(f"{safe_name} eq '{safe_val}'")
+
+    return " and ".join(clauses) if clauses else ""
+
+
 def _build_search_filter(mode: str, query: str) -> str:
     """Build OData ``$filter`` for the given search *mode* and *query*.
 
@@ -602,53 +662,11 @@ class SearchMixin:
             ]
 
         # ── Build shared filter clauses ──────────────────────
-        clauses: list[str] = []
-
-        # Structured criteria take precedence over free-text query.
-        if criteria:
-            allowed_fields = {"Number", "Name"}
-            criterion_clauses: list[str] = []
-            for c in criteria:
-                field = (c.get("field") or "Number").strip()
-                if field not in allowed_fields:
-                    continue
-                value = (c.get("value") or "").strip()
-                clause = _wildcard_clause(field, value)
-                if clause:
-                    criterion_clauses.append(clause)
-            if criterion_clauses:
-                joiner = " or " if (combinator or "and").lower() == "or" else " and "
-                clauses.append("(" + joiner.join(criterion_clauses) + ")")
-        elif query:
-            q_clause_number = _wildcard_clause("Number", query)
-            q_clause_name = _wildcard_clause("Name", query)
-            if q_clause_number and q_clause_name:
-                clauses.append(f"({q_clause_number} or {q_clause_name})")
-            elif q_clause_number:
-                clauses.append(q_clause_number)
-            elif q_clause_name:
-                clauses.append(q_clause_name)
-
-        if state:
-            safe_st = state.strip().replace("'", "''")
-            clauses.append(f"State eq '{safe_st}'")
-
-        # Date filter — choose OData field based on date_field param
-        _date_odata_field = "CreateStamp" if date_field == "created" else "ModifyStamp"
-
-        if date_from:
-            clauses.append(f"{_date_odata_field} ge {date_from}T00:00:00Z")
-
-        if date_to:
-            clauses.append(f"{_date_odata_field} le {date_to}T23:59:59Z")
-
-        if attributes:
-            for attr_name, attr_val in attributes.items():
-                safe_name = attr_name.replace("'", "''")
-                safe_val = attr_val.replace("'", "''")
-                clauses.append(f"{safe_name} eq '{safe_val}'")
-
-        filter_str = " and ".join(clauses) if clauses else ""
+        filter_str = _build_advanced_filter(
+            query=query, criteria=criteria, combinator=combinator,
+            state=state, date_from=date_from, date_to=date_to,
+            date_field=date_field, attributes=attributes,
+        )
         max_pages = max(_DEFAULT_SEARCH_MAX_PAGES, (limit // _WC_PAGE_SIZE) + 2)
 
         # ── Phase 1: Erste Seite pro Typ ─────────────────────
@@ -763,3 +781,167 @@ class SearchMixin:
             ]
 
         return collected[:limit]
+
+    def advanced_search_stream(
+        self: "WRSClientBase",
+        query: str = "",
+        criteria: list[dict] | None = None,
+        combinator: str = "and",
+        entity_types: list[str] | None = None,
+        contexts: list[str] | None = None,
+        state: str | None = None,
+        date_from: str | None = None,
+        date_to: str | None = None,
+        date_field: str = "modified",
+        attributes: dict[str, str] | None = None,
+        limit: int = 200,
+        cancelled: "threading.Event | None" = None,
+    ) -> Generator[list[dict], None, None]:
+        """Streaming variant of :meth:`advanced_search`.
+
+        Yields batches of results as soon as each page is available, so the
+        client can render progressively (SSE).
+        """
+        import re as _re
+        import threading as _threading
+        from concurrent.futures import ThreadPoolExecutor, as_completed
+
+        if cancelled is None:
+            cancelled = _threading.Event()
+
+        if entity_types is None or len(entity_types) == 0:
+            targets = list(self.SEARCHABLE_ENTITIES.items())
+        else:
+            targets = [
+                (k, v) for k, v in self.SEARCHABLE_ENTITIES.items()
+                if k in entity_types
+            ]
+
+        filter_str = _build_advanced_filter(
+            query=query, criteria=criteria, combinator=combinator,
+            state=state, date_from=date_from, date_to=date_to,
+            date_field=date_field, attributes=attributes,
+        )
+
+        max_pages = _DEFAULT_SEARCH_MAX_PAGES
+        if limit > 0:
+            max_pages = max(max_pages, (limit // _WC_PAGE_SIZE) + 2)
+
+        seen_ids: set[str] = set()
+        ctx_prefixes = [f"/{ctx}/" for ctx in contexts] if contexts else None
+        total_yielded = 0
+
+        def _dedup_filter(items: list[dict]) -> list[dict]:
+            nonlocal total_yielded
+            out = []
+            for item in items:
+                pid = extract_id(item)
+                if not pid or pid in seen_ids:
+                    continue
+                seen_ids.add(pid)
+                if ctx_prefixes:
+                    loc = item.get("FolderLocation") or ""
+                    if not any(loc.startswith(p) for p in ctx_prefixes):
+                        continue
+                out.append(item)
+            if limit > 0 and total_yielded + len(out) > limit:
+                out = out[:limit - total_yielded]
+            total_yielded += len(out)
+            return out
+
+        # ── Phase 1: Erste Seite pro Typ ─────────────────────
+        def _fetch_first(type_key: str, service: str, entity_set: str, wc_type: str):
+            if cancelled.is_set():
+                return type_key, wc_type, [], None
+            url = f"{self._odata_url(service)}/{entity_set}"
+            params: dict[str, str] = {}
+            if filter_str:
+                params["$filter"] = filter_str
+            try:
+                resp = self._raw_get(url, params)
+                if resp.status_code != 200:
+                    return type_key, wc_type, [], None
+                data = resp.json()
+                items = list(data.get("value", []))
+                next_link = data.get("@odata.nextLink")
+                for item in items:
+                    item["_entity_type"] = wc_type
+                    item["_entity_type_key"] = type_key
+                return type_key, wc_type, items, next_link
+            except Exception:
+                return type_key, wc_type, [], None
+
+        remaining_urls: list[tuple[str, str, str]] = []
+
+        with ThreadPoolExecutor(max_workers=len(targets)) as pool:
+            futures = [
+                pool.submit(_fetch_first, tk, svc, es, wct)
+                for tk, (svc, es, wct) in targets
+            ]
+            for f in as_completed(futures):
+                if cancelled.is_set():
+                    return
+                type_key, wc_type, items, next_link = f.result()
+
+                if items:
+                    batch = _dedup_filter(items)
+                    if batch:
+                        yield batch
+                    if limit > 0 and total_yielded >= limit:
+                        return
+
+                if not next_link:
+                    continue
+
+                m = _re.search(r'[\?&]\$skiptoken=(\d+)', next_link)
+                if not m:
+                    continue
+
+                skip_size = int(m.group(1))
+                sep = next_link[m.start()]
+                base_url = next_link[:m.start()]
+
+                for pg in range(1, max_pages):
+                    remaining_urls.append(
+                        (f"{base_url}{sep}$skiptoken={skip_size * pg}", type_key, wc_type)
+                    )
+
+        # ── Phase 2: Rest-Seiten parallel ────────────────────
+        def _skiptoken_key(item: tuple[str, str, str]) -> int:
+            m = _re.search(r'\$skiptoken=(\d+)', item[0])
+            return int(m.group(1)) if m else 0
+
+        remaining_urls.sort(key=_skiptoken_key)
+
+        if remaining_urls and (limit == 0 or total_yielded < limit):
+            def _fetch_page(item: tuple[str, str, str]) -> list[dict]:
+                if cancelled.is_set():
+                    return []
+                pg_url, tk, wct = item
+                try:
+                    r = self._raw_get(pg_url)
+                    if r.status_code != 200:
+                        return []
+                    items = list(r.json().get("value", []))
+                    for it in items:
+                        it["_entity_type"] = wct
+                        it["_entity_type_key"] = tk
+                    return items
+                except Exception:
+                    return []
+
+            workers = min(len(remaining_urls), 40)
+            with ThreadPoolExecutor(max_workers=workers) as pool:
+                futures = [pool.submit(_fetch_page, ru) for ru in remaining_urls]
+                for f in as_completed(futures):
+                    if cancelled.is_set():
+                        for pf in futures:
+                            pf.cancel()
+                        return
+                    result = f.result()
+                    if result:
+                        batch = _dedup_filter(result)
+                        if batch:
+                            yield batch
+                        if limit > 0 and total_yielded >= limit:
+                            return

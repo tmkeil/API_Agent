@@ -514,6 +514,82 @@ export async function advancedSearch(body: AdvancedSearchRequest): Promise<PartS
   return data.items
 }
 
+/**
+ * Streaming advanced search via Server-Sent Events.
+ * Mirrors :func:`searchPartsStream` but posts the structured request body.
+ */
+export function advancedSearchStream(
+  body: AdvancedSearchRequest,
+  onBatch: (items: PartSearchResult[]) => void,
+  onDone: (info: { total: number; durationMs: number }) => void,
+  onError: (err: string) => void,
+): AbortController {
+  const controller = new AbortController()
+
+  fetch(`${BASE}/search/advanced/stream`, {
+    method: 'POST',
+    credentials: 'include',
+    signal: controller.signal,
+    headers: {
+      Accept: 'text/event-stream',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(body),
+  })
+    .then(async (resp) => {
+      if (!resp.ok) {
+        const err = await resp.json().catch(() => ({}))
+        throw new Error(err.error || err.detail || `HTTP ${resp.status}`)
+      }
+      const reader = resp.body?.getReader()
+      if (!reader) throw new Error('No response body')
+
+      const decoder = new TextDecoder()
+      let buffer = ''
+      let doneReceived = false
+
+      const parseEvent = (raw: string) => {
+        const lines = raw.trim().split('\n')
+        let eventType = 'message'
+        let data = ''
+        for (const line of lines) {
+          if (line.startsWith('event: ')) eventType = line.slice(7)
+          else if (line.startsWith('data: ')) data += line.slice(6)
+        }
+        if (!data) return
+        if (eventType === 'done') {
+          doneReceived = true
+          try { onDone(JSON.parse(data)) } catch { /* ignore */ }
+        } else {
+          try {
+            const items = JSON.parse(data) as PartSearchResult[]
+            if (items.length > 0) onBatch(items)
+          } catch { /* ignore */ }
+        }
+      }
+
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+        buffer += decoder.decode(value, { stream: true })
+        const segments = buffer.split('\n\n')
+        buffer = segments.pop() || ''
+        for (const seg of segments) {
+          if (seg.trim()) parseEvent(seg)
+        }
+      }
+      if (buffer.trim()) parseEvent(buffer)
+      if (!doneReceived) onDone({ total: 0, durationMs: 0 })
+    })
+    .catch((err) => {
+      if (err?.name !== 'AbortError') {
+        onError(err instanceof Error ? err.message : String(err))
+      }
+    })
+
+  return controller
+}
+
 // ── Document Download ───────────────────────────────────────
 
 export function getDocumentDownloadUrl(typeKey: string, code: string): string {

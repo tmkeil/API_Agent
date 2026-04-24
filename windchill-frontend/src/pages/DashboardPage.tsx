@@ -322,7 +322,9 @@ export default function DashboardPage() {
   // trigger when the list is empty.
   const buildRowActions = useCallback((r: PartSearchResult): RowAction[] => {
     const list: RowAction[] = []
-    if (r.objectType === 'WTPart') {
+    const typeKey = TYPE_KEY_MAP[r.objectType]
+    const isPart = r.objectType === 'WTPart' || typeKey === 'part'
+    if (isPart) {
       list.push({
         key: 'balluff-bom',
         label: 'Balluff BOM export…',
@@ -375,15 +377,23 @@ export default function DashboardPage() {
         {/* Advanced Search Panel */}
         <AdvancedSearchPanel
           contexts={WINDCHILL_CONTEXTS}
-          onResults={(items) => {
-            // Inject advanced search results into the store
+          onStart={() => {
+            // Reset the result store for streaming advanced search
             abortSearch()
-            _store = { query: _store.query, results: items, searching: false, done: true, error: '', durationMs: 0 }
+            _store = { query: '', results: [], searching: true, done: false, error: '', durationMs: 0 }
+            _notify()
+          }}
+          onResults={(items) => {
+            // Append each streamed batch
+            _store = { ..._store, results: [..._store.results, ...items] }
+            _notify()
+          }}
+          onDone={(info) => {
+            _store = { ..._store, searching: false, done: true, durationMs: info.durationMs }
             _notify()
           }}
           onError={(msg) => {
-            abortSearch()
-            _store = { query: _store.query, results: [], searching: false, done: true, error: msg, durationMs: 0 }
+            _store = { ..._store, searching: false, done: true, error: msg }
             _notify()
           }}
         />
@@ -437,6 +447,7 @@ export default function DashboardPage() {
               <table className="w-full text-sm">
                 <thead className="bg-slate-50 text-slate-500 text-xs border-b border-slate-200 sticky top-0 z-10">
                   <tr>
+                    <th className="px-2 py-2 font-medium w-10" aria-label="Actions"></th>
                     <th className="text-left px-3 py-2 font-medium">Type</th>
                     <th className="text-left px-3 py-2 font-medium">Number</th>
                     <th className="text-left px-3 py-2 font-medium">Name</th>
@@ -448,7 +459,6 @@ export default function DashboardPage() {
                     {allParts && <th className="text-left px-3 py-2 font-medium">Classification</th>}
                     <th className="text-left px-3 py-2 font-medium">Modified</th>
                     <th className="text-left px-3 py-2 font-medium">Created</th>
-                    <th className="px-2 py-2 font-medium w-10" aria-label="Actions"></th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -458,6 +468,9 @@ export default function DashboardPage() {
                       onClick={() => handleRowClick(r)}
                       className="cursor-pointer hover:bg-indigo-50 transition-colors"
                     >
+                      <td className="px-1 py-1 whitespace-nowrap">
+                        <RowActionsMenu actions={buildRowActions(r)} />
+                      </td>
                       <td className="px-3 py-2 whitespace-nowrap">
                         <span className={`inline-block px-1.5 py-0.5 rounded border text-[10px] font-medium ${subtypeBadgeStyle(r.subType || typeLabel(r.objectType))}`}>
                           {typeLabel(r.objectType, r.subType)}
@@ -475,9 +488,6 @@ export default function DashboardPage() {
                       {allParts && <td className="px-3 py-2 text-slate-500 whitespace-nowrap text-xs">{r.classification || '—'}</td>}
                       <td className="px-3 py-2 text-slate-400 whitespace-nowrap text-xs">{formatDate(r.lastModified)}</td>
                       <td className="px-3 py-2 text-slate-400 whitespace-nowrap text-xs">{formatDate(r.createdOn)}</td>
-                      <td className="px-1 py-1 whitespace-nowrap text-right">
-                        <RowActionsMenu actions={buildRowActions(r)} />
-                      </td>
                     </tr>
                   ))}
                 </tbody>

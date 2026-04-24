@@ -30,29 +30,60 @@ interface Props {
  */
 export default function RowActionsMenu({ title = 'Actions', actions }: Props) {
   const [open, setOpen] = useState(false)
+  const [menuStyle, setMenuStyle] = useState<React.CSSProperties>({})
   const ref = useRef<HTMLDivElement>(null)
+  const btnRef = useRef<HTMLButtonElement>(null)
+  const menuRef = useRef<HTMLDivElement>(null)
+
+  // Compute fixed-position placement so the dropdown escapes table overflow
+  // clipping. Flips upward when there's not enough room below.
+  const positionMenu = () => {
+    const btn = btnRef.current
+    if (!btn) return
+    const rect = btn.getBoundingClientRect()
+    const menuH = menuRef.current?.offsetHeight ?? Math.max(40, actions.length * 36 + 8)
+    const menuW = menuRef.current?.offsetWidth ?? 220
+    const vh = window.innerHeight
+    const vw = window.innerWidth
+    const spaceBelow = vh - rect.bottom
+    const openUp = spaceBelow < menuH + 8 && rect.top > menuH + 8
+    const top = openUp ? Math.max(8, rect.top - menuH - 4) : rect.bottom + 4
+    const left = Math.min(Math.max(8, rect.left), vw - menuW - 8)
+    setMenuStyle({ position: 'fixed', top, left, zIndex: 50 })
+  }
 
   useEffect(() => {
     if (!open) return
+    positionMenu()
     function onDocClick(ev: MouseEvent) {
-      if (ref.current && !ref.current.contains(ev.target as Node)) {
-        setOpen(false)
-      }
+      const target = ev.target as Node
+      if (ref.current?.contains(target)) return
+      if (menuRef.current?.contains(target)) return
+      setOpen(false)
     }
     function onEsc(ev: KeyboardEvent) {
       if (ev.key === 'Escape') setOpen(false)
     }
+    function onReflow() {
+      positionMenu()
+    }
     document.addEventListener('mousedown', onDocClick)
     document.addEventListener('keydown', onEsc)
+    window.addEventListener('resize', onReflow)
+    window.addEventListener('scroll', onReflow, true)
     return () => {
       document.removeEventListener('mousedown', onDocClick)
       document.removeEventListener('keydown', onEsc)
+      window.removeEventListener('resize', onReflow)
+      window.removeEventListener('scroll', onReflow, true)
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open])
 
   return (
     <div ref={ref} className="relative inline-block" onClick={(e) => e.stopPropagation()}>
       <button
+        ref={btnRef}
         type="button"
         onClick={(e) => { e.stopPropagation(); setOpen((o) => !o) }}
         title={title}
@@ -71,8 +102,10 @@ export default function RowActionsMenu({ title = 'Actions', actions }: Props) {
       </button>
       {open && (
         <div
+          ref={menuRef}
           role="menu"
-          className="absolute left-0 mt-1 z-20 min-w-[220px] bg-white border border-slate-200 rounded shadow-lg py-1 text-sm"
+          style={menuStyle}
+          className="min-w-[220px] bg-white border border-slate-200 rounded shadow-lg py-1 text-sm"
         >
           {actions.length === 0 && (
             <div className="px-3 py-1.5 text-xs text-slate-400 italic">No actions available</div>

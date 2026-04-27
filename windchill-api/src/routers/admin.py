@@ -624,52 +624,89 @@ def diagnose_branch_actions(
         except Exception as e:
             metadata_findings[label] = {"url": url, "error": str(e)}
 
-    # In den geladenen Metadata-Blobs nach Action-Namen suchen
-    metadata_hits: dict[str, list[str]] = {}
-    interesting_names = {c[2] for c in candidates} | {
-        "NewBranch", "SaveAs", "Revise", "CheckOut", "CheckIn",
-        "UndoCheckOut", "NewDownstreamBranch", "GenerateDownstreamStructure",
-        "CreateAlternate", "BomTransformation", "Path",
-    }
+    # In den geladenen Metadata-Blobs nach Action-Namen suchen.
+    # Korrektes XML-Parsing — die EDM-Schemas listen <Action Name="..."> Elemente.
+    import xml.etree.ElementTree as ET
+    EDM_NS = "{http://docs.oasis-open.org/odata/ns/edm}"
+
+    actions_per_domain: dict[str, list[dict]] = {}
+    functions_per_domain: dict[str, list[dict]] = {}
+
     for dom, blob in metadata_blobs.items():
-        hits: list[str] = []
-        for name in interesting_names:
-            # naive case-sensitive substring search; XML uses Action Name="..."
-            if f'Name="{name}"' in blob or f"Action Name=\"{name}\"" in blob:
-                hits.append(name)
-        if hits:
-            metadata_hits[dom] = sorted(set(hits))
+        try:
+            root = ET.fromstring(blob)
+        except ET.ParseError as pe:
+            actions_per_domain[dom] = [{"_parseError": str(pe)}]
+            continue
+        actions: list[dict] = []
+        functions: list[dict] = []
+        for sch in root.iter(f"{EDM_NS}Schema"):
+            ns = sch.get("Namespace") or ""
+            for act in sch.findall(f"{EDM_NS}Action"):
+                actions.append({
+                    "namespace": ns,
+                    "name": act.get("Name") or "",
+                    "isBound": (act.get("IsBound") or "").lower() == "true",
+                    "fullName": f"{ns}.{act.get('Name')}",
+                })
+            for fn in sch.findall(f"{EDM_NS}Function"):
+                functions.append({
+                    "namespace": ns,
+                    "name": fn.get("Name") or "",
+                    "isBound": (fn.get("IsBound") or "").lower() == "true",
+                    "fullName": f"{ns}.{fn.get('Name')}",
+                })
+        actions_per_domain[dom] = actions
+        functions_per_domain[dom] = functions
+
+    # Index: alle bekannten Action-FullNames ueber alle geladenen Metadata-Domains
+    known_action_full_names: set[str] = set()
+    for acts in actions_per_domain.values():
+        for a in acts:
+            if "_parseError" not in a:
+                known_action_full_names.add(a["fullName"])
 
     # ── Schritt 2: GET-Probe pro Kandidat ────────────────────
-    # 405 = Action existiert (erwartet POST). 404 = nicht deployt. 401/403 = Auth.
+    # WICHTIG: 400 alleine ist KEIN Beweis, dass die Action existiert — der
+    # OData-URL-Parser kann fuer beliebige unbekannte Action-Namen 400
+    # zurueckgeben. Verdict ist daher die Kombination aus HTTP-Status UND
+    # Metadata-Treffer.
     action_probes: list[dict] = []
     for label, namespace, action in candidates:
         url = f"{base_part}/{namespace}.{action}"
-        entry: dict = {"label": label, "url": url, "method": "GET"}
+        full_name = f"{namespace}.{action}"
+        in_metadata = full_name in known_action_full_names
+        entry: dict = {"label": label, "url": url, "method": "GET",
+                       "inMetadata": in_metadata}
         try:
-            # _get suppress_errors damit wir die Status-Codes selbst inspizieren
             resp = client._get(url, None, suppress_errors=True)
             if resp is None:
                 entry.update(verdict="unknown", error="no response")
             else:
                 entry["status"] = resp.status_code
-                if resp.status_code == 405:
+                status = resp.status_code
+                if status == 405:
+                    # Action existiert definitiv (erwartet POST)
                     entry.update(verdict="EXISTS",
                                  hint="405 Method Not Allowed → Action ist deployt, erwartet POST")
-                elif resp.status_code == 404:
-                    entry.update(verdict="MISSING",
-                                 hint="404 Not Found → Action ist nicht deployt")
-                elif resp.status_code in (200, 204):
+                elif status == 404:
+                    entry.update(verdict="MISSING", hint="404 Not Found")
+                elif status in (200, 204):
                     entry.update(verdict="UNEXPECTED_GET_OK",
-                                 hint="GET hat geklappt — moeglich, dass es ein Function (nicht Action) ist",
+                                 hint="GET hat geklappt — moeglicherweise Function statt Action",
                                  sample=(resp.text or "")[:200])
-                elif resp.status_code in (400, 422):
-                    entry.update(verdict="EXISTS_LIKELY",
-                                 hint=f"{resp.status_code} → Endpoint existiert, Bad Request",
-                                 sample=(resp.text or "")[:200])
-                elif resp.status_code in (401, 403):
+                elif status in (400, 422):
+                    # Hier brauchen wir Metadata-Bestaetigung
+                    if in_metadata:
+                        entry.update(verdict="EXISTS",
+                                     hint=f"{status} + Metadata-Hit → Action ist deployt")
+                    else:
+                        entry.update(verdict="MISSING",
+                                     hint=f"{status} ohne Metadata-Hit → Action vermutlich nicht deployt (OData parst unbekannte Action-Names oft als 400)",
+                                     sample=(resp.text or "")[:200])
+                elif status in (401, 403):
                     entry.update(verdict="AUTH",
-                                 hint=f"{resp.status_code} → Auth-Problem")
+                                 hint=f"{status} → Auth-Problem oder fehlende Rechte")
                 else:
                     entry.update(verdict="OTHER",
                                  sample=(resp.text or "")[:200])
@@ -679,9 +716,17 @@ def diagnose_branch_actions(
 
     # ── Zusammenfassung ──────────────────────────────────────
     summary = {
-        "exists": [p["label"] for p in action_probes if p.get("verdict") in ("EXISTS", "EXISTS_LIKELY")],
+        "exists": [p["label"] for p in action_probes if p.get("verdict") == "EXISTS"],
         "missing": [p["label"] for p in action_probes if p.get("verdict") == "MISSING"],
-        "metadataHits": metadata_hits,
+        "auth": [p["label"] for p in action_probes if p.get("verdict") == "AUTH"],
+        "metadataActionsByDomain": {
+            dom: sorted([a["fullName"] for a in acts if "_parseError" not in a])
+            for dom, acts in actions_per_domain.items()
+        },
+        "metadataFunctionsByDomain": {
+            dom: sorted([f["fullName"] for f in fns if "_parseError" not in f])
+            for dom, fns in functions_per_domain.items()
+        },
     }
 
     return {
@@ -691,10 +736,11 @@ def diagnose_branch_actions(
         "metadata": metadata_findings,
         "actionProbes": action_probes,
         "note": (
-            "GET-Probes sind nebenwirkungsfrei. 405 beweist dass die Action "
-            "existiert, 404 dass sie fehlt. Der naechste Schritt ist, die "
-            "EXISTS-Actions mit echtem POST-Body zu testen — aber NUR auf "
-            "einem Test-Part, da NewBranch/SaveAs/Revise persistente Objekte erzeugen."
+            "Verdict-Logik: 405 oder (400 + Metadata-Hit) = EXISTS. "
+            "400 ohne Metadata-Hit = MISSING (OData liefert oft 400 statt 404 fuer "
+            "unbekannte Action-Names). 401/403 = AUTH (z.B. fehlende Rechte auf prod). "
+            "POST-Probes wurden bewusst nicht ausgefuehrt, weil sie persistente "
+            "Objekte erzeugen wuerden."
         ),
     }
 

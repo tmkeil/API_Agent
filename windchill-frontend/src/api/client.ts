@@ -377,6 +377,7 @@ export interface BranchActionProbe {
   url: string
   method: string
   status?: number
+  inMetadata?: boolean
   verdict?: 'EXISTS' | 'EXISTS_LIKELY' | 'MISSING' | 'AUTH' | 'OTHER' | 'ERROR' | 'UNEXPECTED_GET_OK' | 'unknown'
   hint?: string
   error?: string
@@ -388,7 +389,11 @@ export interface BranchActionsResponse {
   summary: {
     exists: string[]
     missing: string[]
-    metadataHits: Record<string, string[]>
+    auth?: string[]
+    metadataActionsByDomain?: Record<string, string[]>
+    metadataFunctionsByDomain?: Record<string, string[]>
+    /** legacy field, kept for backwards-compat */
+    metadataHits?: Record<string, string[]>
   }
   metadata: Record<string, { url: string; status?: number; sizeBytes?: number; contentType?: string; snippet?: string; error?: string }>
   actionProbes: BranchActionProbe[]

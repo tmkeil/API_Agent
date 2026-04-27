@@ -447,7 +447,7 @@ function BranchActionDiagnose({ partNumber }: { partNumber: string }) {
           {result && (
             <div className="space-y-3">
               {/* Zusammenfassung */}
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-3 gap-3">
                 <div className="bg-emerald-50 border border-emerald-200 rounded p-2">
                   <div className="text-[10px] uppercase font-semibold text-emerald-700 mb-1">
                     Verfügbar ({result.summary.exists.length})
@@ -472,29 +472,43 @@ function BranchActionDiagnose({ partNumber }: { partNumber: string }) {
                     </ul>
                   )}
                 </div>
+                <div className="bg-amber-50 border border-amber-200 rounded p-2">
+                  <div className="text-[10px] uppercase font-semibold text-amber-700 mb-1">
+                    Auth-Problem ({result.summary.auth?.length ?? 0})
+                  </div>
+                  {!result.summary.auth || result.summary.auth.length === 0 ? (
+                    <div className="text-slate-500 italic">keine</div>
+                  ) : (
+                    <ul className="font-mono text-[11px] text-amber-900 space-y-0.5">
+                      {result.summary.auth.map(l => <li key={l}>⚠ {l}</li>)}
+                    </ul>
+                  )}
+                </div>
               </div>
 
-              {/* Metadata-Hits */}
-              {Object.keys(result.summary.metadataHits).length > 0 && (
-                <div>
-                  <div className="text-[10px] uppercase font-semibold text-slate-500 mb-1">
-                    $metadata-Treffer
+              {/* Metadata-Actions nach Domain */}
+              {result.summary.metadataActionsByDomain && (
+                <details>
+                  <summary className="cursor-pointer text-[10px] uppercase font-semibold text-slate-500">
+                    Alle Actions im $metadata pro Domain
+                  </summary>
+                  <div className="mt-2 space-y-2">
+                    {Object.entries(result.summary.metadataActionsByDomain).map(([dom, names]) => (
+                      <div key={dom} className="border border-slate-200 rounded p-2">
+                        <div className="text-[10px] uppercase font-semibold text-slate-600 mb-1">
+                          {dom} <span className="font-normal text-slate-400">({names.length})</span>
+                        </div>
+                        {names.length === 0 ? (
+                          <div className="text-slate-400 italic text-[11px]">keine Actions deklariert</div>
+                        ) : (
+                          <div className="font-mono text-[11px] text-slate-700 flex flex-wrap gap-x-3 gap-y-0.5">
+                            {names.map(n => <span key={n}>{n}</span>)}
+                          </div>
+                        )}
+                      </div>
+                    ))}
                   </div>
-                  <table className="w-full font-mono text-[11px]">
-                    <tbody>
-                      {Object.entries(result.summary.metadataHits).map(([dom, hits]) => (
-                        <tr key={dom} className="border-t border-slate-100">
-                          <td className="py-1 pr-2 text-slate-500 align-top whitespace-nowrap">
-                            {dom}
-                          </td>
-                          <td className="py-1 text-slate-800">
-                            {hits.join(', ')}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                </details>
               )}
 
               {/* Action-Probes Detail */}
@@ -507,6 +521,7 @@ function BranchActionDiagnose({ partNumber }: { partNumber: string }) {
                     <tr className="text-left text-slate-500 border-b border-slate-200">
                       <th className="py-1 pr-2">Action</th>
                       <th className="py-1 pr-2">Status</th>
+                      <th className="py-1 pr-2">Meta</th>
                       <th className="py-1 pr-2">Verdict</th>
                       <th className="py-1">Hint</th>
                     </tr>
@@ -516,11 +531,14 @@ function BranchActionDiagnose({ partNumber }: { partNumber: string }) {
                       <tr key={p.label} className="border-t border-slate-100">
                         <td className="py-1 pr-2 text-slate-800">{p.label}</td>
                         <td className="py-1 pr-2 text-slate-600">{p.status ?? '—'}</td>
+                        <td className="py-1 pr-2 text-slate-600">{p.inMetadata ? '✓' : '—'}</td>
                         <td className={`py-1 pr-2 font-semibold ${
                           p.verdict === 'EXISTS' || p.verdict === 'EXISTS_LIKELY'
                             ? 'text-emerald-700'
                             : p.verdict === 'MISSING'
                             ? 'text-rose-700'
+                            : p.verdict === 'AUTH'
+                            ? 'text-amber-700'
                             : 'text-slate-500'
                         }`}>
                           {p.verdict}

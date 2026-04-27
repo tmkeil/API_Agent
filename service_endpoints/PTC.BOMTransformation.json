@@ -1,0 +1,5317 @@
+
+{
+  "swagger" : "2.0",
+  "info" : {
+    "description" : "PTC BOM Transformation Domain",
+    "version" : "3",
+    "title" : "PTC.BomTransformation"
+  },
+  "host" : "plm-dev.neuhausen.balluff.net:443",
+  "basePath" : "/Windchill/servlet/odata/v3/BomTransformation",
+  "tags" : [ {
+    "name" : "Service Endpoints"
+  } ],
+  "schemes" : [ "https" ],
+  "paths" : {
+    "/AssignPlant" : {
+      "post" : {
+        "tags" : [ "Service Endpoints" ],
+        "summary" : "Multi API to assign Plant Data objects to Part objects for a given Change object",
+        "description" : "Multi API to assign Plant Data objects to Part objects for a given Change object",
+        "operationId" : "Action_AssignPlant",
+        "parameters" : [ {
+          "name" : "$select",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$filter",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$top",
+          "in" : "query",
+          "required" : false,
+          "type" : "integer"
+        }, {
+          "name" : "$skip",
+          "in" : "query",
+          "required" : false,
+          "type" : "integer"
+        }, {
+          "name" : "$count",
+          "in" : "query",
+          "required" : false,
+          "type" : "boolean",
+          "default" : false
+        }, {
+          "name" : "$orderby",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$expand",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "CSRF_NONCE",
+          "in" : "header",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "in" : "body",
+          "name" : "body",
+          "required" : true,
+          "schema" : {
+            "$ref" : "#/definitions/PTC.BomTransformation.AssignPlant.Unbound.Body"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Success",
+            "schema" : {
+              "type" : "object",
+              "properties" : {
+                "value" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/definitions/PTC.BomTransformation.ExtendedDataListItem"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/CheckInDepartmentDatas" : {
+      "post" : {
+        "tags" : [ "Service Endpoints" ],
+        "summary" : "Multi API to Check In Department Data objects",
+        "description" : "Multi API to Check In Department Data objects",
+        "operationId" : "Action_CheckInDepartmentDatas",
+        "parameters" : [ {
+          "name" : "$select",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$filter",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$top",
+          "in" : "query",
+          "required" : false,
+          "type" : "integer"
+        }, {
+          "name" : "$skip",
+          "in" : "query",
+          "required" : false,
+          "type" : "integer"
+        }, {
+          "name" : "$count",
+          "in" : "query",
+          "required" : false,
+          "type" : "boolean",
+          "default" : false
+        }, {
+          "name" : "$orderby",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$expand",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "CSRF_NONCE",
+          "in" : "header",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "in" : "body",
+          "name" : "body",
+          "required" : true,
+          "schema" : {
+            "$ref" : "#/definitions/PTC.BomTransformation.CheckInDepartmentDatas.Unbound.Body"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Success",
+            "schema" : {
+              "type" : "object",
+              "properties" : {
+                "value" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/definitions/PTC.BomTransformation.DepartmentData"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/CheckInExtendedDatas" : {
+      "post" : {
+        "tags" : [ "Service Endpoints" ],
+        "summary" : "Multi API to Check In Extended Data objects",
+        "description" : "Multi API to Check In Extended Data objects",
+        "operationId" : "Action_CheckInExtendedDatas",
+        "parameters" : [ {
+          "name" : "$select",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$filter",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$top",
+          "in" : "query",
+          "required" : false,
+          "type" : "integer"
+        }, {
+          "name" : "$skip",
+          "in" : "query",
+          "required" : false,
+          "type" : "integer"
+        }, {
+          "name" : "$count",
+          "in" : "query",
+          "required" : false,
+          "type" : "boolean",
+          "default" : false
+        }, {
+          "name" : "$orderby",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$expand",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "CSRF_NONCE",
+          "in" : "header",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "in" : "body",
+          "name" : "body",
+          "required" : true,
+          "schema" : {
+            "$ref" : "#/definitions/PTC.BomTransformation.CheckInExtendedDatas.Unbound.Body"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Success",
+            "schema" : {
+              "type" : "object",
+              "properties" : {
+                "value" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/definitions/PTC.BomTransformation.ExtendedData"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/CheckOutDepartmentDatas" : {
+      "post" : {
+        "tags" : [ "Service Endpoints" ],
+        "summary" : "Multi API to Check Out Department Data objects",
+        "description" : "Multi API to Check Out Department Data objects",
+        "operationId" : "Action_CheckOutDepartmentDatas",
+        "parameters" : [ {
+          "name" : "$select",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$filter",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$top",
+          "in" : "query",
+          "required" : false,
+          "type" : "integer"
+        }, {
+          "name" : "$skip",
+          "in" : "query",
+          "required" : false,
+          "type" : "integer"
+        }, {
+          "name" : "$count",
+          "in" : "query",
+          "required" : false,
+          "type" : "boolean",
+          "default" : false
+        }, {
+          "name" : "$orderby",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$expand",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "CSRF_NONCE",
+          "in" : "header",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "in" : "body",
+          "name" : "body",
+          "required" : true,
+          "schema" : {
+            "$ref" : "#/definitions/PTC.BomTransformation.CheckOutDepartmentDatas.Unbound.Body"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Success",
+            "schema" : {
+              "type" : "object",
+              "properties" : {
+                "value" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/definitions/PTC.BomTransformation.DepartmentData"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/CheckOutExtendedDatas" : {
+      "post" : {
+        "tags" : [ "Service Endpoints" ],
+        "summary" : "Multi API to Check Out Extended Data objects",
+        "description" : "Multi API to Check Out Extended Data objects",
+        "operationId" : "Action_CheckOutExtendedDatas",
+        "parameters" : [ {
+          "name" : "$select",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$filter",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$top",
+          "in" : "query",
+          "required" : false,
+          "type" : "integer"
+        }, {
+          "name" : "$skip",
+          "in" : "query",
+          "required" : false,
+          "type" : "integer"
+        }, {
+          "name" : "$count",
+          "in" : "query",
+          "required" : false,
+          "type" : "boolean",
+          "default" : false
+        }, {
+          "name" : "$orderby",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$expand",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "CSRF_NONCE",
+          "in" : "header",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "in" : "body",
+          "name" : "body",
+          "required" : true,
+          "schema" : {
+            "$ref" : "#/definitions/PTC.BomTransformation.CheckOutExtendedDatas.Unbound.Body"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Success",
+            "schema" : {
+              "type" : "object",
+              "properties" : {
+                "value" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/definitions/PTC.BomTransformation.ExtendedData"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/CreateDepartmentData" : {
+      "post" : {
+        "tags" : [ "Service Endpoints" ],
+        "summary" : "Multi API to create Department Data objects for given Part objects",
+        "description" : "Multi API to create Department Data objects for given Part objects",
+        "operationId" : "Action_CreateDepartmentData",
+        "parameters" : [ {
+          "name" : "$select",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$filter",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$top",
+          "in" : "query",
+          "required" : false,
+          "type" : "integer"
+        }, {
+          "name" : "$skip",
+          "in" : "query",
+          "required" : false,
+          "type" : "integer"
+        }, {
+          "name" : "$count",
+          "in" : "query",
+          "required" : false,
+          "type" : "boolean",
+          "default" : false
+        }, {
+          "name" : "$orderby",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$expand",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "CSRF_NONCE",
+          "in" : "header",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "in" : "body",
+          "name" : "body",
+          "required" : true,
+          "schema" : {
+            "$ref" : "#/definitions/PTC.BomTransformation.CreateDepartmentData.Unbound.Body"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Success",
+            "schema" : {
+              "type" : "object",
+              "properties" : {
+                "value" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/definitions/PTC.BomTransformation.DepartmentDataListItem"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/CreateDepartmentDataForPlantData" : {
+      "post" : {
+        "tags" : [ "Service Endpoints" ],
+        "summary" : "Multi API to create Department Data objects for given Plant objects",
+        "description" : "Multi API to create Department Data objects for given Plant objects",
+        "operationId" : "Action_CreateDepartmentDataForPlantData",
+        "parameters" : [ {
+          "name" : "$select",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$filter",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$top",
+          "in" : "query",
+          "required" : false,
+          "type" : "integer"
+        }, {
+          "name" : "$skip",
+          "in" : "query",
+          "required" : false,
+          "type" : "integer"
+        }, {
+          "name" : "$count",
+          "in" : "query",
+          "required" : false,
+          "type" : "boolean",
+          "default" : false
+        }, {
+          "name" : "$orderby",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$expand",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "CSRF_NONCE",
+          "in" : "header",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "in" : "body",
+          "name" : "body",
+          "required" : true,
+          "schema" : {
+            "$ref" : "#/definitions/PTC.BomTransformation.CreateDepartmentDataForPlantData.Unbound.Body"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Success",
+            "schema" : {
+              "type" : "object",
+              "properties" : {
+                "value" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/definitions/PTC.BomTransformation.DepartmentDataForPlantListItem"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/DepartmentDatas" : {
+      "get" : {
+        "tags" : [ "Service Endpoints" ],
+        "summary" : "Get Department Data objects",
+        "description" : "Get Department Data objects",
+        "operationId" : "GetDepartmentDatas",
+        "parameters" : [ {
+          "name" : "$select",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$filter",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$top",
+          "in" : "query",
+          "required" : false,
+          "type" : "integer"
+        }, {
+          "name" : "$skip",
+          "in" : "query",
+          "required" : false,
+          "type" : "integer"
+        }, {
+          "name" : "$count",
+          "in" : "query",
+          "required" : false,
+          "type" : "boolean",
+          "default" : false
+        }, {
+          "name" : "$orderby",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$expand",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Success",
+            "schema" : {
+              "type" : "object",
+              "properties" : {
+                "value" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/definitions/PTC.BomTransformation.DepartmentData"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/DepartmentDatas('{DepartmentDataId}')" : {
+      "get" : {
+        "tags" : [ "Service Endpoints" ],
+        "summary" : "Get a given Department Data object",
+        "description" : "Get a given Department Data object",
+        "operationId" : "GetDepartmentData",
+        "parameters" : [ {
+          "name" : "DepartmentDataId",
+          "in" : "path",
+          "description" : "The identification key for the item to get",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "name" : "$select",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$expand",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Success",
+            "schema" : {
+              "$ref" : "#/definitions/PTC.BomTransformation.DepartmentData"
+            }
+          }
+        }
+      },
+      "patch" : {
+        "tags" : [ "Service Endpoints" ],
+        "summary" : "Update a given Department Data object",
+        "description" : "Update a given Department Data object",
+        "operationId" : "UpdateDepartmentData",
+        "parameters" : [ {
+          "name" : "DepartmentDataId",
+          "in" : "path",
+          "description" : "The identification key for the item to get",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "name" : "CSRF_NONCE",
+          "in" : "header",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "in" : "body",
+          "name" : "body",
+          "required" : true,
+          "schema" : {
+            "$ref" : "#/definitions/Update.PTC.BomTransformation.DepartmentData"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Success"
+          }
+        }
+      }
+    },
+    "/DepartmentDatas('{DepartmentDataId}')/Context" : {
+      "get" : {
+        "tags" : [ "Service Endpoints" ],
+        "summary" : "Get Container for a given Department Data object",
+        "description" : "Get Container for a given Department Data object",
+        "operationId" : "DepartmentData.Context.GetContainer",
+        "parameters" : [ {
+          "name" : "DepartmentDataId",
+          "in" : "path",
+          "description" : "The identification key for the item to get",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "name" : "$select",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$expand",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Success",
+            "schema" : {
+              "$ref" : "#/definitions/PTC.DataAdmin.Container"
+            }
+          }
+        }
+      }
+    },
+    "/DepartmentDatas('{DepartmentDataId}')/Creator" : {
+      "get" : {
+        "tags" : [ "Service Endpoints" ],
+        "summary" : "Get Creator for a given Department Data object",
+        "description" : "Get Creator for a given Department Data object",
+        "operationId" : "DepartmentData.Creator.GetUser",
+        "parameters" : [ {
+          "name" : "DepartmentDataId",
+          "in" : "path",
+          "description" : "The identification key for the item to get",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "name" : "$select",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$expand",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Success",
+            "schema" : {
+              "$ref" : "#/definitions/PTC.PrincipalMgmt.User"
+            }
+          }
+        }
+      }
+    },
+    "/DepartmentDatas('{DepartmentDataId}')/Effectivities" : {
+      "get" : {
+        "tags" : [ "Service Endpoints" ],
+        "summary" : "Get Effectivities associated with a given Department Data object",
+        "description" : "Get Effectivities associated with a given Department Data object",
+        "operationId" : "DepartmentData.Effectivities.GetEffectivitys",
+        "parameters" : [ {
+          "name" : "DepartmentDataId",
+          "in" : "path",
+          "description" : "The identification key for the item to get",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "name" : "$select",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$filter",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$top",
+          "in" : "query",
+          "required" : false,
+          "type" : "integer"
+        }, {
+          "name" : "$skip",
+          "in" : "query",
+          "required" : false,
+          "type" : "integer"
+        }, {
+          "name" : "$count",
+          "in" : "query",
+          "required" : false,
+          "type" : "boolean",
+          "default" : false
+        }, {
+          "name" : "$orderby",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$expand",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Success",
+            "schema" : {
+              "type" : "object",
+              "properties" : {
+                "value" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/definitions/PTC.EffectivityMgmt.Effectivity"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/DepartmentDatas('{DepartmentDataId}')/Effectivities('{EffectivityId}')" : {
+      "get" : {
+        "tags" : [ "Service Endpoints" ],
+        "summary" : "Get a given Effectivity associated with a given Department Data object",
+        "description" : "Get a given Effectivity associated with a given Department Data object",
+        "operationId" : "DepartmentData.Effectivities.GetEffectivity",
+        "parameters" : [ {
+          "name" : "DepartmentDataId",
+          "in" : "path",
+          "description" : "The identification key for the item to get",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "name" : "EffectivityId",
+          "in" : "path",
+          "description" : "The identification key for the item to get",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "name" : "$select",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$expand",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Success",
+            "schema" : {
+              "$ref" : "#/definitions/PTC.EffectivityMgmt.Effectivity"
+            }
+          }
+        }
+      }
+    },
+    "/DepartmentDatas('{DepartmentDataId}')/Modifier" : {
+      "get" : {
+        "tags" : [ "Service Endpoints" ],
+        "summary" : "Get Modifier for a given Department Data object",
+        "description" : "Get Modifier for a given Department Data object",
+        "operationId" : "DepartmentData.Modifier.GetUser",
+        "parameters" : [ {
+          "name" : "DepartmentDataId",
+          "in" : "path",
+          "description" : "The identification key for the item to get",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "name" : "$select",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$expand",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Success",
+            "schema" : {
+              "$ref" : "#/definitions/PTC.PrincipalMgmt.User"
+            }
+          }
+        }
+      }
+    },
+    "/DepartmentDatas('{DepartmentDataId}')/Organization" : {
+      "get" : {
+        "tags" : [ "Service Endpoints" ],
+        "summary" : "Get Organization for a given Department Data object",
+        "description" : "Get Organization for a given Department Data object",
+        "operationId" : "DepartmentData.Organization.GetOrganization",
+        "parameters" : [ {
+          "name" : "DepartmentDataId",
+          "in" : "path",
+          "description" : "The identification key for the item to get",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "name" : "$select",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Success",
+            "schema" : {
+              "$ref" : "#/definitions/PTC.PrincipalMgmt.Organization"
+            }
+          }
+        }
+      }
+    },
+    "/DepartmentDatas('{DepartmentDataId}')/PTC.BomTransformation.CheckIn" : {
+      "post" : {
+        "tags" : [ "Service Endpoints" ],
+        "summary" : "Check In a given Department Data object",
+        "description" : "Check In a given Department Data object",
+        "operationId" : "PTC.BomTransformation.DepartmentData.Action_CheckIn_With_CheckOutNote_KeepCheckedOut",
+        "parameters" : [ {
+          "name" : "$select",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$expand",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "CSRF_NONCE",
+          "in" : "header",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "name" : "DepartmentDataId",
+          "in" : "path",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "in" : "body",
+          "name" : "body",
+          "required" : true,
+          "schema" : {
+            "$ref" : "#/definitions/PTC.BomTransformation.CheckIn.Body"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Success",
+            "schema" : {
+              "$ref" : "#/definitions/PTC.BomTransformation.DepartmentData"
+            }
+          }
+        }
+      }
+    },
+    "/DepartmentDatas('{DepartmentDataId}')/PTC.BomTransformation.CheckOut" : {
+      "post" : {
+        "tags" : [ "Service Endpoints" ],
+        "summary" : "Check Out a given Department Data object",
+        "description" : "Check Out a given Department Data object",
+        "operationId" : "PTC.BomTransformation.DepartmentData.Action_CheckOut_With",
+        "parameters" : [ {
+          "name" : "$select",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$expand",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "CSRF_NONCE",
+          "in" : "header",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "name" : "DepartmentDataId",
+          "in" : "path",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "in" : "body",
+          "name" : "body",
+          "required" : true,
+          "schema" : {
+            "$ref" : "#/definitions/PTC.BomTransformation.CheckOut.Body"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Success",
+            "schema" : {
+              "$ref" : "#/definitions/PTC.BomTransformation.DepartmentData"
+            }
+          }
+        }
+      }
+    },
+    "/DepartmentDatas('{DepartmentDataId}')/PTC.BomTransformation.ModifyEffectivities" : {
+      "post" : {
+        "tags" : [ "Service Endpoints" ],
+        "summary" : "Modify Effectivities for a given  Department Data object",
+        "description" : "Modify Effectivities for a given  Department Data object",
+        "operationId" : "PTC.BomTransformation.DepartmentData.Action_ModifyEffectivities_With",
+        "parameters" : [ {
+          "name" : "$select",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$filter",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$top",
+          "in" : "query",
+          "required" : false,
+          "type" : "integer"
+        }, {
+          "name" : "$skip",
+          "in" : "query",
+          "required" : false,
+          "type" : "integer"
+        }, {
+          "name" : "$count",
+          "in" : "query",
+          "required" : false,
+          "type" : "boolean",
+          "default" : false
+        }, {
+          "name" : "$orderby",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$expand",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "CSRF_NONCE",
+          "in" : "header",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "name" : "DepartmentDataId",
+          "in" : "path",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "in" : "body",
+          "name" : "body",
+          "required" : true,
+          "schema" : {
+            "$ref" : "#/definitions/PTC.BomTransformation.ModifyEffectivities.Body"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Success",
+            "schema" : {
+              "type" : "object",
+              "properties" : {
+                "value" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/definitions/PTC.EffectivityMgmt.Effectivity"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/DepartmentDatas('{DepartmentDataId}')/PTC.BomTransformation.RemoveEffectivities" : {
+      "post" : {
+        "tags" : [ "Service Endpoints" ],
+        "summary" : "Remove Effectivities for a given Department Data object",
+        "description" : "Remove Effectivities for a given Department Data object",
+        "operationId" : "PTC.BomTransformation.DepartmentData.Action_RemoveEffectivities_With",
+        "parameters" : [ {
+          "name" : "CSRF_NONCE",
+          "in" : "header",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "name" : "DepartmentDataId",
+          "in" : "path",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "in" : "body",
+          "name" : "body",
+          "required" : true,
+          "schema" : {
+            "$ref" : "#/definitions/PTC.BomTransformation.RemoveEffectivities.Body"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Success"
+          }
+        }
+      }
+    },
+    "/DepartmentDatas('{DepartmentDataId}')/PTC.BomTransformation.Revise" : {
+      "post" : {
+        "tags" : [ "Service Endpoints" ],
+        "summary" : "Revise a given Department Data object",
+        "description" : "Revise a given Department Data object",
+        "operationId" : "PTC.BomTransformation.DepartmentData.Action_Revise_With",
+        "parameters" : [ {
+          "name" : "$select",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$expand",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "CSRF_NONCE",
+          "in" : "header",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "name" : "DepartmentDataId",
+          "in" : "path",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "in" : "body",
+          "name" : "body",
+          "required" : true,
+          "schema" : {
+            "$ref" : "#/definitions/PTC.BomTransformation.Revise.Body"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Success",
+            "schema" : {
+              "$ref" : "#/definitions/PTC.BomTransformation.DepartmentData"
+            }
+          }
+        }
+      }
+    },
+    "/DepartmentDatas('{DepartmentDataId}')/PTC.BomTransformation.SetState" : {
+      "post" : {
+        "tags" : [ "Service Endpoints" ],
+        "summary" : "Change the (life cycle) State for a given Department Data object",
+        "description" : "Change the (life cycle) State for a given Department Data object",
+        "operationId" : "PTC.BomTransformation.DepartmentData.Action_SetState_With",
+        "parameters" : [ {
+          "name" : "$select",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$expand",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "CSRF_NONCE",
+          "in" : "header",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "name" : "DepartmentDataId",
+          "in" : "path",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "in" : "body",
+          "name" : "body",
+          "required" : true,
+          "schema" : {
+            "$ref" : "#/definitions/PTC.BomTransformation.SetState.Body"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Success",
+            "schema" : {
+              "$ref" : "#/definitions/PTC.BomTransformation.DepartmentData"
+            }
+          }
+        }
+      }
+    },
+    "/DepartmentDatas('{DepartmentDataId}')/PTC.BomTransformation.UndoCheckOut" : {
+      "post" : {
+        "tags" : [ "Service Endpoints" ],
+        "summary" : "Undo Checkout for a given Department Data object",
+        "description" : "Undo Checkout for a given Department Data object",
+        "operationId" : "PTC.BomTransformation.DepartmentData.Action_UndoCheckOut",
+        "parameters" : [ {
+          "name" : "$select",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$expand",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "CSRF_NONCE",
+          "in" : "header",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "name" : "DepartmentDataId",
+          "in" : "path",
+          "required" : true,
+          "type" : "string"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Success",
+            "schema" : {
+              "$ref" : "#/definitions/PTC.BomTransformation.DepartmentData"
+            }
+          }
+        }
+      }
+    },
+    "/DepartmentDatas('{DepartmentDataId}')/ResultedByObjects" : {
+      "get" : {
+        "tags" : [ "Service Endpoints" ],
+        "summary" : "Get Change objects for a given Department Data object",
+        "description" : "Get Change objects for a given Department Data object",
+        "operationId" : "DepartmentData.ResultedByObjects.GetChangeItems",
+        "parameters" : [ {
+          "name" : "DepartmentDataId",
+          "in" : "path",
+          "description" : "The identification key for the item to get",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "name" : "$select",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$filter",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$top",
+          "in" : "query",
+          "required" : false,
+          "type" : "integer"
+        }, {
+          "name" : "$skip",
+          "in" : "query",
+          "required" : false,
+          "type" : "integer"
+        }, {
+          "name" : "$count",
+          "in" : "query",
+          "required" : false,
+          "type" : "boolean",
+          "default" : false
+        }, {
+          "name" : "$orderby",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Success",
+            "schema" : {
+              "type" : "object",
+              "properties" : {
+                "value" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/definitions/PTC.BomTransformation.ChangeItem"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/DepartmentDatas('{DepartmentDataId}')/ResultedByObjects('{ChangeItemId}')" : {
+      "get" : {
+        "tags" : [ "Service Endpoints" ],
+        "summary" : "Get a given Change object for a given Department Data object",
+        "description" : "Get a given Change object for a given Department Data object",
+        "operationId" : "DepartmentData.ResultedByObjects.GetChangeItem",
+        "parameters" : [ {
+          "name" : "DepartmentDataId",
+          "in" : "path",
+          "description" : "The identification key for the item to get",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "name" : "ChangeItemId",
+          "in" : "path",
+          "description" : "The identification key for the item to get",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "name" : "$select",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Success",
+            "schema" : {
+              "$ref" : "#/definitions/PTC.BomTransformation.ChangeItem"
+            }
+          }
+        }
+      }
+    },
+    "/DepartmentDatas('{DepartmentDataId}')/Revisions" : {
+      "get" : {
+        "tags" : [ "Service Endpoints" ],
+        "summary" : "Get all revisions of a given Department Data object",
+        "description" : "Get all revisions of a given Department Data object",
+        "operationId" : "DepartmentData.Revisions.GetDepartmentDatas",
+        "parameters" : [ {
+          "name" : "DepartmentDataId",
+          "in" : "path",
+          "description" : "The identification key for the item to get",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "name" : "$select",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$filter",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$top",
+          "in" : "query",
+          "required" : false,
+          "type" : "integer"
+        }, {
+          "name" : "$skip",
+          "in" : "query",
+          "required" : false,
+          "type" : "integer"
+        }, {
+          "name" : "$count",
+          "in" : "query",
+          "required" : false,
+          "type" : "boolean",
+          "default" : false
+        }, {
+          "name" : "$orderby",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$expand",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Success",
+            "schema" : {
+              "type" : "object",
+              "properties" : {
+                "value" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/definitions/PTC.BomTransformation.DepartmentData"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/DepartmentDatas('{DepartmentDataId}')/Revisions('{RevisionsId}')" : {
+      "get" : {
+        "tags" : [ "Service Endpoints" ],
+        "summary" : "Get a given Revision of a given Department Data object",
+        "description" : "Get a given Revision of a given Department Data object",
+        "operationId" : "DepartmentData.Revisions.GetDepartmentData",
+        "parameters" : [ {
+          "name" : "DepartmentDataId",
+          "in" : "path",
+          "description" : "The identification key for the item to get",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "name" : "RevisionsId",
+          "in" : "path",
+          "description" : "The identification key for the item to get",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "name" : "$select",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$expand",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Success",
+            "schema" : {
+              "$ref" : "#/definitions/PTC.BomTransformation.DepartmentData"
+            }
+          }
+        }
+      }
+    },
+    "/DepartmentDatas('{DepartmentDataId}')/Versions" : {
+      "get" : {
+        "tags" : [ "Service Endpoints" ],
+        "summary" : "Get all versions of a given Department Data object",
+        "description" : "Get all versions of a given Department Data object",
+        "operationId" : "DepartmentData.Versions.GetDepartmentDatas",
+        "parameters" : [ {
+          "name" : "DepartmentDataId",
+          "in" : "path",
+          "description" : "The identification key for the item to get",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "name" : "$select",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$filter",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$top",
+          "in" : "query",
+          "required" : false,
+          "type" : "integer"
+        }, {
+          "name" : "$skip",
+          "in" : "query",
+          "required" : false,
+          "type" : "integer"
+        }, {
+          "name" : "$count",
+          "in" : "query",
+          "required" : false,
+          "type" : "boolean",
+          "default" : false
+        }, {
+          "name" : "$orderby",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$expand",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Success",
+            "schema" : {
+              "type" : "object",
+              "properties" : {
+                "value" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/definitions/PTC.BomTransformation.DepartmentData"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/DepartmentDatas('{DepartmentDataId}')/Versions('{VersionsId}')" : {
+      "get" : {
+        "tags" : [ "Service Endpoints" ],
+        "summary" : "Get a given Version of a given Department Data object",
+        "description" : "Get a given Version of a given Department Data object",
+        "operationId" : "DepartmentData.Versions.GetDepartmentData",
+        "parameters" : [ {
+          "name" : "DepartmentDataId",
+          "in" : "path",
+          "description" : "The identification key for the item to get",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "name" : "VersionsId",
+          "in" : "path",
+          "description" : "The identification key for the item to get",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "name" : "$select",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$expand",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Success",
+            "schema" : {
+              "$ref" : "#/definitions/PTC.BomTransformation.DepartmentData"
+            }
+          }
+        }
+      }
+    },
+    "/DepartmentDatas(@DepartmentDataId)/PTC.BomTransformation.GetLifeCycleTemplate()" : {
+      "get" : {
+        "tags" : [ "Service Endpoints" ],
+        "summary" : "Execute GetLifeCycleTemplate",
+        "description" : "Execute GetLifeCycleTemplate",
+        "operationId" : "PTC.BomTransformation.DepartmentData.Function_GetLifeCycleTemplate",
+        "parameters" : [ {
+          "name" : "@DepartmentDataId",
+          "in" : "query",
+          "required" : true,
+          "type" : "string"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Success",
+            "schema" : {
+              "$ref" : "#/definitions/PTC.LifeCycleTemplate"
+            }
+          }
+        }
+      }
+    },
+    "/DepartmentDatas(@DepartmentDataId)/PTC.BomTransformation.GetValidStateTransitions()" : {
+      "get" : {
+        "tags" : [ "Service Endpoints" ],
+        "summary" : "Get valid State Transitions for a given Department Data object",
+        "description" : "Get valid State Transitions for a given Department Data object",
+        "operationId" : "PTC.BomTransformation.DepartmentData.Function_GetValidStateTransitions",
+        "parameters" : [ {
+          "name" : "@DepartmentDataId",
+          "in" : "query",
+          "required" : true,
+          "type" : "string"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Success",
+            "schema" : {
+              "$ref" : "#/definitions/PTC.EnumTypeList"
+            }
+          }
+        }
+      }
+    },
+    "/DepartmentDatas(@DepartmentDataId)/PTC.BomTransformation.IsCheckoutAllowed()" : {
+      "get" : {
+        "tags" : [ "Service Endpoints" ],
+        "summary" : "Execute IsCheckoutAllowed for a given Department Data object",
+        "description" : "Execute IsCheckoutAllowed for a given Department Data object",
+        "operationId" : "PTC.BomTransformation.DepartmentData.Function_IsCheckoutAllowed",
+        "parameters" : [ {
+          "name" : "@DepartmentDataId",
+          "in" : "query",
+          "required" : true,
+          "type" : "string"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Success",
+            "schema" : {
+              "$ref" : "#/definitions/PTC.BomTransformation.DepartmentData"
+            }
+          }
+        }
+      }
+    },
+    "/DetectAndResolveDiscrepancies" : {
+      "post" : {
+        "tags" : [ "Service Endpoints" ],
+        "summary" : "Detects discrepancies and resolve them.",
+        "description" : "Detects discrepancies and resolve them.",
+        "operationId" : "Action_DetectAndResolveDiscrepancies",
+        "parameters" : [ {
+          "name" : "$select",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$filter",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$top",
+          "in" : "query",
+          "required" : false,
+          "type" : "integer"
+        }, {
+          "name" : "$skip",
+          "in" : "query",
+          "required" : false,
+          "type" : "integer"
+        }, {
+          "name" : "$count",
+          "in" : "query",
+          "required" : false,
+          "type" : "boolean",
+          "default" : false
+        }, {
+          "name" : "$orderby",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$expand",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "CSRF_NONCE",
+          "in" : "header",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "in" : "body",
+          "name" : "body",
+          "required" : true,
+          "schema" : {
+            "$ref" : "#/definitions/PTC.BomTransformation.DetectAndResolveDiscrepancies.Unbound.Body"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Success",
+            "schema" : {
+              "type" : "object",
+              "properties" : {
+                "value" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/definitions/PTC.BomTransformation.DiscrepancyItem"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/DetectDiscrepancies" : {
+      "post" : {
+        "tags" : [ "Service Endpoints" ],
+        "summary" : "Detects discrepancies between upstream and downstream",
+        "description" : "Detects discrepancies between upstream and downstream",
+        "operationId" : "Action_DetectDiscrepancies",
+        "parameters" : [ {
+          "name" : "$select",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$filter",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$top",
+          "in" : "query",
+          "required" : false,
+          "type" : "integer"
+        }, {
+          "name" : "$skip",
+          "in" : "query",
+          "required" : false,
+          "type" : "integer"
+        }, {
+          "name" : "$count",
+          "in" : "query",
+          "required" : false,
+          "type" : "boolean",
+          "default" : false
+        }, {
+          "name" : "$orderby",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$expand",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "CSRF_NONCE",
+          "in" : "header",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "in" : "body",
+          "name" : "body",
+          "required" : true,
+          "schema" : {
+            "$ref" : "#/definitions/PTC.BomTransformation.DetectDiscrepancies.Unbound.Body"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Success",
+            "schema" : {
+              "type" : "object",
+              "properties" : {
+                "value" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/definitions/PTC.BomTransformation.DiscrepancyItem"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/ExtendedDatas" : {
+      "get" : {
+        "tags" : [ "Service Endpoints" ],
+        "summary" : "Get Extended Data objects",
+        "description" : "Get Extended Data objects",
+        "operationId" : "GetExtendedDatas",
+        "parameters" : [ {
+          "name" : "$select",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$filter",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$top",
+          "in" : "query",
+          "required" : false,
+          "type" : "integer"
+        }, {
+          "name" : "$skip",
+          "in" : "query",
+          "required" : false,
+          "type" : "integer"
+        }, {
+          "name" : "$count",
+          "in" : "query",
+          "required" : false,
+          "type" : "boolean",
+          "default" : false
+        }, {
+          "name" : "$orderby",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$expand",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Success",
+            "schema" : {
+              "type" : "object",
+              "properties" : {
+                "value" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/definitions/PTC.BomTransformation.ExtendedData"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/ExtendedDatas('{ExtendedDataId}')" : {
+      "get" : {
+        "tags" : [ "Service Endpoints" ],
+        "summary" : "Get a given Extended Data object",
+        "description" : "Get a given Extended Data object",
+        "operationId" : "GetExtendedData",
+        "parameters" : [ {
+          "name" : "ExtendedDataId",
+          "in" : "path",
+          "description" : "The identification key for the item to get",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "name" : "$select",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$expand",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Success",
+            "schema" : {
+              "$ref" : "#/definitions/PTC.BomTransformation.ExtendedData"
+            }
+          }
+        }
+      },
+      "patch" : {
+        "tags" : [ "Service Endpoints" ],
+        "summary" : "Update a given Extended Data object",
+        "description" : "Update a given Extended Data object",
+        "operationId" : "UpdateExtendedData",
+        "parameters" : [ {
+          "name" : "ExtendedDataId",
+          "in" : "path",
+          "description" : "The identification key for the item to get",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "name" : "CSRF_NONCE",
+          "in" : "header",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "in" : "body",
+          "name" : "body",
+          "required" : true,
+          "schema" : {
+            "$ref" : "#/definitions/Update.PTC.BomTransformation.ExtendedData"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Success"
+          }
+        }
+      }
+    },
+    "/ExtendedDatas('{ExtendedDataId}')/Context" : {
+      "get" : {
+        "tags" : [ "Service Endpoints" ],
+        "summary" : "Get Container for a given Extended Data object",
+        "description" : "Get Container for a given Extended Data object",
+        "operationId" : "ExtendedData.Context.GetContainer",
+        "parameters" : [ {
+          "name" : "ExtendedDataId",
+          "in" : "path",
+          "description" : "The identification key for the item to get",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "name" : "$select",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$expand",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Success",
+            "schema" : {
+              "$ref" : "#/definitions/PTC.DataAdmin.Container"
+            }
+          }
+        }
+      }
+    },
+    "/ExtendedDatas('{ExtendedDataId}')/Creator" : {
+      "get" : {
+        "tags" : [ "Service Endpoints" ],
+        "summary" : "Get Creator for a given Extended Data object",
+        "description" : "Get Creator for a given Extended Data object",
+        "operationId" : "ExtendedData.Creator.GetUser",
+        "parameters" : [ {
+          "name" : "ExtendedDataId",
+          "in" : "path",
+          "description" : "The identification key for the item to get",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "name" : "$select",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$expand",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Success",
+            "schema" : {
+              "$ref" : "#/definitions/PTC.PrincipalMgmt.User"
+            }
+          }
+        }
+      }
+    },
+    "/ExtendedDatas('{ExtendedDataId}')/DepartmentData" : {
+      "get" : {
+        "tags" : [ "Service Endpoints" ],
+        "summary" : "Get Department Data objects associated with a given Extended Data object",
+        "description" : "Get Department Data objects associated with a given Extended Data object",
+        "operationId" : "ExtendedData.DepartmentData.GetDepartmentDatas",
+        "parameters" : [ {
+          "name" : "ExtendedDataId",
+          "in" : "path",
+          "description" : "The identification key for the item to get",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "name" : "$select",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$filter",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$top",
+          "in" : "query",
+          "required" : false,
+          "type" : "integer"
+        }, {
+          "name" : "$skip",
+          "in" : "query",
+          "required" : false,
+          "type" : "integer"
+        }, {
+          "name" : "$count",
+          "in" : "query",
+          "required" : false,
+          "type" : "boolean",
+          "default" : false
+        }, {
+          "name" : "$orderby",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$expand",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Success",
+            "schema" : {
+              "type" : "object",
+              "properties" : {
+                "value" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/definitions/PTC.BomTransformation.DepartmentData"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/ExtendedDatas('{ExtendedDataId}')/DepartmentData('{DepartmentDataId}')" : {
+      "get" : {
+        "tags" : [ "Service Endpoints" ],
+        "summary" : "Get a given Department Data object associated with a given Extended Data object",
+        "description" : "Get a given Department Data object associated with a given Extended Data object",
+        "operationId" : "ExtendedData.DepartmentData.GetDepartmentData",
+        "parameters" : [ {
+          "name" : "ExtendedDataId",
+          "in" : "path",
+          "description" : "The identification key for the item to get",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "name" : "DepartmentDataId",
+          "in" : "path",
+          "description" : "The identification key for the item to get",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "name" : "$select",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$expand",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Success",
+            "schema" : {
+              "$ref" : "#/definitions/PTC.BomTransformation.DepartmentData"
+            }
+          }
+        }
+      }
+    },
+    "/ExtendedDatas('{ExtendedDataId}')/Effectivities" : {
+      "get" : {
+        "tags" : [ "Service Endpoints" ],
+        "summary" : "Get Effectivities associated with a given Extended Data object",
+        "description" : "Get Effectivities associated with a given Extended Data object",
+        "operationId" : "ExtendedData.Effectivities.GetEffectivitys",
+        "parameters" : [ {
+          "name" : "ExtendedDataId",
+          "in" : "path",
+          "description" : "The identification key for the item to get",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "name" : "$select",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$filter",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$top",
+          "in" : "query",
+          "required" : false,
+          "type" : "integer"
+        }, {
+          "name" : "$skip",
+          "in" : "query",
+          "required" : false,
+          "type" : "integer"
+        }, {
+          "name" : "$count",
+          "in" : "query",
+          "required" : false,
+          "type" : "boolean",
+          "default" : false
+        }, {
+          "name" : "$orderby",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$expand",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Success",
+            "schema" : {
+              "type" : "object",
+              "properties" : {
+                "value" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/definitions/PTC.EffectivityMgmt.Effectivity"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/ExtendedDatas('{ExtendedDataId}')/Effectivities('{EffectivityId}')" : {
+      "get" : {
+        "tags" : [ "Service Endpoints" ],
+        "summary" : "Get a given Effectivity associated with a given Extended Data object",
+        "description" : "Get a given Effectivity associated with a given Extended Data object",
+        "operationId" : "ExtendedData.Effectivities.GetEffectivity",
+        "parameters" : [ {
+          "name" : "ExtendedDataId",
+          "in" : "path",
+          "description" : "The identification key for the item to get",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "name" : "EffectivityId",
+          "in" : "path",
+          "description" : "The identification key for the item to get",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "name" : "$select",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$expand",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Success",
+            "schema" : {
+              "$ref" : "#/definitions/PTC.EffectivityMgmt.Effectivity"
+            }
+          }
+        }
+      }
+    },
+    "/ExtendedDatas('{ExtendedDataId}')/Folder" : {
+      "get" : {
+        "tags" : [ "Service Endpoints" ],
+        "summary" : "Get Folder for a given Extended Data object",
+        "description" : "Get Folder for a given Extended Data object",
+        "operationId" : "ExtendedData.Folder.GetFolder",
+        "parameters" : [ {
+          "name" : "ExtendedDataId",
+          "in" : "path",
+          "description" : "The identification key for the item to get",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "name" : "$select",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$expand",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Success",
+            "schema" : {
+              "$ref" : "#/definitions/PTC.DataAdmin.Folder"
+            }
+          }
+        }
+      }
+    },
+    "/ExtendedDatas('{ExtendedDataId}')/Modifier" : {
+      "get" : {
+        "tags" : [ "Service Endpoints" ],
+        "summary" : "Get Modifier a given Extended Data object",
+        "description" : "Get Modifier a given Extended Data object",
+        "operationId" : "ExtendedData.Modifier.GetUser",
+        "parameters" : [ {
+          "name" : "ExtendedDataId",
+          "in" : "path",
+          "description" : "The identification key for the item to get",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "name" : "$select",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$expand",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Success",
+            "schema" : {
+              "$ref" : "#/definitions/PTC.PrincipalMgmt.User"
+            }
+          }
+        }
+      }
+    },
+    "/ExtendedDatas('{ExtendedDataId}')/Organization" : {
+      "get" : {
+        "tags" : [ "Service Endpoints" ],
+        "summary" : "Get Organization a given Extended Data object",
+        "description" : "Get Organization a given Extended Data object",
+        "operationId" : "ExtendedData.Organization.GetOrganization",
+        "parameters" : [ {
+          "name" : "ExtendedDataId",
+          "in" : "path",
+          "description" : "The identification key for the item to get",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "name" : "$select",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Success",
+            "schema" : {
+              "$ref" : "#/definitions/PTC.PrincipalMgmt.Organization"
+            }
+          }
+        }
+      }
+    },
+    "/ExtendedDatas('{ExtendedDataId}')/PTC.BomTransformation.CheckIn" : {
+      "post" : {
+        "tags" : [ "Service Endpoints" ],
+        "summary" : "Check In a given Extended Data object",
+        "description" : "Check In a given Extended Data object",
+        "operationId" : "PTC.BomTransformation.ExtendedData.Action_CheckIn_With_CheckOutNote_KeepCheckedOut",
+        "parameters" : [ {
+          "name" : "$select",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$expand",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "CSRF_NONCE",
+          "in" : "header",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "name" : "ExtendedDataId",
+          "in" : "path",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "in" : "body",
+          "name" : "body",
+          "required" : true,
+          "schema" : {
+            "$ref" : "#/definitions/PTC.BomTransformation.CheckIn.Body"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Success",
+            "schema" : {
+              "$ref" : "#/definitions/PTC.BomTransformation.ExtendedData"
+            }
+          }
+        }
+      }
+    },
+    "/ExtendedDatas('{ExtendedDataId}')/PTC.BomTransformation.CheckOut" : {
+      "post" : {
+        "tags" : [ "Service Endpoints" ],
+        "summary" : "Check Out a given  Extended Data object",
+        "description" : "Check Out a given  Extended Data object",
+        "operationId" : "PTC.BomTransformation.ExtendedData.Action_CheckOut_With",
+        "parameters" : [ {
+          "name" : "$select",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$expand",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "CSRF_NONCE",
+          "in" : "header",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "name" : "ExtendedDataId",
+          "in" : "path",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "in" : "body",
+          "name" : "body",
+          "required" : true,
+          "schema" : {
+            "$ref" : "#/definitions/PTC.BomTransformation.CheckOut.Body"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Success",
+            "schema" : {
+              "$ref" : "#/definitions/PTC.BomTransformation.ExtendedData"
+            }
+          }
+        }
+      }
+    },
+    "/ExtendedDatas('{ExtendedDataId}')/PTC.BomTransformation.ModifyEffectivities" : {
+      "post" : {
+        "tags" : [ "Service Endpoints" ],
+        "summary" : "Modify Effectivities for a given Extended Data object",
+        "description" : "Modify Effectivities for a given Extended Data object",
+        "operationId" : "PTC.BomTransformation.ExtendedData.Action_ModifyEffectivities_With",
+        "parameters" : [ {
+          "name" : "$select",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$filter",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$top",
+          "in" : "query",
+          "required" : false,
+          "type" : "integer"
+        }, {
+          "name" : "$skip",
+          "in" : "query",
+          "required" : false,
+          "type" : "integer"
+        }, {
+          "name" : "$count",
+          "in" : "query",
+          "required" : false,
+          "type" : "boolean",
+          "default" : false
+        }, {
+          "name" : "$orderby",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$expand",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "CSRF_NONCE",
+          "in" : "header",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "name" : "ExtendedDataId",
+          "in" : "path",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "in" : "body",
+          "name" : "body",
+          "required" : true,
+          "schema" : {
+            "$ref" : "#/definitions/PTC.BomTransformation.ModifyEffectivities.Body"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Success",
+            "schema" : {
+              "type" : "object",
+              "properties" : {
+                "value" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/definitions/PTC.EffectivityMgmt.Effectivity"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/ExtendedDatas('{ExtendedDataId}')/PTC.BomTransformation.RemoveEffectivities" : {
+      "post" : {
+        "tags" : [ "Service Endpoints" ],
+        "summary" : "Remove Effectivities for a given Extended Data object",
+        "description" : "Remove Effectivities for a given Extended Data object",
+        "operationId" : "PTC.BomTransformation.ExtendedData.Action_RemoveEffectivities_With",
+        "parameters" : [ {
+          "name" : "CSRF_NONCE",
+          "in" : "header",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "name" : "ExtendedDataId",
+          "in" : "path",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "in" : "body",
+          "name" : "body",
+          "required" : true,
+          "schema" : {
+            "$ref" : "#/definitions/PTC.BomTransformation.RemoveEffectivities.Body"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Success"
+          }
+        }
+      }
+    },
+    "/ExtendedDatas('{ExtendedDataId}')/PTC.BomTransformation.Revise" : {
+      "post" : {
+        "tags" : [ "Service Endpoints" ],
+        "summary" : "Revise a given Extended Data object",
+        "description" : "Revise a given Extended Data object",
+        "operationId" : "PTC.BomTransformation.ExtendedData.Action_Revise_With",
+        "parameters" : [ {
+          "name" : "$select",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$expand",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "CSRF_NONCE",
+          "in" : "header",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "name" : "ExtendedDataId",
+          "in" : "path",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "in" : "body",
+          "name" : "body",
+          "required" : true,
+          "schema" : {
+            "$ref" : "#/definitions/PTC.BomTransformation.Revise.Body"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Success",
+            "schema" : {
+              "$ref" : "#/definitions/PTC.BomTransformation.ExtendedData"
+            }
+          }
+        }
+      }
+    },
+    "/ExtendedDatas('{ExtendedDataId}')/PTC.BomTransformation.SetState" : {
+      "post" : {
+        "tags" : [ "Service Endpoints" ],
+        "summary" : "Change the (life cycle) State for a given Extended Data object",
+        "description" : "Change the (life cycle) State for a given Extended Data object",
+        "operationId" : "PTC.BomTransformation.ExtendedData.Action_SetState_With",
+        "parameters" : [ {
+          "name" : "$select",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$expand",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "CSRF_NONCE",
+          "in" : "header",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "name" : "ExtendedDataId",
+          "in" : "path",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "in" : "body",
+          "name" : "body",
+          "required" : true,
+          "schema" : {
+            "$ref" : "#/definitions/PTC.BomTransformation.SetState.Body"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Success",
+            "schema" : {
+              "$ref" : "#/definitions/PTC.BomTransformation.ExtendedData"
+            }
+          }
+        }
+      }
+    },
+    "/ExtendedDatas('{ExtendedDataId}')/PTC.BomTransformation.UndoCheckOut" : {
+      "post" : {
+        "tags" : [ "Service Endpoints" ],
+        "summary" : "Undo Checkout for a given Extended Data object",
+        "description" : "Undo Checkout for a given Extended Data object",
+        "operationId" : "PTC.BomTransformation.ExtendedData.Action_UndoCheckOut",
+        "parameters" : [ {
+          "name" : "$select",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$expand",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "CSRF_NONCE",
+          "in" : "header",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "name" : "ExtendedDataId",
+          "in" : "path",
+          "required" : true,
+          "type" : "string"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Success",
+            "schema" : {
+              "$ref" : "#/definitions/PTC.BomTransformation.ExtendedData"
+            }
+          }
+        }
+      }
+    },
+    "/ExtendedDatas('{ExtendedDataId}')/ResultedByObjects" : {
+      "get" : {
+        "tags" : [ "Service Endpoints" ],
+        "summary" : "Get Change objects for a given Extended Data object",
+        "description" : "Get Change objects for a given Extended Data object",
+        "operationId" : "ExtendedData.ResultedByObjects.GetChangeItems",
+        "parameters" : [ {
+          "name" : "ExtendedDataId",
+          "in" : "path",
+          "description" : "The identification key for the item to get",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "name" : "$select",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$filter",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$top",
+          "in" : "query",
+          "required" : false,
+          "type" : "integer"
+        }, {
+          "name" : "$skip",
+          "in" : "query",
+          "required" : false,
+          "type" : "integer"
+        }, {
+          "name" : "$count",
+          "in" : "query",
+          "required" : false,
+          "type" : "boolean",
+          "default" : false
+        }, {
+          "name" : "$orderby",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Success",
+            "schema" : {
+              "type" : "object",
+              "properties" : {
+                "value" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/definitions/PTC.BomTransformation.ChangeItem"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/ExtendedDatas('{ExtendedDataId}')/ResultedByObjects('{ChangeItemId}')" : {
+      "get" : {
+        "tags" : [ "Service Endpoints" ],
+        "summary" : "Get a given Change object for a given Extended Data object",
+        "description" : "Get a given Change object for a given Extended Data object",
+        "operationId" : "ExtendedData.ResultedByObjects.GetChangeItem",
+        "parameters" : [ {
+          "name" : "ExtendedDataId",
+          "in" : "path",
+          "description" : "The identification key for the item to get",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "name" : "ChangeItemId",
+          "in" : "path",
+          "description" : "The identification key for the item to get",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "name" : "$select",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Success",
+            "schema" : {
+              "$ref" : "#/definitions/PTC.BomTransformation.ChangeItem"
+            }
+          }
+        }
+      }
+    },
+    "/ExtendedDatas('{ExtendedDataId}')/Revisions" : {
+      "get" : {
+        "tags" : [ "Service Endpoints" ],
+        "summary" : "Get all revisions of a given Extended Data object",
+        "description" : "Get all revisions of a given Extended Data object",
+        "operationId" : "ExtendedData.Revisions.GetExtendedDatas",
+        "parameters" : [ {
+          "name" : "ExtendedDataId",
+          "in" : "path",
+          "description" : "The identification key for the item to get",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "name" : "$select",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$filter",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$top",
+          "in" : "query",
+          "required" : false,
+          "type" : "integer"
+        }, {
+          "name" : "$skip",
+          "in" : "query",
+          "required" : false,
+          "type" : "integer"
+        }, {
+          "name" : "$count",
+          "in" : "query",
+          "required" : false,
+          "type" : "boolean",
+          "default" : false
+        }, {
+          "name" : "$orderby",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$expand",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Success",
+            "schema" : {
+              "type" : "object",
+              "properties" : {
+                "value" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/definitions/PTC.BomTransformation.ExtendedData"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/ExtendedDatas('{ExtendedDataId}')/Revisions('{RevisionsId}')" : {
+      "get" : {
+        "tags" : [ "Service Endpoints" ],
+        "summary" : "Get a given Revision of a given Extended Data object",
+        "description" : "Get a given Revision of a given Extended Data object",
+        "operationId" : "ExtendedData.Revisions.GetExtendedData",
+        "parameters" : [ {
+          "name" : "ExtendedDataId",
+          "in" : "path",
+          "description" : "The identification key for the item to get",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "name" : "RevisionsId",
+          "in" : "path",
+          "description" : "The identification key for the item to get",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "name" : "$select",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$expand",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Success",
+            "schema" : {
+              "$ref" : "#/definitions/PTC.BomTransformation.ExtendedData"
+            }
+          }
+        }
+      }
+    },
+    "/ExtendedDatas('{ExtendedDataId}')/Versions" : {
+      "get" : {
+        "tags" : [ "Service Endpoints" ],
+        "summary" : "Get all versions of a given Extended Data object",
+        "description" : "Get all versions of a given Extended Data object",
+        "operationId" : "ExtendedData.Versions.GetExtendedDatas",
+        "parameters" : [ {
+          "name" : "ExtendedDataId",
+          "in" : "path",
+          "description" : "The identification key for the item to get",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "name" : "$select",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$filter",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$top",
+          "in" : "query",
+          "required" : false,
+          "type" : "integer"
+        }, {
+          "name" : "$skip",
+          "in" : "query",
+          "required" : false,
+          "type" : "integer"
+        }, {
+          "name" : "$count",
+          "in" : "query",
+          "required" : false,
+          "type" : "boolean",
+          "default" : false
+        }, {
+          "name" : "$orderby",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$expand",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Success",
+            "schema" : {
+              "type" : "object",
+              "properties" : {
+                "value" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/definitions/PTC.BomTransformation.ExtendedData"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/ExtendedDatas('{ExtendedDataId}')/Versions('{VersionsId}')" : {
+      "get" : {
+        "tags" : [ "Service Endpoints" ],
+        "summary" : "Get a given Version of a given Extended Data object",
+        "description" : "Get a given Version of a given Extended Data object",
+        "operationId" : "ExtendedData.Versions.GetExtendedData",
+        "parameters" : [ {
+          "name" : "ExtendedDataId",
+          "in" : "path",
+          "description" : "The identification key for the item to get",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "name" : "VersionsId",
+          "in" : "path",
+          "description" : "The identification key for the item to get",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "name" : "$select",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$expand",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Success",
+            "schema" : {
+              "$ref" : "#/definitions/PTC.BomTransformation.ExtendedData"
+            }
+          }
+        }
+      }
+    },
+    "/ExtendedDatas(@ExtendedDataId)/PTC.BomTransformation.GetLifeCycleTemplate()" : {
+      "get" : {
+        "tags" : [ "Service Endpoints" ],
+        "summary" : "Execute GetLifeCycleTemplate",
+        "description" : "Execute GetLifeCycleTemplate",
+        "operationId" : "PTC.BomTransformation.ExtendedData.Function_GetLifeCycleTemplate",
+        "parameters" : [ {
+          "name" : "@ExtendedDataId",
+          "in" : "query",
+          "required" : true,
+          "type" : "string"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Success",
+            "schema" : {
+              "$ref" : "#/definitions/PTC.LifeCycleTemplate"
+            }
+          }
+        }
+      }
+    },
+    "/ExtendedDatas(@ExtendedDataId)/PTC.BomTransformation.GetValidStateTransitions()" : {
+      "get" : {
+        "tags" : [ "Service Endpoints" ],
+        "summary" : "Get valid State Transitions for a given Extended Data object",
+        "description" : "Get valid State Transitions for a given Extended Data object",
+        "operationId" : "PTC.BomTransformation.ExtendedData.Function_GetValidStateTransitions",
+        "parameters" : [ {
+          "name" : "@ExtendedDataId",
+          "in" : "query",
+          "required" : true,
+          "type" : "string"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Success",
+            "schema" : {
+              "$ref" : "#/definitions/PTC.EnumTypeList"
+            }
+          }
+        }
+      }
+    },
+    "/ExtendedDatas(@ExtendedDataId)/PTC.BomTransformation.IsCheckoutAllowed()" : {
+      "get" : {
+        "tags" : [ "Service Endpoints" ],
+        "summary" : "Execute IsCheckoutAllowed for a given Extended Data object",
+        "description" : "Execute IsCheckoutAllowed for a given Extended Data object",
+        "operationId" : "PTC.BomTransformation.ExtendedData.Function_IsCheckoutAllowed",
+        "parameters" : [ {
+          "name" : "@ExtendedDataId",
+          "in" : "query",
+          "required" : true,
+          "type" : "string"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Success",
+            "schema" : {
+              "$ref" : "#/definitions/PTC.BomTransformation.ExtendedData"
+            }
+          }
+        }
+      }
+    },
+    "/ExtendedDatas/PTC.BomTransformation.CommonEnterpriseData" : {
+      "get" : {
+        "tags" : [ "Service Endpoints" ],
+        "summary" : "Get ExtendedDatas of type CommonEnterpriseData",
+        "description" : "Get ExtendedDatas of type CommonEnterpriseData",
+        "operationId" : "GetCommonEnterpriseDatas",
+        "parameters" : [ {
+          "name" : "$select",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$filter",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$top",
+          "in" : "query",
+          "required" : false,
+          "type" : "integer"
+        }, {
+          "name" : "$skip",
+          "in" : "query",
+          "required" : false,
+          "type" : "integer"
+        }, {
+          "name" : "$count",
+          "in" : "query",
+          "required" : false,
+          "type" : "boolean",
+          "default" : false
+        }, {
+          "name" : "$orderby",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$expand",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Success",
+            "schema" : {
+              "type" : "object",
+              "properties" : {
+                "value" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/definitions/PTC.BomTransformation.CommonEnterpriseData"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/ExtendedDatas/PTC.BomTransformation.PlantSpecificEnterpriseData" : {
+      "get" : {
+        "tags" : [ "Service Endpoints" ],
+        "summary" : "Get ExtendedDatas of type PlantSpecificEnterpriseData",
+        "description" : "Get ExtendedDatas of type PlantSpecificEnterpriseData",
+        "operationId" : "GetPlantSpecificEnterpriseDatas",
+        "parameters" : [ {
+          "name" : "$select",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$filter",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$top",
+          "in" : "query",
+          "required" : false,
+          "type" : "integer"
+        }, {
+          "name" : "$skip",
+          "in" : "query",
+          "required" : false,
+          "type" : "integer"
+        }, {
+          "name" : "$count",
+          "in" : "query",
+          "required" : false,
+          "type" : "boolean",
+          "default" : false
+        }, {
+          "name" : "$orderby",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$expand",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Success",
+            "schema" : {
+              "type" : "object",
+              "properties" : {
+                "value" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/definitions/PTC.BomTransformation.PlantSpecificEnterpriseData"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/GenerateDownstreamStructure" : {
+      "post" : {
+        "tags" : [ "Service Endpoints" ],
+        "summary" : "GenerateDownstreamStructures",
+        "description" : "GenerateDownstreamStructures",
+        "operationId" : "Action_GenerateDownstreamStructure",
+        "parameters" : [ {
+          "name" : "$select",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$filter",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$top",
+          "in" : "query",
+          "required" : false,
+          "type" : "integer"
+        }, {
+          "name" : "$skip",
+          "in" : "query",
+          "required" : false,
+          "type" : "integer"
+        }, {
+          "name" : "$count",
+          "in" : "query",
+          "required" : false,
+          "type" : "boolean",
+          "default" : false
+        }, {
+          "name" : "$orderby",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$expand",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "CSRF_NONCE",
+          "in" : "header",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "in" : "body",
+          "name" : "body",
+          "required" : true,
+          "schema" : {
+            "$ref" : "#/definitions/PTC.BomTransformation.GenerateDownstreamStructure.Unbound.Body"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Success",
+            "schema" : {
+              "type" : "object",
+              "properties" : {
+                "value" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/definitions/PTC.BomTransformation.EquivalentUsageAssociation"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/GetDepartmentDatas" : {
+      "post" : {
+        "tags" : [ "Service Endpoints" ],
+        "summary" : "Multi API to get Department Data",
+        "description" : "Multi API to get Department Data",
+        "operationId" : "Action_GetDepartmentDatas",
+        "parameters" : [ {
+          "name" : "$select",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$filter",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$top",
+          "in" : "query",
+          "required" : false,
+          "type" : "integer"
+        }, {
+          "name" : "$skip",
+          "in" : "query",
+          "required" : false,
+          "type" : "integer"
+        }, {
+          "name" : "$count",
+          "in" : "query",
+          "required" : false,
+          "type" : "boolean",
+          "default" : false
+        }, {
+          "name" : "$orderby",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$expand",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "CSRF_NONCE",
+          "in" : "header",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "in" : "body",
+          "name" : "body",
+          "required" : true,
+          "schema" : {
+            "$ref" : "#/definitions/PTC.BomTransformation.GetDepartmentDatas.Unbound.Body"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Success",
+            "schema" : {
+              "type" : "object",
+              "properties" : {
+                "value" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/definitions/PTC.BomTransformation.DepartmentData"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/GetDepartmentDatasForParts" : {
+      "post" : {
+        "tags" : [ "Service Endpoints" ],
+        "summary" : "Multi API to get Department Data for Parts for a given Navigation Criteria, if NavigationCriteriaId is passed as a parameter",
+        "description" : "Multi API to get Department Data for Parts for a given Navigation Criteria, if NavigationCriteriaId is passed as a parameter",
+        "operationId" : "Action_GetDepartmentDatasForParts",
+        "parameters" : [ {
+          "name" : "$select",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$filter",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$top",
+          "in" : "query",
+          "required" : false,
+          "type" : "integer"
+        }, {
+          "name" : "$skip",
+          "in" : "query",
+          "required" : false,
+          "type" : "integer"
+        }, {
+          "name" : "$count",
+          "in" : "query",
+          "required" : false,
+          "type" : "boolean",
+          "default" : false
+        }, {
+          "name" : "$orderby",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$expand",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "CSRF_NONCE",
+          "in" : "header",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "in" : "body",
+          "name" : "body",
+          "required" : true,
+          "schema" : {
+            "$ref" : "#/definitions/PTC.BomTransformation.GetDepartmentDatasForParts.Unbound.Body"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Success",
+            "schema" : {
+              "type" : "object",
+              "properties" : {
+                "value" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/definitions/PTC.BomTransformation.DepartmentDataListItem"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/GetDepartmentDatasForPartsWithInlineNavCriteria" : {
+      "post" : {
+        "tags" : [ "Service Endpoints" ],
+        "summary" : "Multi API to get Department Data for Parts with Inline Navigation Criteria",
+        "description" : "Multi API to get Department Data for Parts with Inline Navigation Criteria",
+        "operationId" : "Action_GetDepartmentDatasForPartsWithInlineNavCriteria",
+        "parameters" : [ {
+          "name" : "$select",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$filter",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$top",
+          "in" : "query",
+          "required" : false,
+          "type" : "integer"
+        }, {
+          "name" : "$skip",
+          "in" : "query",
+          "required" : false,
+          "type" : "integer"
+        }, {
+          "name" : "$count",
+          "in" : "query",
+          "required" : false,
+          "type" : "boolean",
+          "default" : false
+        }, {
+          "name" : "$orderby",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$expand",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "CSRF_NONCE",
+          "in" : "header",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "in" : "body",
+          "name" : "body",
+          "required" : true,
+          "schema" : {
+            "$ref" : "#/definitions/PTC.BomTransformation.GetDepartmentDatasForPartsWithInlineNavCriteria.Unbound.Body"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Success",
+            "schema" : {
+              "type" : "object",
+              "properties" : {
+                "value" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/definitions/PTC.BomTransformation.DepartmentDataListItem"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/GetDepartmentDatasFromPlant" : {
+      "post" : {
+        "tags" : [ "Service Endpoints" ],
+        "summary" : "Multi API to get Department Data for Plant for a given Navigation Criteria, if NavigationCriteriaId is passed as a parameter",
+        "description" : "Multi API to get Department Data for Plant for a given Navigation Criteria, if NavigationCriteriaId is passed as a parameter",
+        "operationId" : "Action_GetDepartmentDatasFromPlant",
+        "parameters" : [ {
+          "name" : "$select",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$filter",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$top",
+          "in" : "query",
+          "required" : false,
+          "type" : "integer"
+        }, {
+          "name" : "$skip",
+          "in" : "query",
+          "required" : false,
+          "type" : "integer"
+        }, {
+          "name" : "$count",
+          "in" : "query",
+          "required" : false,
+          "type" : "boolean",
+          "default" : false
+        }, {
+          "name" : "$orderby",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$expand",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "CSRF_NONCE",
+          "in" : "header",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "in" : "body",
+          "name" : "body",
+          "required" : true,
+          "schema" : {
+            "$ref" : "#/definitions/PTC.BomTransformation.GetDepartmentDatasFromPlant.Unbound.Body"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Success",
+            "schema" : {
+              "type" : "object",
+              "properties" : {
+                "value" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/definitions/PTC.BomTransformation.DepartmentDataForPlantListItem"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/GetDepartmentDatasFromPlantWithInlineNavCriteria" : {
+      "post" : {
+        "tags" : [ "Service Endpoints" ],
+        "summary" : "Multi API to get Department Data for Plant with Inline Navigation Criteria",
+        "description" : "Multi API to get Department Data for Plant with Inline Navigation Criteria",
+        "operationId" : "Action_GetDepartmentDatasFromPlantWithInlineNavCriteria",
+        "parameters" : [ {
+          "name" : "$select",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$filter",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$top",
+          "in" : "query",
+          "required" : false,
+          "type" : "integer"
+        }, {
+          "name" : "$skip",
+          "in" : "query",
+          "required" : false,
+          "type" : "integer"
+        }, {
+          "name" : "$count",
+          "in" : "query",
+          "required" : false,
+          "type" : "boolean",
+          "default" : false
+        }, {
+          "name" : "$orderby",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$expand",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "CSRF_NONCE",
+          "in" : "header",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "in" : "body",
+          "name" : "body",
+          "required" : true,
+          "schema" : {
+            "$ref" : "#/definitions/PTC.BomTransformation.GetDepartmentDatasFromPlantWithInlineNavCriteria.Unbound.Body"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Success",
+            "schema" : {
+              "type" : "object",
+              "properties" : {
+                "value" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/definitions/PTC.BomTransformation.DepartmentDataForPlantListItem"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/GetEquivalenceNetworkForParts" : {
+      "post" : {
+        "tags" : [ "Service Endpoints" ],
+        "summary" : "Get Equivalence Network information for Parts",
+        "description" : "Get Equivalence Network information for Parts",
+        "operationId" : "Action_GetEquivalenceNetworkForParts",
+        "parameters" : [ {
+          "name" : "$select",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$filter",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$top",
+          "in" : "query",
+          "required" : false,
+          "type" : "integer"
+        }, {
+          "name" : "$skip",
+          "in" : "query",
+          "required" : false,
+          "type" : "integer"
+        }, {
+          "name" : "$count",
+          "in" : "query",
+          "required" : false,
+          "type" : "boolean",
+          "default" : false
+        }, {
+          "name" : "$orderby",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$expand",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "CSRF_NONCE",
+          "in" : "header",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "in" : "body",
+          "name" : "body",
+          "required" : true,
+          "schema" : {
+            "$ref" : "#/definitions/PTC.BomTransformation.GetEquivalenceNetworkForParts.Unbound.Body"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Success",
+            "schema" : {
+              "type" : "object",
+              "properties" : {
+                "value" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/definitions/PTC.BomTransformation.EquivalenceNetworkListItem"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/GetExtendedDatas" : {
+      "post" : {
+        "tags" : [ "Service Endpoints" ],
+        "summary" : "Multi API to get Extended Data",
+        "description" : "Multi API to get Extended Data",
+        "operationId" : "Action_GetExtendedDatas",
+        "parameters" : [ {
+          "name" : "$select",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$filter",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$top",
+          "in" : "query",
+          "required" : false,
+          "type" : "integer"
+        }, {
+          "name" : "$skip",
+          "in" : "query",
+          "required" : false,
+          "type" : "integer"
+        }, {
+          "name" : "$count",
+          "in" : "query",
+          "required" : false,
+          "type" : "boolean",
+          "default" : false
+        }, {
+          "name" : "$orderby",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$expand",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "CSRF_NONCE",
+          "in" : "header",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "in" : "body",
+          "name" : "body",
+          "required" : true,
+          "schema" : {
+            "$ref" : "#/definitions/PTC.BomTransformation.GetExtendedDatas.Unbound.Body"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Success",
+            "schema" : {
+              "type" : "object",
+              "properties" : {
+                "value" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/definitions/PTC.BomTransformation.ExtendedData"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/GetExtendedDatasForParts" : {
+      "post" : {
+        "tags" : [ "Service Endpoints" ],
+        "summary" : "Multi API to get Extended Data for Parts for a given Navigation Criteria, if NavigationCriteriaId is passed as a parameter",
+        "description" : "Multi API to get Extended Data for Parts for a given Navigation Criteria, if NavigationCriteriaId is passed as a parameter",
+        "operationId" : "Action_GetExtendedDatasForParts",
+        "parameters" : [ {
+          "name" : "$select",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$filter",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$top",
+          "in" : "query",
+          "required" : false,
+          "type" : "integer"
+        }, {
+          "name" : "$skip",
+          "in" : "query",
+          "required" : false,
+          "type" : "integer"
+        }, {
+          "name" : "$count",
+          "in" : "query",
+          "required" : false,
+          "type" : "boolean",
+          "default" : false
+        }, {
+          "name" : "$orderby",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$expand",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "CSRF_NONCE",
+          "in" : "header",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "in" : "body",
+          "name" : "body",
+          "required" : true,
+          "schema" : {
+            "$ref" : "#/definitions/PTC.BomTransformation.GetExtendedDatasForParts.Unbound.Body"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Success",
+            "schema" : {
+              "type" : "object",
+              "properties" : {
+                "value" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/definitions/PTC.BomTransformation.ExtendedDataListItem"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/GetExtendedDatasForPartsWithInlineNavCriteria" : {
+      "post" : {
+        "tags" : [ "Service Endpoints" ],
+        "summary" : "Multi API to get Extended Data for Parts with Inline Navigation Criteria",
+        "description" : "Multi API to get Extended Data for Parts with Inline Navigation Criteria",
+        "operationId" : "Action_GetExtendedDatasForPartsWithInlineNavCriteria",
+        "parameters" : [ {
+          "name" : "$select",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$filter",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$top",
+          "in" : "query",
+          "required" : false,
+          "type" : "integer"
+        }, {
+          "name" : "$skip",
+          "in" : "query",
+          "required" : false,
+          "type" : "integer"
+        }, {
+          "name" : "$count",
+          "in" : "query",
+          "required" : false,
+          "type" : "boolean",
+          "default" : false
+        }, {
+          "name" : "$orderby",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$expand",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "CSRF_NONCE",
+          "in" : "header",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "in" : "body",
+          "name" : "body",
+          "required" : true,
+          "schema" : {
+            "$ref" : "#/definitions/PTC.BomTransformation.GetExtendedDatasForPartsWithInlineNavCriteria.Unbound.Body"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Success",
+            "schema" : {
+              "type" : "object",
+              "properties" : {
+                "value" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/definitions/PTC.BomTransformation.ExtendedDataListItem"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/InsertMadeFrom" : {
+      "post" : {
+        "tags" : [ "Service Endpoints" ],
+        "summary" : "Multi API to insert Made From Parts (Raw Materials) for Part objects or Made From Set objects",
+        "description" : "Multi API to insert Made From Parts (Raw Materials) for Part objects or Made From Set objects",
+        "operationId" : "Action_InsertMadeFrom",
+        "parameters" : [ {
+          "name" : "$select",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$filter",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$top",
+          "in" : "query",
+          "required" : false,
+          "type" : "integer"
+        }, {
+          "name" : "$skip",
+          "in" : "query",
+          "required" : false,
+          "type" : "integer"
+        }, {
+          "name" : "$count",
+          "in" : "query",
+          "required" : false,
+          "type" : "boolean",
+          "default" : false
+        }, {
+          "name" : "$orderby",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$expand",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "CSRF_NONCE",
+          "in" : "header",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "in" : "body",
+          "name" : "body",
+          "required" : true,
+          "schema" : {
+            "$ref" : "#/definitions/PTC.BomTransformation.InsertMadeFrom.Unbound.Body"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Success",
+            "schema" : {
+              "type" : "object",
+              "properties" : {
+                "value" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/definitions/PTC.BomTransformation.MadeFromAssociation"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/PasteSpecial" : {
+      "post" : {
+        "tags" : [ "Service Endpoints" ],
+        "summary" : "Paste Special action",
+        "description" : "Paste Special action",
+        "operationId" : "Action_PasteSpecial",
+        "parameters" : [ {
+          "name" : "$select",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$filter",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$top",
+          "in" : "query",
+          "required" : false,
+          "type" : "integer"
+        }, {
+          "name" : "$skip",
+          "in" : "query",
+          "required" : false,
+          "type" : "integer"
+        }, {
+          "name" : "$count",
+          "in" : "query",
+          "required" : false,
+          "type" : "boolean",
+          "default" : false
+        }, {
+          "name" : "$orderby",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$expand",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "CSRF_NONCE",
+          "in" : "header",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "in" : "body",
+          "name" : "body",
+          "required" : true,
+          "schema" : {
+            "$ref" : "#/definitions/PTC.BomTransformation.PasteSpecial.Unbound.Body"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Success",
+            "schema" : {
+              "type" : "object",
+              "properties" : {
+                "value" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/definitions/PTC.BomTransformation.EquivalentUsageAssociation"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/RemoveDepartmentDataAssociations" : {
+      "post" : {
+        "tags" : [ "Service Endpoints" ],
+        "summary" : "Multi API to remove Department Data associated with Plant Data",
+        "description" : "Multi API to remove Department Data associated with Plant Data",
+        "operationId" : "Action_RemoveDepartmentDataAssociations",
+        "parameters" : [ {
+          "name" : "CSRF_NONCE",
+          "in" : "header",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "in" : "body",
+          "name" : "body",
+          "required" : true,
+          "schema" : {
+            "$ref" : "#/definitions/PTC.BomTransformation.RemoveDepartmentDataAssociations.Unbound.Body"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Success"
+          }
+        }
+      }
+    },
+    "/RemovePlantDataAssociations" : {
+      "post" : {
+        "tags" : [ "Service Endpoints" ],
+        "summary" : "Multi API to remove Plant Data associated with Parts",
+        "description" : "Multi API to remove Plant Data associated with Parts",
+        "operationId" : "Action_RemovePlantDataAssociations",
+        "parameters" : [ {
+          "name" : "CSRF_NONCE",
+          "in" : "header",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "in" : "body",
+          "name" : "body",
+          "required" : true,
+          "schema" : {
+            "$ref" : "#/definitions/PTC.BomTransformation.RemovePlantDataAssociations.Unbound.Body"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Success"
+          }
+        }
+      }
+    },
+    "/ResolveDiscrepancies" : {
+      "post" : {
+        "tags" : [ "Service Endpoints" ],
+        "summary" : "ResolveDiscrepancies description",
+        "description" : "ResolveDiscrepancies description",
+        "operationId" : "Action_ResolveDiscrepancies",
+        "parameters" : [ {
+          "name" : "$select",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$filter",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$top",
+          "in" : "query",
+          "required" : false,
+          "type" : "integer"
+        }, {
+          "name" : "$skip",
+          "in" : "query",
+          "required" : false,
+          "type" : "integer"
+        }, {
+          "name" : "$count",
+          "in" : "query",
+          "required" : false,
+          "type" : "boolean",
+          "default" : false
+        }, {
+          "name" : "$orderby",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$expand",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "CSRF_NONCE",
+          "in" : "header",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "in" : "body",
+          "name" : "body",
+          "required" : true,
+          "schema" : {
+            "$ref" : "#/definitions/PTC.BomTransformation.ResolveDiscrepancies.Unbound.Body"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Success",
+            "schema" : {
+              "type" : "object",
+              "properties" : {
+                "value" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/definitions/PTC.BomTransformation.DiscrepancyItem"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/ReviseDepartmentDatas" : {
+      "post" : {
+        "tags" : [ "Service Endpoints" ],
+        "summary" : "Revise Department Data objects",
+        "description" : "Revise Department Data objects",
+        "operationId" : "Action_ReviseDepartmentDatas",
+        "parameters" : [ {
+          "name" : "$select",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$filter",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$top",
+          "in" : "query",
+          "required" : false,
+          "type" : "integer"
+        }, {
+          "name" : "$skip",
+          "in" : "query",
+          "required" : false,
+          "type" : "integer"
+        }, {
+          "name" : "$count",
+          "in" : "query",
+          "required" : false,
+          "type" : "boolean",
+          "default" : false
+        }, {
+          "name" : "$orderby",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$expand",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "CSRF_NONCE",
+          "in" : "header",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "in" : "body",
+          "name" : "body",
+          "required" : true,
+          "schema" : {
+            "$ref" : "#/definitions/PTC.BomTransformation.ReviseDepartmentDatas.Unbound.Body"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Success",
+            "schema" : {
+              "type" : "object",
+              "properties" : {
+                "value" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/definitions/PTC.BomTransformation.DepartmentData"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/ReviseExtendedDatas" : {
+      "post" : {
+        "tags" : [ "Service Endpoints" ],
+        "summary" : "Revise Extended Data objects",
+        "description" : "Revise Extended Data objects",
+        "operationId" : "Action_ReviseExtendedDatas",
+        "parameters" : [ {
+          "name" : "$select",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$filter",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$top",
+          "in" : "query",
+          "required" : false,
+          "type" : "integer"
+        }, {
+          "name" : "$skip",
+          "in" : "query",
+          "required" : false,
+          "type" : "integer"
+        }, {
+          "name" : "$count",
+          "in" : "query",
+          "required" : false,
+          "type" : "boolean",
+          "default" : false
+        }, {
+          "name" : "$orderby",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$expand",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "CSRF_NONCE",
+          "in" : "header",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "in" : "body",
+          "name" : "body",
+          "required" : true,
+          "schema" : {
+            "$ref" : "#/definitions/PTC.BomTransformation.ReviseExtendedDatas.Unbound.Body"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Success",
+            "schema" : {
+              "type" : "object",
+              "properties" : {
+                "value" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/definitions/PTC.BomTransformation.ExtendedData"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/SetStateDepartmentDatas" : {
+      "post" : {
+        "tags" : [ "Service Endpoints" ],
+        "summary" : "Change the (life cycle) State of Department Data objects",
+        "description" : "Change the (life cycle) State of Department Data objects",
+        "operationId" : "Action_SetStateDepartmentDatas",
+        "parameters" : [ {
+          "name" : "$select",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$filter",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$top",
+          "in" : "query",
+          "required" : false,
+          "type" : "integer"
+        }, {
+          "name" : "$skip",
+          "in" : "query",
+          "required" : false,
+          "type" : "integer"
+        }, {
+          "name" : "$count",
+          "in" : "query",
+          "required" : false,
+          "type" : "boolean",
+          "default" : false
+        }, {
+          "name" : "$orderby",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$expand",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "CSRF_NONCE",
+          "in" : "header",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "in" : "body",
+          "name" : "body",
+          "required" : true,
+          "schema" : {
+            "$ref" : "#/definitions/PTC.BomTransformation.SetStateDepartmentDatas.Unbound.Body"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Success",
+            "schema" : {
+              "type" : "object",
+              "properties" : {
+                "value" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/definitions/PTC.BomTransformation.DepartmentData"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/SetStateExtendedDatas" : {
+      "post" : {
+        "tags" : [ "Service Endpoints" ],
+        "summary" : "Change the (life cycle) State of Extended Data objects",
+        "description" : "Change the (life cycle) State of Extended Data objects",
+        "operationId" : "Action_SetStateExtendedDatas",
+        "parameters" : [ {
+          "name" : "$select",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$filter",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$top",
+          "in" : "query",
+          "required" : false,
+          "type" : "integer"
+        }, {
+          "name" : "$skip",
+          "in" : "query",
+          "required" : false,
+          "type" : "integer"
+        }, {
+          "name" : "$count",
+          "in" : "query",
+          "required" : false,
+          "type" : "boolean",
+          "default" : false
+        }, {
+          "name" : "$orderby",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$expand",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "CSRF_NONCE",
+          "in" : "header",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "in" : "body",
+          "name" : "body",
+          "required" : true,
+          "schema" : {
+            "$ref" : "#/definitions/PTC.BomTransformation.SetStateExtendedDatas.Unbound.Body"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Success",
+            "schema" : {
+              "type" : "object",
+              "properties" : {
+                "value" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/definitions/PTC.BomTransformation.ExtendedData"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/SplitAssemble" : {
+      "post" : {
+        "tags" : [ "Service Endpoints" ],
+        "summary" : "SplitAssemble",
+        "description" : "SplitAssemble",
+        "operationId" : "Action_SplitAssemble",
+        "parameters" : [ {
+          "name" : "$select",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$filter",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$top",
+          "in" : "query",
+          "required" : false,
+          "type" : "integer"
+        }, {
+          "name" : "$skip",
+          "in" : "query",
+          "required" : false,
+          "type" : "integer"
+        }, {
+          "name" : "$count",
+          "in" : "query",
+          "required" : false,
+          "type" : "boolean",
+          "default" : false
+        }, {
+          "name" : "$orderby",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$expand",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "CSRF_NONCE",
+          "in" : "header",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "in" : "body",
+          "name" : "body",
+          "required" : true,
+          "schema" : {
+            "$ref" : "#/definitions/PTC.BomTransformation.SplitAssemble.Unbound.Body"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Success",
+            "schema" : {
+              "type" : "object",
+              "properties" : {
+                "value" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/definitions/PTC.BomTransformation.EquivalentUsageAssociation"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/SubcontractToPlants" : {
+      "post" : {
+        "tags" : [ "Service Endpoints" ],
+        "summary" : "SubcontractToPlants",
+        "description" : "SubcontractToPlants",
+        "operationId" : "Action_SubcontractToPlants",
+        "parameters" : [ {
+          "name" : "$select",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$filter",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$top",
+          "in" : "query",
+          "required" : false,
+          "type" : "integer"
+        }, {
+          "name" : "$skip",
+          "in" : "query",
+          "required" : false,
+          "type" : "integer"
+        }, {
+          "name" : "$count",
+          "in" : "query",
+          "required" : false,
+          "type" : "boolean",
+          "default" : false
+        }, {
+          "name" : "$orderby",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$expand",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "CSRF_NONCE",
+          "in" : "header",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "in" : "body",
+          "name" : "body",
+          "required" : true,
+          "schema" : {
+            "$ref" : "#/definitions/PTC.BomTransformation.SubcontractToPlants.Unbound.Body"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Success",
+            "schema" : {
+              "type" : "object",
+              "properties" : {
+                "value" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/definitions/PTC.BomTransformation.EquivalentUsageAssociation"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/UndoCheckOutDepartmentDatas" : {
+      "post" : {
+        "tags" : [ "Service Endpoints" ],
+        "summary" : "Undo Checkout of Department Data objects",
+        "description" : "Undo Checkout of Department Data objects",
+        "operationId" : "Action_UndoCheckOutDepartmentDatas",
+        "parameters" : [ {
+          "name" : "$select",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$filter",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$top",
+          "in" : "query",
+          "required" : false,
+          "type" : "integer"
+        }, {
+          "name" : "$skip",
+          "in" : "query",
+          "required" : false,
+          "type" : "integer"
+        }, {
+          "name" : "$count",
+          "in" : "query",
+          "required" : false,
+          "type" : "boolean",
+          "default" : false
+        }, {
+          "name" : "$orderby",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$expand",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "CSRF_NONCE",
+          "in" : "header",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "in" : "body",
+          "name" : "body",
+          "required" : true,
+          "schema" : {
+            "$ref" : "#/definitions/PTC.BomTransformation.UndoCheckOutDepartmentDatas.Unbound.Body"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Success",
+            "schema" : {
+              "type" : "object",
+              "properties" : {
+                "value" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/definitions/PTC.BomTransformation.DepartmentData"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/UndoCheckOutExtendedDatas" : {
+      "post" : {
+        "tags" : [ "Service Endpoints" ],
+        "summary" : "Undo Checkout of Extended Data objects",
+        "description" : "Undo Checkout of Extended Data objects",
+        "operationId" : "Action_UndoCheckOutExtendedDatas",
+        "parameters" : [ {
+          "name" : "$select",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$filter",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$top",
+          "in" : "query",
+          "required" : false,
+          "type" : "integer"
+        }, {
+          "name" : "$skip",
+          "in" : "query",
+          "required" : false,
+          "type" : "integer"
+        }, {
+          "name" : "$count",
+          "in" : "query",
+          "required" : false,
+          "type" : "boolean",
+          "default" : false
+        }, {
+          "name" : "$orderby",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$expand",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "CSRF_NONCE",
+          "in" : "header",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "in" : "body",
+          "name" : "body",
+          "required" : true,
+          "schema" : {
+            "$ref" : "#/definitions/PTC.BomTransformation.UndoCheckOutExtendedDatas.Unbound.Body"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Success",
+            "schema" : {
+              "type" : "object",
+              "properties" : {
+                "value" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/definitions/PTC.BomTransformation.ExtendedData"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/UpdateCommonPropertiesForDepartmentDatas" : {
+      "post" : {
+        "tags" : [ "Service Endpoints" ],
+        "summary" : "Multi API to update common properties for Department Data objects",
+        "description" : "Multi API to update common properties for Department Data objects",
+        "operationId" : "Action_UpdateCommonPropertiesForDepartmentDatas",
+        "parameters" : [ {
+          "name" : "$select",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$filter",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$top",
+          "in" : "query",
+          "required" : false,
+          "type" : "integer"
+        }, {
+          "name" : "$skip",
+          "in" : "query",
+          "required" : false,
+          "type" : "integer"
+        }, {
+          "name" : "$count",
+          "in" : "query",
+          "required" : false,
+          "type" : "boolean",
+          "default" : false
+        }, {
+          "name" : "$orderby",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$expand",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "CSRF_NONCE",
+          "in" : "header",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "in" : "body",
+          "name" : "body",
+          "required" : true,
+          "schema" : {
+            "$ref" : "#/definitions/PTC.BomTransformation.UpdateCommonPropertiesForDepartmentDatas.Unbound.Body"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Success",
+            "schema" : {
+              "type" : "object",
+              "properties" : {
+                "value" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/definitions/PTC.BomTransformation.DepartmentData"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/UpdateCommonPropertiesForExtendedDatas" : {
+      "post" : {
+        "tags" : [ "Service Endpoints" ],
+        "summary" : "Multi API to update common properties for Extended Data objects",
+        "description" : "Multi API to update common properties for Extended Data objects",
+        "operationId" : "Action_UpdateCommonPropertiesForExtendedDatas",
+        "parameters" : [ {
+          "name" : "$select",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$filter",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$top",
+          "in" : "query",
+          "required" : false,
+          "type" : "integer"
+        }, {
+          "name" : "$skip",
+          "in" : "query",
+          "required" : false,
+          "type" : "integer"
+        }, {
+          "name" : "$count",
+          "in" : "query",
+          "required" : false,
+          "type" : "boolean",
+          "default" : false
+        }, {
+          "name" : "$orderby",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$expand",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "CSRF_NONCE",
+          "in" : "header",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "in" : "body",
+          "name" : "body",
+          "required" : true,
+          "schema" : {
+            "$ref" : "#/definitions/PTC.BomTransformation.UpdateCommonPropertiesForExtendedDatas.Unbound.Body"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Success",
+            "schema" : {
+              "type" : "object",
+              "properties" : {
+                "value" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/definitions/PTC.BomTransformation.ExtendedData"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/UpdateDepartmentDatas" : {
+      "post" : {
+        "tags" : [ "Service Endpoints" ],
+        "summary" : "Multi API to update Department Data objects",
+        "description" : "Multi API to update Department Data objects",
+        "operationId" : "Action_UpdateDepartmentDatas",
+        "parameters" : [ {
+          "name" : "$select",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$filter",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$top",
+          "in" : "query",
+          "required" : false,
+          "type" : "integer"
+        }, {
+          "name" : "$skip",
+          "in" : "query",
+          "required" : false,
+          "type" : "integer"
+        }, {
+          "name" : "$count",
+          "in" : "query",
+          "required" : false,
+          "type" : "boolean",
+          "default" : false
+        }, {
+          "name" : "$orderby",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$expand",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "CSRF_NONCE",
+          "in" : "header",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "in" : "body",
+          "name" : "body",
+          "required" : true,
+          "schema" : {
+            "$ref" : "#/definitions/PTC.BomTransformation.UpdateDepartmentDatas.Unbound.Body"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Success",
+            "schema" : {
+              "type" : "object",
+              "properties" : {
+                "value" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/definitions/PTC.BomTransformation.DepartmentData"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/UpdateExtendedDatas" : {
+      "post" : {
+        "tags" : [ "Service Endpoints" ],
+        "summary" : "Multi API to update Extended Data objects",
+        "description" : "Multi API to update Extended Data objects",
+        "operationId" : "Action_UpdateExtendedDatas",
+        "parameters" : [ {
+          "name" : "$select",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$filter",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$top",
+          "in" : "query",
+          "required" : false,
+          "type" : "integer"
+        }, {
+          "name" : "$skip",
+          "in" : "query",
+          "required" : false,
+          "type" : "integer"
+        }, {
+          "name" : "$count",
+          "in" : "query",
+          "required" : false,
+          "type" : "boolean",
+          "default" : false
+        }, {
+          "name" : "$orderby",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$expand",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "CSRF_NONCE",
+          "in" : "header",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "in" : "body",
+          "name" : "body",
+          "required" : true,
+          "schema" : {
+            "$ref" : "#/definitions/PTC.BomTransformation.UpdateExtendedDatas.Unbound.Body"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Success",
+            "schema" : {
+              "type" : "object",
+              "properties" : {
+                "value" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/definitions/PTC.BomTransformation.ExtendedData"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/UpdateToCurrentUpstreamEquivalents" : {
+      "post" : {
+        "tags" : [ "Service Endpoints" ],
+        "summary" : "Update to Current Upstream Equivalent Objects action",
+        "description" : "Update to Current Upstream Equivalent Objects action",
+        "operationId" : "Action_UpdateToCurrentUpstreamEquivalents",
+        "parameters" : [ {
+          "name" : "$select",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$filter",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$top",
+          "in" : "query",
+          "required" : false,
+          "type" : "integer"
+        }, {
+          "name" : "$skip",
+          "in" : "query",
+          "required" : false,
+          "type" : "integer"
+        }, {
+          "name" : "$count",
+          "in" : "query",
+          "required" : false,
+          "type" : "boolean",
+          "default" : false
+        }, {
+          "name" : "$orderby",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$expand",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "CSRF_NONCE",
+          "in" : "header",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "in" : "body",
+          "name" : "body",
+          "required" : true,
+          "schema" : {
+            "$ref" : "#/definitions/PTC.BomTransformation.UpdateToCurrentUpstreamEquivalents.Unbound.Body"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Success",
+            "schema" : {
+              "type" : "object",
+              "properties" : {
+                "value" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/definitions/PTC.BomTransformation.ExistingDownstreamAssociation"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/XBOMParts" : {
+      "get" : {
+        "tags" : [ "Service Endpoints" ],
+        "summary" : "Get XBOMParts",
+        "description" : "Get XBOMParts",
+        "operationId" : "GetXBOMParts",
+        "parameters" : [ {
+          "name" : "$select",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$filter",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$top",
+          "in" : "query",
+          "required" : false,
+          "type" : "integer"
+        }, {
+          "name" : "$skip",
+          "in" : "query",
+          "required" : false,
+          "type" : "integer"
+        }, {
+          "name" : "$count",
+          "in" : "query",
+          "required" : false,
+          "type" : "boolean",
+          "default" : false
+        }, {
+          "name" : "$orderby",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$expand",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Success",
+            "schema" : {
+              "type" : "object",
+              "properties" : {
+                "value" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/definitions/PTC.BomTransformation.XBOMPart"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/XBOMParts('{XBOMPartId}')" : {
+      "get" : {
+        "tags" : [ "Service Endpoints" ],
+        "summary" : "Get XBOMPart for a given XBOMPartId",
+        "description" : "Get XBOMPart for a given XBOMPartId",
+        "operationId" : "GetXBOMPart",
+        "parameters" : [ {
+          "name" : "XBOMPartId",
+          "in" : "path",
+          "description" : "The identification key for the item to get",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "name" : "$select",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$expand",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Success",
+            "schema" : {
+              "$ref" : "#/definitions/PTC.BomTransformation.XBOMPart"
+            }
+          }
+        }
+      }
+    },
+    "/XBOMParts('{XBOMPartId}')/Creator" : {
+      "get" : {
+        "tags" : [ "Service Endpoints" ],
+        "summary" : "Get User",
+        "description" : "Get User",
+        "operationId" : "XBOMPart.Creator.GetUser",
+        "parameters" : [ {
+          "name" : "XBOMPartId",
+          "in" : "path",
+          "description" : "The identification key for the item to get",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "name" : "$select",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$expand",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Success",
+            "schema" : {
+              "$ref" : "#/definitions/PTC.PrincipalMgmt.User"
+            }
+          }
+        }
+      }
+    },
+    "/XBOMParts('{XBOMPartId}')/Modifier" : {
+      "get" : {
+        "tags" : [ "Service Endpoints" ],
+        "summary" : "Get User",
+        "description" : "Get User",
+        "operationId" : "XBOMPart.Modifier.GetUser",
+        "parameters" : [ {
+          "name" : "XBOMPartId",
+          "in" : "path",
+          "description" : "The identification key for the item to get",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "name" : "$select",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$expand",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Success",
+            "schema" : {
+              "$ref" : "#/definitions/PTC.PrincipalMgmt.User"
+            }
+          }
+        }
+      }
+    },
+    "/XBOMParts('{XBOMPartId}')/PTC.BomTransformation.GetManufacturingBOM" : {
+      "post" : {
+        "tags" : [ "Service Endpoints" ],
+        "summary" : "Get Manufacturing Bill of Material, using the Navigation Criteria passed in the navigationCriteria parameter.",
+        "description" : "Get Manufacturing Bill of Material, using the Navigation Criteria passed in the navigationCriteria parameter. NOTE: For ConfigSpecs and Filters enter them in JSON format. Example: \"@odata.type\":\"#PTC.NavCriteria.WTPartStandardConfigSpec\", \"WorkingIncluded\":true, \"View\":\"Manufacturing\"",
+        "operationId" : "PTC.BomTransformation.XBOMPart.Action_GetManufacturingBOM_With_RelatedItems",
+        "parameters" : [ {
+          "name" : "$select",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$expand",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "CSRF_NONCE",
+          "in" : "header",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "name" : "XBOMPartId",
+          "in" : "path",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "in" : "body",
+          "name" : "body",
+          "required" : true,
+          "schema" : {
+            "$ref" : "#/definitions/PTC.BomTransformation.GetManufacturingBOM.Body"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Success",
+            "schema" : {
+              "$ref" : "#/definitions/PTC.BomTransformation.TreeStructureItem"
+            }
+          }
+        }
+      }
+    },
+    "/XBOMParts/PTC.BomTransformation.NewAlternate" : {
+      "get" : {
+        "tags" : [ "Service Endpoints" ],
+        "summary" : "Get XBOMParts of type NewAlternate",
+        "description" : "Get XBOMParts of type NewAlternate",
+        "operationId" : "GetNewAlternates",
+        "parameters" : [ {
+          "name" : "$select",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$filter",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$top",
+          "in" : "query",
+          "required" : false,
+          "type" : "integer"
+        }, {
+          "name" : "$skip",
+          "in" : "query",
+          "required" : false,
+          "type" : "integer"
+        }, {
+          "name" : "$count",
+          "in" : "query",
+          "required" : false,
+          "type" : "boolean",
+          "default" : false
+        }, {
+          "name" : "$orderby",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$expand",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Success",
+            "schema" : {
+              "type" : "object",
+              "properties" : {
+                "value" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/definitions/PTC.BomTransformation.NewAlternate"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/XBOMParts/PTC.BomTransformation.NewSplitAlternate" : {
+      "get" : {
+        "tags" : [ "Service Endpoints" ],
+        "summary" : "Get XBOMParts of type NewSplitAlternate",
+        "description" : "Get XBOMParts of type NewSplitAlternate",
+        "operationId" : "GetNewSplitAlternates",
+        "parameters" : [ {
+          "name" : "$select",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$filter",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$top",
+          "in" : "query",
+          "required" : false,
+          "type" : "integer"
+        }, {
+          "name" : "$skip",
+          "in" : "query",
+          "required" : false,
+          "type" : "integer"
+        }, {
+          "name" : "$count",
+          "in" : "query",
+          "required" : false,
+          "type" : "boolean",
+          "default" : false
+        }, {
+          "name" : "$orderby",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "$expand",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Success",
+            "schema" : {
+              "type" : "object",
+              "properties" : {
+                "value" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/definitions/PTC.BomTransformation.NewSplitAlternate"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

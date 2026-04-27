@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { createObject, fetchContainers, fetchClassificationNodes, fetchPartSubtypes } from '../api/client'
 import type { ClassificationNode, ContainerItem, PartSubtype } from '../api/types'
+import { getSubtypeSpec, isRequired, isVisible, type FieldKey } from './createPart/subtypeFieldSpecs'
 
 /* ── Windchill-Systemkonstanten (aus Part-Erstellformular) ── */
 
@@ -300,10 +301,22 @@ export default function CreatePartPage() {
     [],
   )
 
+  // Welche Felder gehören aktuell zum gewählten Subtyp?
+  const subtypeSpec = useMemo(() => getSubtypeSpec(form.TypeId), [form.TypeId])
+
   const handleSubmit = useCallback(
     async (e: React.FormEvent) => {
       e.preventDefault()
       if (!form.Name.trim() || !form.ContainerBinding) return
+
+      // Prüfen, dass alle für diesen Subtyp erforderlichen Felder ausgefüllt sind
+      const missingRequired: FieldKey[] = (Object.keys(form) as Array<keyof FormState>)
+        .filter((k): k is FieldKey => k !== 'TypeId' && k !== 'ContainerBinding')
+        .filter((k) => isRequired(subtypeSpec, k) && !form[k].trim())
+      if (missingRequired.length > 0) {
+        setError(`Required fields missing: ${missingRequired.join(', ')}`)
+        return
+      }
 
       setBusy(true)
       setError('')
@@ -312,6 +325,14 @@ export default function CreatePartPage() {
       const attrs: Record<string, string> = {}
       for (const [k, v] of Object.entries(form)) {
         if (k === 'ContainerBinding') continue
+        // TypeId immer mitschicken (Soft-Type ist fixe Pflicht)
+        if (k === 'TypeId') {
+          const trimmed = v.trim()
+          if (trimmed) attrs[k] = trimmed
+          continue
+        }
+        // Felder, die für den aktuellen Subtyp ausgeblendet sind, NICHT senden.
+        if (!isVisible(subtypeSpec, k as FieldKey)) continue
         const trimmed = v.trim()
         if (trimmed) attrs[k] = trimmed
       }
@@ -409,118 +430,140 @@ export default function CreatePartPage() {
           )}
 
           {/* Number */}
-          <Field label="Number">
-            <input
-              value={form.Number}
-              onChange={(e) => set('Number', e.target.value)}
-              placeholder="(Generated)"
-              className="input"
-            />
-          </Field>
+          {isVisible(subtypeSpec, 'Number') && (
+            <Field label="Number" required={isRequired(subtypeSpec, 'Number')}>
+              <input
+                value={form.Number}
+                onChange={(e) => set('Number', e.target.value)}
+                placeholder="(Generated)"
+                className="input"
+              />
+            </Field>
+          )}
 
           {/* Name */}
-          <Field label="Name" required>
-            <input
-              value={form.Name}
-              onChange={(e) => set('Name', e.target.value)}
-              className="input"
-            />
-          </Field>
+          {isVisible(subtypeSpec, 'Name') && (
+            <Field label="Name" required={isRequired(subtypeSpec, 'Name')}>
+              <input
+                value={form.Name}
+                onChange={(e) => set('Name', e.target.value)}
+                className="input"
+              />
+            </Field>
+          )}
 
           {/* Description */}
-          <Field label="Description">
-            <textarea
-              value={form.Description}
-              onChange={(e) => set('Description', e.target.value)}
-              rows={2}
-              className="input resize-y"
-            />
-          </Field>
+          {isVisible(subtypeSpec, 'Description') && (
+            <Field label="Description" required={isRequired(subtypeSpec, 'Description')}>
+              <textarea
+                value={form.Description}
+                onChange={(e) => set('Description', e.target.value)}
+                rows={2}
+                className="input resize-y"
+              />
+            </Field>
+          )}
 
           {/* Source */}
-          <Field label="Source" required>
-            <ToggleGroup
-              options={SOURCES}
-              value={form.Source}
-              onChange={(v) => set('Source', v)}
-            />
-          </Field>
+          {isVisible(subtypeSpec, 'Source') && (
+            <Field label="Source" required={isRequired(subtypeSpec, 'Source')}>
+              <ToggleGroup
+                options={SOURCES}
+                value={form.Source}
+                onChange={(v) => set('Source', v)}
+              />
+            </Field>
+          )}
 
           {/* Associated Product Family */}
-          <Field label="Associated Product Family">
-            <select
-              value={form.ProductFamily}
-              onChange={(e) => set('ProductFamily', e.target.value)}
-              className="input"
-            >
-              {PRODUCT_FAMILIES.map((pf) => (
-                <option key={pf} value={pf}>{pf || '—'}</option>
-              ))}
-            </select>
-          </Field>
+          {isVisible(subtypeSpec, 'ProductFamily') && (
+            <Field label="Associated Product Family" required={isRequired(subtypeSpec, 'ProductFamily')}>
+              <select
+                value={form.ProductFamily}
+                onChange={(e) => set('ProductFamily', e.target.value)}
+                className="input"
+              >
+                {PRODUCT_FAMILIES.map((pf) => (
+                  <option key={pf} value={pf}>{pf || '—'}</option>
+                ))}
+              </select>
+            </Field>
+          )}
 
           {/* View */}
-          <Field label="View">
-            <select
-              value={form.View}
-              onChange={(e) => set('View', e.target.value)}
-              className="input"
-            >
-              {VIEWS.map((v) => (
-                <option key={v.value} value={v.value}>{v.label}</option>
-              ))}
-            </select>
-          </Field>
+          {isVisible(subtypeSpec, 'View') && (
+            <Field label="View" required={isRequired(subtypeSpec, 'View')}>
+              <select
+                value={form.View}
+                onChange={(e) => set('View', e.target.value)}
+                className="input"
+              >
+                {VIEWS.map((v) => (
+                  <option key={v.value} value={v.value}>{v.label}</option>
+                ))}
+              </select>
+            </Field>
+          )}
 
           {/* Assembly Mode */}
-          <Field label="Assembly Mode" required>
-            <ToggleGroup
-              options={ASSEMBLY_MODES}
-              value={form.AssemblyMode}
-              onChange={(v) => set('AssemblyMode', v)}
-            />
-          </Field>
+          {isVisible(subtypeSpec, 'AssemblyMode') && (
+            <Field label="Assembly Mode" required={isRequired(subtypeSpec, 'AssemblyMode')}>
+              <ToggleGroup
+                options={ASSEMBLY_MODES}
+                value={form.AssemblyMode}
+                onChange={(v) => set('AssemblyMode', v)}
+              />
+            </Field>
+          )}
 
           {/* Gathering Part */}
-          <Field label="Gathering Part" required>
-            <ToggleGroup
-              options={[{ value: 'no', label: 'No' }, { value: 'yes', label: 'Yes' }]}
-              value={form.GatheringPart}
-              onChange={(v) => set('GatheringPart', v)}
-            />
-          </Field>
+          {isVisible(subtypeSpec, 'GatheringPart') && (
+            <Field label="Gathering Part" required={isRequired(subtypeSpec, 'GatheringPart')}>
+              <ToggleGroup
+                options={[{ value: 'no', label: 'No' }, { value: 'yes', label: 'Yes' }]}
+                value={form.GatheringPart}
+                onChange={(v) => set('GatheringPart', v)}
+              />
+            </Field>
+          )}
 
           {/* Default Unit */}
-          <Field label="Default Unit" required>
-            <select
-              value={form.DefaultUnit}
-              onChange={(e) => set('DefaultUnit', e.target.value)}
-              className="input"
-            >
-              {UNITS.map((u) => (
-                <option key={u.value} value={u.value}>{u.label}</option>
-              ))}
-            </select>
-          </Field>
+          {isVisible(subtypeSpec, 'DefaultUnit') && (
+            <Field label="Default Unit" required={isRequired(subtypeSpec, 'DefaultUnit')}>
+              <select
+                value={form.DefaultUnit}
+                onChange={(e) => set('DefaultUnit', e.target.value)}
+                className="input"
+              >
+                {UNITS.map((u) => (
+                  <option key={u.value} value={u.value}>{u.label}</option>
+                ))}
+              </select>
+            </Field>
+          )}
 
           {/* Configurable Module */}
-          <Field label="Configurable Module" required>
-            <ToggleGroup
-              options={[{ value: 'no', label: 'No' }, { value: 'yes', label: 'Yes' }]}
-              value={form.ConfigurableModule}
-              onChange={(v) => set('ConfigurableModule', v)}
-            />
-          </Field>
+          {isVisible(subtypeSpec, 'ConfigurableModule') && (
+            <Field label="Configurable Module" required={isRequired(subtypeSpec, 'ConfigurableModule')}>
+              <ToggleGroup
+                options={[{ value: 'no', label: 'No' }, { value: 'yes', label: 'Yes' }]}
+                value={form.ConfigurableModule}
+                onChange={(v) => set('ConfigurableModule', v)}
+              />
+            </Field>
+          )}
 
           {/* Classification — automatisch vom Type bestimmt */}
-          <Field label="Classification">
-            <div className="input bg-slate-50 text-slate-600 cursor-default flex items-center justify-between">
-              <span>{form.Classification
-                ? (clfNodes.find((n) => n.internalName === form.Classification)?.displayName || form.Classification)
-                : '—'}</span>
-              <span className="text-xs text-slate-400">determined automatically by type</span>
-            </div>
-          </Field>
+          {isVisible(subtypeSpec, 'Classification') && (
+            <Field label="Classification" required={isRequired(subtypeSpec, 'Classification')}>
+              <div className="input bg-slate-50 text-slate-600 cursor-default flex items-center justify-between">
+                <span>{form.Classification
+                  ? (clfNodes.find((n) => n.internalName === form.Classification)?.displayName || form.Classification)
+                  : '—'}</span>
+                <span className="text-xs text-slate-400">determined automatically by type</span>
+              </div>
+            </Field>
+          )}
         </Section>
 
         {/* ── Submit ───────────────────────────────────────── */}

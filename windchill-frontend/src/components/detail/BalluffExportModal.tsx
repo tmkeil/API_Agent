@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { fetchBalluffBomExport, fetchSapExport, fetchSapPreview } from '../../api/client'
 import type { BalluffBomExportResponse, SapExportResponse, SapExportRequest, SapPreviewResponse } from '../../api/types'
+import { useAuth } from '../../contexts/AuthContext'
+import { deleteDraft, loadDraft, saveDraft, type SapPreviewDraft } from '../../utils/sapDraftStorage'
 
 // ── Types ───────────────────────────────────────────────────
 
@@ -127,6 +129,12 @@ interface Props {
 }
 
 export default function BalluffExportModal({ partNumber, onClose }: Props) {
+  const { user } = useAuth()
+  const draftScope = useMemo(
+    () => ({ system: user?.system ?? '', username: user?.username ?? '' }),
+    [user?.system, user?.username],
+  )
+
   const [activeTab, setActiveTab] = useState<'raw' | 'sap' | 'config'>('raw')
 
   // ── Level picker state ────────────────────────────────
@@ -151,6 +159,15 @@ export default function BalluffExportModal({ partNumber, onClose }: Props) {
   } | null>(null)
   const [sapError, setSapError] = useState('')
   const [validationStale, setValidationStale] = useState(false)
+
+  // ── Draft state (persisted SAP-preview edits per part) ─
+  const [activeDraft, setActiveDraft] = useState<SapPreviewDraft | null>(null)
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'unsaved' | 'saving' | 'saved'>('idle')
+  const [lastSavedAt, setLastSavedAt] = useState<string>('')
+  const saveTimerRef = useRef<number | null>(null)
+  // When true, the next sapData mutation will not be auto-saved (used during
+  // initial load / draft hydration to avoid an immediate echo-save).
+  const skipNextAutoSaveRef = useRef(false)
 
   // ── SAP Export (final) state ──────────────────────────
   const [exportLoading, setExportLoading] = useState(false)
@@ -211,7 +228,7 @@ export default function BalluffExportModal({ partNumber, onClose }: Props) {
   }, [partNumber])
 
   // ── SAP Preview trigger ───────────────────────────────
-  const triggerSapPreview = useCallback((data: TabData, r?: RuleConfig) => {
+  const triggerSapPreview = useCallback((data: TabData, r?: RuleConfig, opts?: { applyDraft?: boolean }) => {
     const ctrl = new AbortController()
     setSapLoading(true)
     setSapError('')
@@ -227,11 +244,43 @@ export default function BalluffExportModal({ partNumber, onClose }: Props) {
       ctrl.signal,
     )
       .then((resp: SapPreviewResponse) => {
-        setSapData({
-          columns: resp.columns,
-          rows: resp.rows.map(r => ({ ...r })),
-          partNumber: data.partNumber,
-        })
+        // Try to overlay a previously saved draft for this part. We only
+        // adopt drafts whose column layout matches the fresh preview, so
+        // schema changes don't silently corrupt the table.
+        const applyDraft = opts?.applyDraft !== false
+        const draft = applyDraft ? loadDraft(draftScope, data.partNumber) : null
+        const sameColumns = draft &&
+          draft.columns.length === resp.columns.length &&
+          draft.columns.every((c, i) => c === resp.columns[i])
+        if (draft && sameColumns) {
+          // Suppress the echo-save that would otherwise fire from setSapData.
+          skipNextAutoSaveRef.current = true
+          setSapData({
+            columns: resp.columns,
+            rows: draft.rows.map((r) => ({ ...r })),
+            partNumber: data.partNumber,
+          })
+          setActiveDraft(draft)
+          setLastSavedAt(draft.savedAt)
+          setSaveStatus('saved')
+          // Edits from the draft predate validation → mark stale so the user
+          // re-validates before exporting.
+          setValidationStale(true)
+        } else {
+          if (draft && !sameColumns) {
+            // Drop incompatible draft so it doesn't keep re-applying.
+            deleteDraft(draftScope, data.partNumber)
+          }
+          skipNextAutoSaveRef.current = true
+          setSapData({
+            columns: resp.columns,
+            rows: resp.rows.map(r => ({ ...r })),
+            partNumber: data.partNumber,
+          })
+          setActiveDraft(null)
+          setLastSavedAt('')
+          setSaveStatus('idle')
+        }
         setSapValidation(resp.validation)
         setSapPreviewStats(resp.stats)
       })
@@ -240,7 +289,7 @@ export default function BalluffExportModal({ partNumber, onClose }: Props) {
       })
       .finally(() => setSapLoading(false))
     return ctrl
-  }, [rules])
+  }, [rules, draftScope])
 
   // Auto-trigger SAP preview when raw data first loads
   useEffect(() => {
@@ -249,6 +298,49 @@ export default function BalluffExportModal({ partNumber, onClose }: Props) {
     const ctrl = triggerSapPreview(rawData)
     return () => ctrl.abort()
   }, [rawData, triggerSapPreview])
+
+  // ── Auto-save SAP edits as a draft ────────────────────
+  // Any user edit on the SAP preview table debounces a write to localStorage
+  // so the table can be restored on later sessions.
+  useEffect(() => {
+    if (!sapData) return
+    if (skipNextAutoSaveRef.current) {
+      skipNextAutoSaveRef.current = false
+      return
+    }
+    if (!draftScope.username) return
+    setSaveStatus('unsaved')
+    if (saveTimerRef.current !== null) {
+      window.clearTimeout(saveTimerRef.current)
+    }
+    saveTimerRef.current = window.setTimeout(() => {
+      setSaveStatus('saving')
+      const saved = saveDraft(draftScope, sapData.partNumber, sapData.columns, sapData.rows)
+      if (saved) {
+        setActiveDraft(saved)
+        setLastSavedAt(saved.savedAt)
+        setSaveStatus('saved')
+      } else {
+        setSaveStatus('unsaved')
+      }
+    }, 600)
+    return () => {
+      if (saveTimerRef.current !== null) {
+        window.clearTimeout(saveTimerRef.current)
+        saveTimerRef.current = null
+      }
+    }
+  }, [sapData, draftScope])
+
+  // Discard the saved draft and reload from Windchill (the original preview).
+  const handleDiscardDraft = useCallback(() => {
+    if (!rawData) return
+    deleteDraft(draftScope, partNumber)
+    setActiveDraft(null)
+    setLastSavedAt('')
+    setSaveStatus('idle')
+    triggerSapPreview(rawData, undefined, { applyDraft: false })
+  }, [rawData, draftScope, partNumber, triggerSapPreview])
 
   // ── Collapse logic ────────────────────────────────────
   const toggleCollapse = useCallback((tab: 'raw' | 'sap', rowIdx: number) => {
@@ -682,6 +774,23 @@ export default function BalluffExportModal({ partNumber, onClose }: Props) {
               </div>
             ) : sapData ? (
                 <>
+                  {/* Saved-draft banner */}
+                  {activeDraft && (
+                    <div className="bg-indigo-50 border border-indigo-200 rounded-md px-4 py-1.5 mb-2 text-xs text-indigo-800 shrink-0 flex items-center justify-between gap-3">
+                      <span>
+                        <span className="font-semibold">Loaded saved draft</span>
+                        {' '}from {new Date(activeDraft.savedAt).toLocaleString()}
+                      </span>
+                      <button
+                        onClick={handleDiscardDraft}
+                        className="px-2 py-0.5 text-xs font-medium rounded border border-indigo-300 text-indigo-700 hover:bg-indigo-100 transition-colors"
+                        title="Delete the saved draft and reload the original SAP preview from Windchill"
+                      >
+                        Discard draft
+                      </button>
+                    </div>
+                  )}
+
                   {/* Validation */}
                   {sapValidation.length > 0 && (
                     <div className="bg-amber-50 border border-amber-200 rounded-md px-4 py-2 mb-2 shrink-0">
@@ -717,6 +826,29 @@ export default function BalluffExportModal({ partNumber, onClose }: Props) {
                         <> · {sapPreviewStats.removedRows} removed</>
                       )}
                     </span>
+                    {/* Save-status indicator (debounced auto-save to localStorage) */}
+                    {draftScope.username && (
+                      <span
+                        className={`text-xs ${
+                          saveStatus === 'saved' ? 'text-emerald-600' :
+                          saveStatus === 'saving' ? 'text-slate-500' :
+                          saveStatus === 'unsaved' ? 'text-orange-500' :
+                          'text-slate-400'
+                        }`}
+                        title={
+                          saveStatus === 'saved' && lastSavedAt
+                            ? `Auto-saved at ${new Date(lastSavedAt).toLocaleTimeString()}`
+                            : saveStatus === 'unsaved' ? 'Unsaved changes — auto-saving…'
+                            : saveStatus === 'saving' ? 'Saving…'
+                            : 'Edits will be auto-saved as a draft'
+                        }
+                      >
+                        {saveStatus === 'saved' && lastSavedAt && `✓ Saved ${new Date(lastSavedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`}
+                        {saveStatus === 'saving' && '… Saving'}
+                        {saveStatus === 'unsaved' && '● Unsaved'}
+                        {saveStatus === 'idle' && 'Auto-save ready'}
+                      </span>
+                    )}
                     <button onClick={handleRefreshPreview} disabled={sapLoading} className="px-2 py-1 text-xs font-medium rounded border border-slate-300 text-slate-500 hover:bg-slate-100 transition-colors disabled:opacity-40">
                       Refresh preview
                     </button>

@@ -371,6 +371,35 @@ export async function diagnoseEquivalence(partNumber: string): Promise<EquivDiag
   return request<EquivDiagnosticResponse>(`${BASE}/diagnose/equivalence?${params}`)
 }
 
+// Phase 2a: Branch / SaveAs / Revise action discovery
+export interface BranchActionProbe {
+  label: string
+  url: string
+  method: string
+  status?: number
+  verdict?: 'EXISTS' | 'EXISTS_LIKELY' | 'MISSING' | 'AUTH' | 'OTHER' | 'ERROR' | 'UNEXPECTED_GET_OK' | 'unknown'
+  hint?: string
+  error?: string
+  sample?: string
+}
+export interface BranchActionsResponse {
+  partNumber: string
+  partId: string
+  summary: {
+    exists: string[]
+    missing: string[]
+    metadataHits: Record<string, string[]>
+  }
+  metadata: Record<string, { url: string; status?: number; sizeBytes?: number; contentType?: string; snippet?: string; error?: string }>
+  actionProbes: BranchActionProbe[]
+  note: string
+  error?: string
+}
+export async function diagnoseBranchActions(partNumber: string): Promise<BranchActionsResponse> {
+  const params = new URLSearchParams({ partNumber })
+  return request<BranchActionsResponse>(`${BASE}/diagnose/branch-actions?${params}`)
+}
+
 // API Logs
 export async function getApiLogs(limit = 120): Promise<ApiLogEntry[]> {
   const data = await request<{ items: ApiLogEntry[] }>(

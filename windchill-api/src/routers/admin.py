@@ -525,6 +525,180 @@ def diagnose_equivalence(
     }
 
 
+# ── Phase 2a: Branch / Path / SaveAs Action Discovery ───────
+
+
+@router.get(
+    "/diagnose/branch-actions",
+    summary="Phase 2a: prueft welche Branch/Path/SaveAs-Actions auf diesem Windchill verfuegbar sind",
+)
+def diagnose_branch_actions(
+    request: Request,
+    _: None = Depends(require_auth),
+    partNumber: str = Query(..., description="Part-Nummer (Code) eines existierenden Parts"),
+):
+    """Ermittelt, welche OData-Actions fuer 'New Downstream Branch' / 'Save As' /
+    'Revise' / 'CheckOut' auf plm-prod tatsaechlich deployt sind.
+
+    Zwei Probe-Strategien (beide nebenwirkungsfrei):
+      1) $metadata (XML) der relevanten Domains laden und nach Action-Namen
+         grep'en. Liefert die definitive Liste der bound Actions.
+      2) GET auf die Action-URL. 405 'Method Not Allowed' beweist, dass die
+         Action existiert (sie erwartet POST). 404 'Not Found' beweist, dass
+         sie nicht deployt ist.
+
+    POST-Proben werden BEWUSST NICHT ausgefuehrt, weil sie reale Objekte
+    erzeugen wuerden (NewBranch, SaveAs, Revise haben Seiteneffekte!).
+    """
+    from src.core.odata import extract_id
+
+    client = get_client(request)
+
+    # 1) Part aufloesen
+    try:
+        raw_part = client.find_part(partNumber)
+    except Exception as e:
+        return {"error": f"Part nicht gefunden: {e}", "partNumber": partNumber}
+    part_id = extract_id(raw_part)
+
+    # 2) Action-Kandidaten (PTC-Standard + Balluff-Custom + bekannte v3-Pfade)
+    #    Format: (label, namespace, action_name)
+    candidates: list[tuple[str, str, str]] = [
+        # PTC ProdMgmt Standard-Actions
+        ("PTC.ProdMgmt.NewBranch",                    "PTC.ProdMgmt", "NewBranch"),
+        ("PTC.ProdMgmt.SaveAs",                       "PTC.ProdMgmt", "SaveAs"),
+        ("PTC.ProdMgmt.Revise",                       "PTC.ProdMgmt", "Revise"),
+        ("PTC.ProdMgmt.CheckOut",                     "PTC.ProdMgmt", "CheckOut"),
+        ("PTC.ProdMgmt.CheckIn",                      "PTC.ProdMgmt", "CheckIn"),
+        ("PTC.ProdMgmt.UndoCheckOut",                 "PTC.ProdMgmt", "UndoCheckOut"),
+        ("PTC.ProdMgmt.CreateAlternate",              "PTC.ProdMgmt", "CreateAlternate"),
+        ("PTC.ProdMgmt.AssignAlternate",              "PTC.ProdMgmt", "AssignAlternate"),
+        ("PTC.ProdMgmt.NewVersion",                   "PTC.ProdMgmt", "NewVersion"),
+        ("PTC.ProdMgmt.GenerateStructuredAppearance", "PTC.ProdMgmt", "GenerateStructuredAppearance"),
+        # Balluff-Custom (vermutet, von der Diagnose her wahrscheinlich nicht da)
+        ("PTC.BalluffCustom.NewDownstreamBranch",     "PTC.BalluffCustom", "NewDownstreamBranch"),
+        ("PTC.BalluffCustom.GenerateDownstreamStructure", "PTC.BalluffCustom", "GenerateDownstreamStructure"),
+        # v3 BomTransformation (per Diagnose schon als 404 bekannt — als Referenz)
+        ("PTC.BomTransformation.GenerateDownstreamStructure",
+         "PTC.BomTransformation", "GenerateDownstreamStructure"),
+    ]
+
+    base_part = f"{client._odata_url('ProdMgmt')}/Parts('{part_id}')"
+
+    # ── Schritt 1: $metadata grep ────────────────────────────
+    metadata_findings: dict[str, dict] = {}
+    domains_to_check = ["ProdMgmt", "ChangeMgmt"]
+    # Optionale custom Domains (vermutlich 404)
+    optional_domains = [
+        ("BalluffCustom_v1", f"{client.base_url}/servlet/odata/v1/BalluffCustom/$metadata"),
+        ("BalluffCustom_v6", f"{client._odata_url('BalluffCustom')}/$metadata"),
+        ("BomTransformation_v3", f"{client.base_url}/servlet/odata/v3/BomTransformation/$metadata"),
+    ]
+
+    metadata_blobs: dict[str, str] = {}
+    for dom in domains_to_check:
+        url = f"{client._odata_url(dom)}/$metadata"
+        try:
+            resp = client._raw_get(url, timeout=15)
+            entry: dict = {"url": url, "status": resp.status_code,
+                           "contentType": resp.headers.get("content-type", "")}
+            if resp.status_code == 200:
+                txt = resp.text or ""
+                metadata_blobs[dom] = txt
+                entry["sizeBytes"] = len(txt)
+            else:
+                entry["snippet"] = (resp.text or "")[:300]
+            metadata_findings[dom] = entry
+        except Exception as e:
+            metadata_findings[dom] = {"url": url, "error": str(e)}
+
+    for label, url in optional_domains:
+        try:
+            resp = client._raw_get(url, timeout=10)
+            entry = {"url": url, "status": resp.status_code}
+            if resp.status_code == 200:
+                txt = resp.text or ""
+                metadata_blobs[label] = txt
+                entry["sizeBytes"] = len(txt)
+            metadata_findings[label] = entry
+        except Exception as e:
+            metadata_findings[label] = {"url": url, "error": str(e)}
+
+    # In den geladenen Metadata-Blobs nach Action-Namen suchen
+    metadata_hits: dict[str, list[str]] = {}
+    interesting_names = {c[2] for c in candidates} | {
+        "NewBranch", "SaveAs", "Revise", "CheckOut", "CheckIn",
+        "UndoCheckOut", "NewDownstreamBranch", "GenerateDownstreamStructure",
+        "CreateAlternate", "BomTransformation", "Path",
+    }
+    for dom, blob in metadata_blobs.items():
+        hits: list[str] = []
+        for name in interesting_names:
+            # naive case-sensitive substring search; XML uses Action Name="..."
+            if f'Name="{name}"' in blob or f"Action Name=\"{name}\"" in blob:
+                hits.append(name)
+        if hits:
+            metadata_hits[dom] = sorted(set(hits))
+
+    # ── Schritt 2: GET-Probe pro Kandidat ────────────────────
+    # 405 = Action existiert (erwartet POST). 404 = nicht deployt. 401/403 = Auth.
+    action_probes: list[dict] = []
+    for label, namespace, action in candidates:
+        url = f"{base_part}/{namespace}.{action}"
+        entry: dict = {"label": label, "url": url, "method": "GET"}
+        try:
+            # _get suppress_errors damit wir die Status-Codes selbst inspizieren
+            resp = client._get(url, None, suppress_errors=True)
+            if resp is None:
+                entry.update(verdict="unknown", error="no response")
+            else:
+                entry["status"] = resp.status_code
+                if resp.status_code == 405:
+                    entry.update(verdict="EXISTS",
+                                 hint="405 Method Not Allowed → Action ist deployt, erwartet POST")
+                elif resp.status_code == 404:
+                    entry.update(verdict="MISSING",
+                                 hint="404 Not Found → Action ist nicht deployt")
+                elif resp.status_code in (200, 204):
+                    entry.update(verdict="UNEXPECTED_GET_OK",
+                                 hint="GET hat geklappt — moeglich, dass es ein Function (nicht Action) ist",
+                                 sample=(resp.text or "")[:200])
+                elif resp.status_code in (400, 422):
+                    entry.update(verdict="EXISTS_LIKELY",
+                                 hint=f"{resp.status_code} → Endpoint existiert, Bad Request",
+                                 sample=(resp.text or "")[:200])
+                elif resp.status_code in (401, 403):
+                    entry.update(verdict="AUTH",
+                                 hint=f"{resp.status_code} → Auth-Problem")
+                else:
+                    entry.update(verdict="OTHER",
+                                 sample=(resp.text or "")[:200])
+        except Exception as ex:
+            entry.update(verdict="ERROR", error=str(ex))
+        action_probes.append(entry)
+
+    # ── Zusammenfassung ──────────────────────────────────────
+    summary = {
+        "exists": [p["label"] for p in action_probes if p.get("verdict") in ("EXISTS", "EXISTS_LIKELY")],
+        "missing": [p["label"] for p in action_probes if p.get("verdict") == "MISSING"],
+        "metadataHits": metadata_hits,
+    }
+
+    return {
+        "partNumber": partNumber,
+        "partId": part_id,
+        "summary": summary,
+        "metadata": metadata_findings,
+        "actionProbes": action_probes,
+        "note": (
+            "GET-Probes sind nebenwirkungsfrei. 405 beweist dass die Action "
+            "existiert, 404 dass sie fehlt. Der naechste Schritt ist, die "
+            "EXISTS-Actions mit echtem POST-Body zu testen — aber NUR auf "
+            "einem Test-Part, da NewBranch/SaveAs/Revise persistente Objekte erzeugen."
+        ),
+    }
+
+
 @router.get("/diagnose/service-doc", summary="OData Service-Dokument — zeigt alle Entity Sets")
 def diagnose_service_doc(
     request: Request,

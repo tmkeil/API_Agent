@@ -1,12 +1,13 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { getBomTransformer, getObjectDetail } from '../api/client'
+import { diagnoseBranchActions, getBomTransformer, getObjectDetail } from '../api/client'
 import type {
   BomTransformerResponse,
   BomTreeNode,
   BomViewColumn,
   ObjectDetailResponse,
 } from '../api/types'
+import type { BranchActionsResponse } from '../api/client'
 import BomTreeRow from '../components/BomTreeNode'
 
 /** Compact column set used by both trees — matches StructureTab's defaults
@@ -373,6 +374,188 @@ export default function BomTransformerPage() {
 
       {modalNode && (
         <NodeDetailModal node={modalNode} onClose={() => setModalNode(null)} />
+      )}
+
+      {/* Phase 2a: Branch / SaveAs / Revise Action Discovery */}
+      {!loading && !error && data && (
+        <BranchActionDiagnose partNumber={code} />
+      )}
+    </div>
+  )
+}
+
+// ── Phase 2a Diagnose-Panel ────────────────────────────────
+
+function BranchActionDiagnose({ partNumber }: { partNumber: string }) {
+  const [open, setOpen] = useState(false)
+  const [running, setRunning] = useState(false)
+  const [result, setResult] = useState<BranchActionsResponse | null>(null)
+  const [err, setErr] = useState<string | null>(null)
+
+  async function run() {
+    setRunning(true)
+    setErr(null)
+    setResult(null)
+    try {
+      const r = await diagnoseBranchActions(partNumber)
+      setResult(r)
+    } catch (e) {
+      setErr(String((e as Error)?.message ?? e))
+    } finally {
+      setRunning(false)
+    }
+  }
+
+  return (
+    <div className="bg-white rounded shadow-sm border border-slate-200">
+      <button
+        onClick={() => setOpen(o => !o)}
+        className="w-full px-3 py-2 flex items-center justify-between text-xs text-slate-600 hover:bg-slate-50"
+      >
+        <span className="flex items-center gap-2">
+          <span className="text-[10px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded bg-violet-100 text-violet-700">
+            Phase 2a
+          </span>
+          <span>Branch / SaveAs / Revise Action Discovery</span>
+        </span>
+        <span className="text-slate-400">{open ? '▾' : '▸'}</span>
+      </button>
+
+      {open && (
+        <div className="px-3 pb-3 pt-1 text-xs space-y-3 border-t border-slate-100">
+          <p className="text-slate-600">
+            Prüft <strong>nebenwirkungsfrei</strong>, welche OData-Actions auf
+            plm-prod tatsächlich verfügbar sind. Strategie: <code>$metadata</code>{' '}
+            grep + GET-Probe (405 = existiert, 404 = fehlt). Es werden{' '}
+            <strong>keine</strong> POST-Probes ausgeführt, weil NewBranch /
+            SaveAs / Revise reale Objekte erzeugen würden.
+          </p>
+          <button
+            onClick={run}
+            disabled={running}
+            className="px-3 py-1 rounded bg-violet-600 text-white hover:bg-violet-700 disabled:opacity-50"
+          >
+            {running ? 'Läuft …' : `Diagnose für ${partNumber} starten`}
+          </button>
+
+          {err && (
+            <div className="bg-rose-50 border border-rose-200 rounded p-2 text-rose-700">
+              {err}
+            </div>
+          )}
+
+          {result && (
+            <div className="space-y-3">
+              {/* Zusammenfassung */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="bg-emerald-50 border border-emerald-200 rounded p-2">
+                  <div className="text-[10px] uppercase font-semibold text-emerald-700 mb-1">
+                    Verfügbar ({result.summary.exists.length})
+                  </div>
+                  {result.summary.exists.length === 0 ? (
+                    <div className="text-slate-500 italic">keine</div>
+                  ) : (
+                    <ul className="font-mono text-[11px] text-emerald-900 space-y-0.5">
+                      {result.summary.exists.map(l => <li key={l}>✓ {l}</li>)}
+                    </ul>
+                  )}
+                </div>
+                <div className="bg-rose-50 border border-rose-200 rounded p-2">
+                  <div className="text-[10px] uppercase font-semibold text-rose-700 mb-1">
+                    Fehlend ({result.summary.missing.length})
+                  </div>
+                  {result.summary.missing.length === 0 ? (
+                    <div className="text-slate-500 italic">keine</div>
+                  ) : (
+                    <ul className="font-mono text-[11px] text-rose-900 space-y-0.5">
+                      {result.summary.missing.map(l => <li key={l}>✗ {l}</li>)}
+                    </ul>
+                  )}
+                </div>
+              </div>
+
+              {/* Metadata-Hits */}
+              {Object.keys(result.summary.metadataHits).length > 0 && (
+                <div>
+                  <div className="text-[10px] uppercase font-semibold text-slate-500 mb-1">
+                    $metadata-Treffer
+                  </div>
+                  <table className="w-full font-mono text-[11px]">
+                    <tbody>
+                      {Object.entries(result.summary.metadataHits).map(([dom, hits]) => (
+                        <tr key={dom} className="border-t border-slate-100">
+                          <td className="py-1 pr-2 text-slate-500 align-top whitespace-nowrap">
+                            {dom}
+                          </td>
+                          <td className="py-1 text-slate-800">
+                            {hits.join(', ')}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+
+              {/* Action-Probes Detail */}
+              <details>
+                <summary className="cursor-pointer text-[10px] uppercase font-semibold text-slate-500">
+                  Alle Action-Probes ({result.actionProbes.length})
+                </summary>
+                <table className="w-full mt-2 font-mono text-[11px]">
+                  <thead>
+                    <tr className="text-left text-slate-500 border-b border-slate-200">
+                      <th className="py-1 pr-2">Action</th>
+                      <th className="py-1 pr-2">Status</th>
+                      <th className="py-1 pr-2">Verdict</th>
+                      <th className="py-1">Hint</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {result.actionProbes.map(p => (
+                      <tr key={p.label} className="border-t border-slate-100">
+                        <td className="py-1 pr-2 text-slate-800">{p.label}</td>
+                        <td className="py-1 pr-2 text-slate-600">{p.status ?? '—'}</td>
+                        <td className={`py-1 pr-2 font-semibold ${
+                          p.verdict === 'EXISTS' || p.verdict === 'EXISTS_LIKELY'
+                            ? 'text-emerald-700'
+                            : p.verdict === 'MISSING'
+                            ? 'text-rose-700'
+                            : 'text-slate-500'
+                        }`}>
+                          {p.verdict}
+                        </td>
+                        <td className="py-1 text-slate-600">{p.hint || p.error || '—'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </details>
+
+              {/* Metadata-Endpunkte Status */}
+              <details>
+                <summary className="cursor-pointer text-[10px] uppercase font-semibold text-slate-500">
+                  $metadata-Endpunkte
+                </summary>
+                <table className="w-full mt-2 font-mono text-[11px]">
+                  <tbody>
+                    {Object.entries(result.metadata).map(([dom, m]) => (
+                      <tr key={dom} className="border-t border-slate-100">
+                        <td className="py-1 pr-2 text-slate-500">{dom}</td>
+                        <td className="py-1 pr-2 text-slate-600">{m.status ?? m.error ?? '—'}</td>
+                        <td className="py-1 text-slate-500">
+                          {m.sizeBytes != null ? `${m.sizeBytes} bytes` : ''}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </details>
+
+              <p className="text-slate-500 italic">{result.note}</p>
+            </div>
+          )}
+        </div>
       )}
     </div>
   )

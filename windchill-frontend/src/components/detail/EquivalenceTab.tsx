@@ -59,6 +59,7 @@ export default function EquivalenceTab({ detail }: Props) {
   const [diag, setDiag] = useState<EquivDiagnosticResponse | null>(null)
   const [diagLoading, setDiagLoading] = useState(false)
   const [diagError, setDiagError] = useState<string | null>(null)
+  const [diagOpen, setDiagOpen] = useState(false)
 
   useEffect(() => {
     const ctrl = new AbortController()
@@ -87,7 +88,16 @@ export default function EquivalenceTab({ detail }: Props) {
     }
   }
 
-  const diagPanel = (
+  const diagPanel = !diagOpen ? (
+    <div className="flex justify-end">
+      <button
+        onClick={() => setDiagOpen(true)}
+        className="text-xs text-slate-400 hover:text-slate-600 underline"
+      >
+        OData-Pfad-Diagnose
+      </button>
+    </div>
+  ) : (
     <div className="bg-white rounded shadow-sm border border-amber-200 overflow-hidden">
       <div className="px-4 py-2.5 bg-amber-50 border-b border-amber-200 flex items-center justify-between gap-3">
         <div>
@@ -98,13 +108,22 @@ export default function EquivalenceTab({ detail }: Props) {
             Probiert mehrere OData-Pfade und meldet Status / Treffer.
           </p>
         </div>
-        <button
-          onClick={runDiagnose}
-          disabled={diagLoading}
-          className="px-3 py-1.5 text-xs rounded border border-amber-300 bg-white hover:bg-amber-100 text-amber-800 disabled:opacity-50"
-        >
-          {diagLoading ? 'Prüfe …' : 'Pfade prüfen'}
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={runDiagnose}
+            disabled={diagLoading}
+            className="px-3 py-1.5 text-xs rounded border border-amber-300 bg-white hover:bg-amber-100 text-amber-800 disabled:opacity-50"
+          >
+            {diagLoading ? 'Prüfe …' : 'Pfade prüfen'}
+          </button>
+          <button
+            onClick={() => setDiagOpen(false)}
+            className="px-2 py-1.5 text-xs rounded border border-amber-300 bg-white hover:bg-amber-100 text-amber-800"
+            aria-label="Schließen"
+          >
+            ×
+          </button>
+        </div>
       </div>
       {diagError && (
         <div className="px-4 py-2 text-xs text-rose-600 bg-rose-50 border-b border-rose-200">
@@ -193,13 +212,22 @@ export default function EquivalenceTab({ detail }: Props) {
     <div className="space-y-3">
       {diagPanel}
       <div className="bg-white rounded shadow-sm border border-slate-200 overflow-hidden">
-        <div className="px-4 py-3 bg-slate-50 border-b border-slate-200">
-          <h3 className="text-xs font-semibold text-slate-600 uppercase tracking-wider">
-            Equivalence Network
-          </h3>
-          <p className="text-xs text-slate-400 mt-0.5">
-            Aktuelles Part: {detail.number} ({view || '?'}) — {pairs.length} Verknüpfung{pairs.length !== 1 ? 'en' : ''}
-          </p>
+        <div className="px-4 py-3 bg-slate-50 border-b border-slate-200 flex items-center justify-between gap-3">
+          <div>
+            <h3 className="text-xs font-semibold text-slate-600 uppercase tracking-wider">
+              Equivalence Network
+            </h3>
+            <p className="text-xs text-slate-400 mt-0.5">
+              Aktuelles Part: {detail.number} ({view || '?'}) — {pairs.length} Verknüpfung{pairs.length !== 1 ? 'en' : ''}
+            </p>
+          </div>
+          <button
+            onClick={() => navigate(`/parts/${encodeURIComponent(detail.number)}/transformer`)}
+            className="text-xs px-2.5 py-1 rounded border border-indigo-200 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 whitespace-nowrap"
+            title="Open BOM Transformer (dual tree view)"
+          >
+            Open BOM Transformer →
+          </button>
         </div>
 
         <table className="w-full text-sm">

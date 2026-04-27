@@ -3,6 +3,7 @@ import type {
   AdvancedSearchRequest,
   BalluffBomExportResponse,
   BomNodeResponse,
+  BomTransformerResponse,
   BomTreeNode,
   BomViewConfig,
   BulkItem,
@@ -257,6 +258,14 @@ export async function getWhereUsed(code: string, signal?: AbortSignal): Promise<
 export async function getPartEquivalence(code: string, signal?: AbortSignal): Promise<EquivalenceNetworkResponse> {
   return request<EquivalenceNetworkResponse>(
     `${BASE}/parts/${encodeURIComponent(code)}/equivalence`,
+    { signal },
+  )
+}
+
+// BOM Transformer dual-tree view (Design + Manufacturing) — Phase 1 read-only.
+export async function getBomTransformer(code: string, signal?: AbortSignal): Promise<BomTransformerResponse> {
+  return request<BomTransformerResponse>(
+    `${BASE}/parts/${encodeURIComponent(code)}/transformer`,
     { signal },
   )
 }

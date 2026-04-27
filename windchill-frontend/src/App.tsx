@@ -7,6 +7,7 @@ import DashboardPage from './pages/DashboardPage'
 import DetailPage from './pages/DetailPage'
 import CreatePartPage from './pages/CreatePartPage'
 import WorkItemPage from './pages/WorkItemPage'
+import BomTransformerPage from './pages/BomTransformerPage'
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth()
@@ -45,6 +46,7 @@ function AppRoutes() {
                 <Route path="/create/part" element={<CreatePartPage />} />
                 <Route path="/workitem/:id" element={<WorkItemPage />} />
                 <Route path="/detail/:typeKey/:code" element={<DetailPage />} />
+                <Route path="/parts/:code/transformer" element={<BomTransformerPage />} />
                 <Route path="*" element={<NotFoundPage />} />
               </Routes>
             </Layout>

@@ -326,6 +326,12 @@ export default function DashboardPage() {
     const isPart = r.objectType === 'WTPart' || typeKey === 'part'
     if (isPart) {
       list.push({
+        key: 'bom-transformer',
+        label: 'Open BOM Transformer',
+        description: 'Design ↔ Manufacturing dual tree view',
+        onSelect: () => navigate(`/parts/${encodeURIComponent(r.number)}/transformer`),
+      })
+      list.push({
         key: 'balluff-bom',
         label: 'Balluff BOM export…',
         description: 'Open the BOM export modal for this part',
@@ -333,7 +339,7 @@ export default function DashboardPage() {
       })
     }
     return list
-  }, [])
+  }, [navigate])
 
   // ── Render ─────────────────────────────────────────────
 

@@ -18,6 +18,7 @@ from src.core.dependencies import get_client, get_session
 from src.core.session import log_session_event
 from src.models.dto import (
     BomNodeResponse,
+    BomTransformerResponse,
     BomViewConfig,
     ClassificationNodeListResponse,
     ContainerListResponse,
@@ -29,6 +30,7 @@ from src.models.dto import (
     WhereUsedResponse,
 )
 from src.services import parts_service
+from src.services import bom_transformer_service
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -114,6 +116,21 @@ def get_equivalence(
 ):
     client = get_client(request)
     return parts_service.get_part_equivalence(client, code)
+
+
+@router.get(
+    "/parts/{code}/transformer",
+    response_model=BomTransformerResponse,
+    summary="BOM Transformer dual-tree view (Design + Manufacturing)",
+)
+def get_transformer(
+    code: str,
+    request: Request,
+    _: None = Depends(require_auth),
+):
+    client = get_client(request)
+    session = get_session(request)
+    return bom_transformer_service.get_transformer_view(client, code, session=session)
 
 
 # ── Occurrences ──────────────────────────────────────────────

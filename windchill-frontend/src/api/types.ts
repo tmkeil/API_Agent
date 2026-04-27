@@ -212,6 +212,15 @@ export interface EquivalenceNetworkResponse {
   timing: TimingInfo
 }
 
+export interface BomTransformerResponse {
+  code: string
+  selfView: string
+  designRoot: BomTreeNode | null
+  manufacturingRoot: BomTreeNode | null
+  equivalence: EquivalenceNetworkResponse
+  timing: TimingInfo
+}
+
 // ── Change Items (Affected / Resulting) ─────────────────────
 
 export interface ChangeItem {

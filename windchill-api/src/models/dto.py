@@ -298,6 +298,22 @@ class EquivalenceNetworkResponse(BaseModel):
     timing: TimingInfo = TimingInfo()
 
 
+class BomTransformerResponse(BaseModel):
+    """Combined response for the BOM Transformer dual-tree view.
+
+    Loads the equivalence network for `code` plus the BOM root nodes for
+    the Design side (left) and the Manufacturing side (right). Either
+    side may be `None` if no counterpart exists yet — the frontend will
+    then show an empty placeholder / Generate-action.
+    """
+    code: str
+    selfView: str = ""
+    designRoot: Optional[BomTreeNode] = None
+    manufacturingRoot: Optional[BomTreeNode] = None
+    equivalence: EquivalenceNetworkResponse
+    timing: TimingInfo = TimingInfo()
+
+
 # ── Document Details (Referencing Parts, File Info) ──────────
 
 

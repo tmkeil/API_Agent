@@ -337,6 +337,31 @@ export async function diagnoseBomFields(partNumber: string): Promise<Record<stri
   return request<Record<string, unknown>>(`${BASE}/diagnose/bom-fields?${params}`)
 }
 
+// Equivalence path diagnostics — probes WTPart Nav, BomTransformation, BalluffCustom
+export interface EquivDiagnosticEntry {
+  label: string
+  ok?: boolean
+  status?: number
+  count?: number | null
+}
+export interface EquivDiagnosticResponse {
+  partNumber: string
+  partId: string
+  summary: EquivDiagnosticEntry[]
+  details: Array<EquivDiagnosticEntry & {
+    url: string
+    params: Record<string, unknown>
+    method: string
+    sample?: unknown
+    text?: string
+    error?: string
+  }>
+}
+export async function diagnoseEquivalence(partNumber: string): Promise<EquivDiagnosticResponse> {
+  const params = new URLSearchParams({ partNumber })
+  return request<EquivDiagnosticResponse>(`${BASE}/diagnose/equivalence?${params}`)
+}
+
 // API Logs
 export async function getApiLogs(limit = 120): Promise<ApiLogEntry[]> {
   const data = await request<{ items: ApiLogEntry[] }>(

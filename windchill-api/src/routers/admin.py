@@ -400,6 +400,131 @@ def diagnose_bom_fields(
     }
 
 
+@router.get(
+    "/diagnose/equivalence",
+    summary="Equivalence Network — prueft welche OData-Pfade auf diesem Windchill funktionieren",
+)
+def diagnose_equivalence(
+    request: Request,
+    _: None = Depends(require_auth),
+    partNumber: str = Query(..., description="Part-Nummer (Code)"),
+):
+    """Probiert mehrere OData-Pfade fuer Equivalence-Links und meldet,
+    welche tatsaechlich antworten. Zur Verifikation auf dem echten System
+    bevor wir uns auf einen Pfad festlegen.
+
+    Probierte Pfade (jeweils relativ zum Part):
+      A) /Parts('{id}')/DownstreamEquivalanceLinks?$expand=Downstream
+      B) /Parts('{id}')/DownstreamEquivalanceLinks
+      C) /Parts('{id}')/UpstreamEquivalanceLinks?$expand=Upstream
+      D) /Parts('{id}')/UpstreamEquivalanceLinks
+      E) /Parts('{id}')/BAL_DOWNSTREAMNav
+      F) BomTransformation /GetEquivalenceNetworkForParts (Action)
+      G) BalluffCustom /GetEquivalence(ProductNumber=...)
+    """
+    from src.core.odata import extract_id
+
+    client = get_client(request)
+
+    # Resolve part
+    try:
+        raw_part = client.find_part(partNumber)
+    except Exception as e:
+        return {"error": f"Part nicht gefunden: {e}", "partNumber": partNumber}
+
+    part_id = extract_id(raw_part)
+    base_part = f"{client._odata_url('ProdMgmt')}/Parts('{part_id}')"
+
+    results: list[dict] = []
+
+    def probe(label: str, url: str, params: dict | None = None, method: str = "GET", body: dict | None = None):
+        entry: dict = {"label": label, "url": url, "params": params or {}, "method": method}
+        try:
+            if method == "GET":
+                resp = client._get(url, params, suppress_errors=True)
+            else:
+                resp = client._http.post(url, json=body, timeout=client._timeout)
+            if resp is None:
+                entry.update(ok=False, status=0, error="no response")
+            else:
+                entry["status"] = resp.status_code
+                if resp.status_code == 200:
+                    try:
+                        data = resp.json()
+                        if isinstance(data, dict) and "value" in data:
+                            val = data["value"]
+                            entry.update(
+                                ok=True,
+                                count=len(val) if isinstance(val, list) else None,
+                                sample=val[:2] if isinstance(val, list) else val,
+                            )
+                        else:
+                            entry.update(ok=True, sample=data)
+                    except Exception as je:
+                        entry.update(ok=True, parseError=str(je), text=resp.text[:300])
+                else:
+                    entry.update(ok=False, text=resp.text[:300])
+        except Exception as ex:
+            entry.update(ok=False, error=str(ex))
+        return entry
+
+    # A / B
+    results.append(probe(
+        "A: WTPart Downstream + $expand=Downstream",
+        f"{base_part}/DownstreamEquivalanceLinks",
+        {"$expand": "Downstream"},
+    ))
+    results.append(probe(
+        "B: WTPart Downstream (no expand)",
+        f"{base_part}/DownstreamEquivalanceLinks",
+    ))
+    # C / D
+    results.append(probe(
+        "C: WTPart Upstream + $expand=Upstream",
+        f"{base_part}/UpstreamEquivalanceLinks",
+        {"$expand": "Upstream"},
+    ))
+    results.append(probe(
+        "D: WTPart Upstream (no expand)",
+        f"{base_part}/UpstreamEquivalanceLinks",
+    ))
+    # E
+    results.append(probe(
+        "E: WTPart BAL_DOWNSTREAMNav (object refs)",
+        f"{base_part}/BAL_DOWNSTREAMNav",
+    ))
+    # F: BomTransformation action (versioned base path from swagger: v3/BomTransformation)
+    bt_url = f"{client.base_url}/servlet/odata/v3/BomTransformation/GetEquivalenceNetworkForParts"
+    results.append(probe(
+        "F: BomTransformation/GetEquivalenceNetworkForParts",
+        bt_url,
+        method="POST",
+        body={"Parts": [{"ID": part_id}]},
+    ))
+    # G: BalluffCustom GetEquivalence (basePath: v1/BalluffCustom)
+    bc_url = (
+        f"{client.base_url}/servlet/odata/v1/BalluffCustom"
+        f"/GetEquivalence(ProductNumber=@ProductNumber)"
+    )
+    results.append(probe(
+        "G: BalluffCustom/GetEquivalence(ProductNumber=...)",
+        bc_url,
+        {"@ProductNumber": f"'{partNumber}'"},
+    ))
+
+    summary = [
+        {"label": r["label"], "ok": r.get("ok"), "status": r.get("status"),
+         "count": r.get("count")}
+        for r in results
+    ]
+    return {
+        "partNumber": partNumber,
+        "partId": part_id,
+        "summary": summary,
+        "details": results,
+    }
+
+
 @router.get("/diagnose/service-doc", summary="OData Service-Dokument — zeigt alle Entity Sets")
 def diagnose_service_doc(
     request: Request,

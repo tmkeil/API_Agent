@@ -12,6 +12,7 @@ import type {
   CheckPartResultsResponse,
   ContainerListResponse,
   DocumentListResponse,
+  EquivalenceNetworkResponse,
   FileInfoResponse,
   LifecycleResponse,
   ObjectDetailResponse,
@@ -250,6 +251,14 @@ export async function getPartCadDocuments(code: string, signal?: AbortSignal): P
 
 export async function getWhereUsed(code: string, signal?: AbortSignal): Promise<WhereUsedResponse> {
   return request<WhereUsedResponse>(`${BASE}/parts/${encodeURIComponent(code)}/where-used`, { signal })
+}
+
+// Equivalence Network (PTC OData Nav: DownstreamEquivalanceLinks / UpstreamEquivalanceLinks)
+export async function getPartEquivalence(code: string, signal?: AbortSignal): Promise<EquivalenceNetworkResponse> {
+  return request<EquivalenceNetworkResponse>(
+    `${BASE}/parts/${encodeURIComponent(code)}/equivalence`,
+    { signal },
+  )
 }
 
 // Change Items (Affected / Resulting)

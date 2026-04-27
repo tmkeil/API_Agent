@@ -22,6 +22,7 @@ from src.models.dto import (
     ClassificationNodeListResponse,
     ContainerListResponse,
     DocumentListResponse,
+    EquivalenceNetworkResponse,
     OccurrencesResponse,
     PartDetailResponse,
     PartSubtypeListResponse,
@@ -96,6 +97,23 @@ def get_where_used(
 ):
     client = get_client(request)
     return parts_service.get_part_where_used(client, code)
+
+
+# ── Equivalence Network ──────────────────────────────────────
+
+
+@router.get(
+    "/parts/{code}/equivalence",
+    response_model=EquivalenceNetworkResponse,
+    summary="Equivalence Network (Design ↔ Manufacturing) via OData Nav",
+)
+def get_equivalence(
+    code: str,
+    request: Request,
+    _: None = Depends(require_auth),
+):
+    client = get_client(request)
+    return parts_service.get_part_equivalence(client, code)
 
 
 # ── Occurrences ──────────────────────────────────────────────

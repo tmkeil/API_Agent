@@ -1,84 +1,88 @@
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import type { ObjectDetail } from '../../api/types'
+import { getPartEquivalence } from '../../api/client'
+import type { EquivPartRef, EquivalenceNetworkResponse, ObjectDetail } from '../../api/types'
 
 interface Props {
   detail: ObjectDetail
 }
 
-interface EquivEntry {
+interface EquivPair {
+  design: EquivPartRef | SelfRef
+  manufacturing: EquivPartRef | SelfRef
+}
+
+interface SelfRef {
+  partId: string
   number: string
   name: string
   version: string
   view: string
+  state: string
+  organizationId: string
 }
 
-interface EquivPair {
-  design: EquivEntry
-  manufacturing: EquivEntry
-}
-
-function parseEntries(value: string): EquivEntry[] {
-  if (!value) return []
-  if (!value.includes('(')) {
-    return value.split(',').map(s => s.trim()).filter(Boolean).map(num => ({
-      number: num, name: '', version: '', view: 'Design',
-    }))
-  }
-  const parts = value.split(',').map(s => s.trim())
-  const all: EquivEntry[] = []
-  let i = 0
-  while (i + 3 < parts.length) {
-    const number = parts[i]
-    const name = parts[i + 1]
-    const versionView = parts[i + 3]
-    const vMatch = versionView.match(/^(.+?)\s*\((.+?)\)$/)
-    all.push({
-      number, name,
-      version: vMatch ? vMatch[1] : versionView,
-      view: vMatch ? vMatch[2] : '',
-    })
-    i += 4
-  }
-  return all
-}
-
-function buildPairs(detail: ObjectDetail): EquivPair[] {
-  const attrs = detail.allAttributes || {}
-  const down = String(attrs['BALDOWNSTREAM'] ?? '')
-  const up = String(attrs['BALUPSTREAM'] ?? '')
-  const self: EquivEntry = {
+function selfFromDetail(detail: ObjectDetail): SelfRef {
+  return {
+    partId: detail.objectId,
     number: detail.number,
     name: detail.name,
     version: detail.version,
-    view: String(attrs['View'] ?? ''),
+    view: String(detail.allAttributes?.['View'] ?? ''),
+    state: detail.state,
+    organizationId: '',
   }
-  const isDesign = self.view === 'Design'
-  const pairs: EquivPair[] = []
+}
 
-  if (isDesign && down) {
-    const entries = parseEntries(down)
-    const latest = new Map<string, EquivEntry>()
-    for (const e of entries) {
-      const ex = latest.get(e.number)
-      if (!ex || e.version.localeCompare(ex.version) > 0) latest.set(e.number, e)
-    }
-    for (const mfg of latest.values()) pairs.push({ design: self, manufacturing: mfg })
-  } else if (!isDesign && up) {
-    const entries = parseEntries(up)
-    const latest = new Map<string, EquivEntry>()
-    for (const e of entries) {
-      const ex = latest.get(e.number)
-      if (!ex || e.version.localeCompare(ex.version) > 0) latest.set(e.number, e)
-    }
-    for (const dsn of latest.values()) pairs.push({ design: dsn, manufacturing: self })
+function buildPairs(detail: ObjectDetail, data: EquivalenceNetworkResponse): EquivPair[] {
+  const self = selfFromDetail(detail)
+  const isDesign = (data.selfView || self.view) === 'Design'
+  const pairs: EquivPair[] = []
+  if (isDesign) {
+    for (const m of data.down) pairs.push({ design: self, manufacturing: m })
+  } else {
+    for (const d of data.up) pairs.push({ design: d, manufacturing: self })
   }
   return pairs
 }
 
 export default function EquivalenceTab({ detail }: Props) {
   const navigate = useNavigate()
-  const pairs = buildPairs(detail)
-  const view = String(detail.allAttributes?.['View'] ?? '')
+  const [data, setData] = useState<EquivalenceNetworkResponse | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    const ctrl = new AbortController()
+    setLoading(true)
+    setError(null)
+    getPartEquivalence(detail.number, ctrl.signal)
+      .then(setData)
+      .catch(e => {
+        if (e?.name !== 'AbortError') setError(String(e?.message ?? e))
+      })
+      .finally(() => setLoading(false))
+    return () => ctrl.abort()
+  }, [detail.number])
+
+  if (loading) {
+    return (
+      <div className="bg-white rounded shadow-sm border border-slate-200 p-6 text-center text-slate-400 text-sm">
+        Lade Equivalence Network …
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="bg-white rounded shadow-sm border border-rose-200 p-6 text-center text-rose-600 text-sm">
+        Fehler beim Laden: {error}
+      </div>
+    )
+  }
+
+  const pairs = data ? buildPairs(detail, data) : []
+  const view = data?.selfView || String(detail.allAttributes?.['View'] ?? '')
 
   if (pairs.length === 0) {
     return (
@@ -160,3 +164,4 @@ export default function EquivalenceTab({ detail }: Props) {
     </div>
   )
 }
+

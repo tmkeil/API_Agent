@@ -26,6 +26,8 @@ from src.models.dto import (
     CacheStats,
     DocumentListResponse,
     DocumentNode,
+    EquivPartRef,
+    EquivalenceNetworkResponse,
     OccurrencesResponse,
     PartDetail,
     PartDetailResponse,
@@ -624,5 +626,99 @@ def get_containers(client: WRSClient) -> "ContainerListResponse":
     ms = round((time.monotonic() - t0) * 1000, 1)
     return ContainerListResponse(
         containers=containers,
+        timing=TimingInfo(totalMs=ms, wrsMs=ms),
+    )
+
+
+# ── Equivalence Network ──────────────────────────────────────
+
+
+def _map_equiv_entity(raw: dict, link_id: str = "") -> EquivPartRef:
+    """Map an expanded WindchillEntity (Downstream/Upstream nav target) to EquivPartRef."""
+    n = normalize_item(raw)
+    view_val = raw.get("View", "")
+    if isinstance(view_val, dict):
+        view_val = view_val.get("Display") or view_val.get("Value") or ""
+    org_val = (raw.get("OrganizationName") or raw.get("OrganizationID")
+               or raw.get("Organization") or "")
+    if isinstance(org_val, dict):
+        org_val = org_val.get("Display") or org_val.get("Value") or ""
+    return EquivPartRef(
+        linkId=link_id,
+        partId=n.get("id", ""),
+        number=n.get("number", ""),
+        name=n.get("name", ""),
+        version=n.get("version", ""),
+        iteration=n.get("iteration", ""),
+        state=n.get("state", ""),
+        view=str(view_val) if view_val else "",
+        organizationId=str(org_val) if org_val else "",
+    )
+
+
+def get_part_equivalence(
+    client: WRSClient, code: str
+) -> EquivalenceNetworkResponse:
+    """Equivalence Network eines Parts via PTC OData Navigation laden.
+
+    Nutzt die offiziellen Navigation-Properties:
+      /Parts('{id}')/DownstreamEquivalanceLinks?$expand=Downstream
+      /Parts('{id}')/UpstreamEquivalanceLinks?$expand=Upstream
+
+    Ersetzt das fruehere String-Parsing der BALDOWNSTREAM / BALUPSTREAM IBAs.
+    """
+    t0 = time.monotonic()
+
+    # 1. Resolve part by code
+    raw_part = client.find_part(code)
+    part_id = extract_id(raw_part)
+    n = normalize_item(raw_part)
+    self_view = raw_part.get("View", "")
+    if isinstance(self_view, dict):
+        self_view = self_view.get("Display") or self_view.get("Value") or ""
+
+    base = f"{client._odata_url('ProdMgmt')}/Parts('{part_id}')"
+
+    # 2. Downstream links (Manufacturing pendants)
+    down: list[EquivPartRef] = []
+    down_items = client._get_all_pages(
+        f"{base}/DownstreamEquivalanceLinks",
+        {"$expand": "Downstream"},
+        return_none_on_error=True,
+    ) or []
+    for link in down_items:
+        link_id = str(link.get("ID") or "")
+        dn = link.get("Downstream")
+        if isinstance(dn, list):
+            for ent in dn:
+                if isinstance(ent, dict):
+                    down.append(_map_equiv_entity(ent, link_id))
+        elif isinstance(dn, dict):
+            down.append(_map_equiv_entity(dn, link_id))
+
+    # 3. Upstream links (Design parents)
+    up: list[EquivPartRef] = []
+    up_items = client._get_all_pages(
+        f"{base}/UpstreamEquivalanceLinks",
+        {"$expand": "Upstream"},
+        return_none_on_error=True,
+    ) or []
+    for link in up_items:
+        link_id = str(link.get("ID") or "")
+        us = link.get("Upstream")
+        if isinstance(us, list):
+            for ent in us:
+                if isinstance(ent, dict):
+                    up.append(_map_equiv_entity(ent, link_id))
+        elif isinstance(us, dict):
+            up.append(_map_equiv_entity(us, link_id))
+
+    ms = round((time.monotonic() - t0) * 1000, 1)
+    return EquivalenceNetworkResponse(
+        code=code,
+        selfNumber=n.get("number", ""),
+        selfView=str(self_view) if self_view else "",
+        down=down,
+        up=up,
         timing=TimingInfo(totalMs=ms, wrsMs=ms),
     )

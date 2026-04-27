@@ -189,6 +189,29 @@ export interface DocumentListResponse {
   timing: TimingInfo
 }
 
+// ── Equivalence Network ─────────────────────────────────────
+
+export interface EquivPartRef {
+  linkId: string
+  partId: string
+  number: string
+  name: string
+  version: string
+  iteration: string
+  state: string
+  view: string
+  organizationId: string
+}
+
+export interface EquivalenceNetworkResponse {
+  code: string
+  selfNumber: string
+  selfView: string
+  down: EquivPartRef[]
+  up: EquivPartRef[]
+  timing: TimingInfo
+}
+
 // ── Change Items (Affected / Resulting) ─────────────────────
 
 export interface ChangeItem {

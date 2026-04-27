@@ -268,6 +268,36 @@ class ChangeNoticeListResponse(BaseModel):
     timing: TimingInfo = TimingInfo()
 
 
+# ── Equivalence Network (Design ↔ Manufacturing) ─────────────
+
+
+class EquivPartRef(BaseModel):
+    """A part referenced through an Equivalence Link."""
+    linkId: str = ""
+    partId: str = ""
+    number: str = ""
+    name: str = ""
+    version: str = ""
+    iteration: str = ""
+    state: str = ""
+    view: str = ""
+    organizationId: str = ""
+
+
+class EquivalenceNetworkResponse(BaseModel):
+    """Equivalence Network for a single Part.
+
+    `down` lists Manufacturing pendants (this Part is the upstream/design side).
+    `up`   lists Design parents (this Part is the downstream/manufacturing side).
+    """
+    code: str
+    selfNumber: str = ""
+    selfView: str = ""
+    down: list[EquivPartRef] = []
+    up: list[EquivPartRef] = []
+    timing: TimingInfo = TimingInfo()
+
+
 # ── Document Details (Referencing Parts, File Info) ──────────
 
 

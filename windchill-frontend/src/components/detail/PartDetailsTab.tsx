@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import type { ObjectDetail } from '../../api/types'
+import { getPartEquivalence } from '../../api/client'
+import type { EquivPartRef, EquivalenceNetworkResponse, ObjectDetail } from '../../api/types'
 import { formatDate } from '../../utils/labels'
 
 interface Props {
@@ -144,98 +145,13 @@ function resolveValue(detail: ObjectDetail, key: string): string {
     const prop = key.slice(7) as keyof ObjectDetail
     return String(detail[prop] ?? '') || '—'
   }
-  // Virtual key: merge BALDOWNSTREAM + BALUPSTREAM for Equivalence Network
-  if (key === '_equivNetwork') {
-    const attrs = detail.allAttributes || {}
-    const down = attrs['BALDOWNSTREAM']
-    const up = attrs['BALUPSTREAM']
-    if (down) return String(down)
-    if (up) return String(up)
-    return ''
-  }
+  // Virtual key: Equivalence Network is rendered async via EquivNetworkValue.
+  // Returning a non-empty placeholder ensures the row is shown so the
+  // component can fetch + render or display "—" itself.
+  if (key === '_equivNetwork') return '…'
   const raw = detail.allAttributes?.[key]
   if (raw === undefined || raw === null || raw === '') return ''
   return String(raw)
-}
-
-/* ── Parse Equivalence Network into Design↔Manufacturing pairs ── */
-interface EquivEntry { number: string; name: string; org: string; version: string; view: string }
-interface EquivPair { design: EquivEntry; manufacturing: EquivEntry }
-
-function parseEquivEntries(value: string): EquivEntry[] {
-  if (!value) return []
-
-  // BALUPSTREAM can be just plain numbers (e.g. "1200209432")
-  if (!value.includes('(')) {
-    return value.split(',').map(s => s.trim()).filter(Boolean).map(num => ({
-      number: num, name: '', org: '', version: '', view: 'Design',
-    }))
-  }
-
-  // Full format: "NUMBER, NAME, ORG, VERSION (VIEW), …" — groups of 4
-  const parts = value.split(',').map(s => s.trim())
-  const all: EquivEntry[] = []
-  let i = 0
-  while (i + 3 < parts.length) {
-    const number = parts[i]
-    const name = parts[i + 1]
-    const org = parts[i + 2]
-    const versionView = parts[i + 3]
-    const vMatch = versionView.match(/^(.+?)\s*\((.+?)\)$/)
-    all.push({
-      number, name, org,
-      version: vMatch ? vMatch[1] : versionView,
-      view: vMatch ? vMatch[2] : '',
-    })
-    i += 4
-  }
-  return all
-}
-
-function buildEquivPairs(detail: ObjectDetail): EquivPair[] {
-  const attrs = detail.allAttributes || {}
-  const down = String(attrs['BALDOWNSTREAM'] ?? '')
-  const up = String(attrs['BALUPSTREAM'] ?? '')
-
-  // Current part info
-  const self: EquivEntry = {
-    number: detail.number,
-    name: detail.name,
-    org: '', // not needed for display
-    version: detail.version,
-    view: String(attrs['View'] ?? ''),
-  }
-
-  const isDesign = self.view === 'Design'
-  const pairs: EquivPair[] = []
-
-  if (isDesign && down) {
-    // Design part → BALDOWNSTREAM lists Manufacturing counterparts
-    const entries = parseEquivEntries(down)
-    // Deduplicate: keep latest version per number
-    const latest = new Map<string, EquivEntry>()
-    for (const e of entries) {
-      const existing = latest.get(e.number)
-      if (!existing || e.version.localeCompare(existing.version) > 0)
-        latest.set(e.number, e)
-    }
-    for (const mfg of latest.values()) {
-      pairs.push({ design: self, manufacturing: mfg })
-    }
-  } else if (!isDesign && up) {
-    // Manufacturing part → BALUPSTREAM lists Design counterparts
-    const entries = parseEquivEntries(up)
-    const latest = new Map<string, EquivEntry>()
-    for (const e of entries) {
-      const existing = latest.get(e.number)
-      if (!existing || e.version.localeCompare(existing.version) > 0)
-        latest.set(e.number, e)
-    }
-    for (const dsn of latest.values()) {
-      pairs.push({ design: dsn, manufacturing: self })
-    }
-  }
-  return pairs
 }
 
 /* ── Collapsible section component ──────────────────────────── */
@@ -266,10 +182,50 @@ function Section({ title, children, defaultCollapsed = false }: {
 }
 
 /* ── Equivalence Network display (Design ↔ Manufacturing pairs) ───── */
+interface EquivPair {
+  design: { number: string; name: string; version: string }
+  manufacturing: { number: string; name: string; version: string }
+}
+
+function buildEquivPairs(
+  detail: ObjectDetail,
+  data: EquivalenceNetworkResponse,
+): EquivPair[] {
+  const self = {
+    number: detail.number,
+    name: detail.name,
+    version: detail.version,
+  }
+  const isDesign = (data.selfView || String(detail.allAttributes?.['View'] ?? '')) === 'Design'
+  const toRef = (e: EquivPartRef) => ({ number: e.number, name: e.name, version: e.version })
+  const pairs: EquivPair[] = []
+  if (isDesign) {
+    for (const m of data.down) pairs.push({ design: self, manufacturing: toRef(m) })
+  } else {
+    for (const d of data.up) pairs.push({ design: toRef(d), manufacturing: self })
+  }
+  return pairs
+}
+
 function EquivNetworkValue({ detail }: { detail: ObjectDetail }) {
   const navigate = useNavigate()
-  const pairs = buildEquivPairs(detail)
+  const [data, setData] = useState<EquivalenceNetworkResponse | null>(null)
+  const [loading, setLoading] = useState(true)
 
+  useEffect(() => {
+    const ctrl = new AbortController()
+    setLoading(true)
+    getPartEquivalence(detail.number, ctrl.signal)
+      .then(setData)
+      .catch(() => { /* silently fall back to "—" */ })
+      .finally(() => setLoading(false))
+    return () => ctrl.abort()
+  }, [detail.number])
+
+  if (loading) return <span className="text-slate-400 text-xs">Lädt …</span>
+  if (!data) return <span className="text-slate-400">—</span>
+
+  const pairs = buildEquivPairs(detail, data)
   if (pairs.length === 0) return <span className="text-slate-400">—</span>
 
   return (

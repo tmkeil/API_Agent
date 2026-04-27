@@ -13,6 +13,11 @@ interface Props {
   onSelect?: (node: BomTreeNode) => void
   /** The partId of the currently selected node (used for highlight). */
   selectedPartId?: string
+  /** When provided, an explicit info button is rendered next to the
+   *  number-column external-link icon. Click invokes this callback
+   *  (does not toggle expansion). Used by the BOM Transformer page to
+   *  open a modal with full attributes. */
+  onShowDetail?: (node: BomTreeNode) => void
 }
 
 /** Resolve a column value from a BomTreeNode based on the column config. */
@@ -62,7 +67,7 @@ function getDocCellValue(doc: DocumentNode, col: BomViewColumn): string {
  * Children are lazily loaded on first expand click.
  * Columns are driven by the viewColumns config (BOM view support).
  */
-export default function BomTreeRow({ node, depth, viewColumns, totalCols, onSelect, selectedPartId }: Props) {
+export default function BomTreeRow({ node, depth, viewColumns, totalCols, onSelect, selectedPartId, onShowDetail }: Props) {
   const hasInitialChildren = (node.children && node.children.length > 0) || node.childrenLoaded || false
   const [expanded, setExpanded] = useState(false)
   const [children, setChildren] = useState<BomTreeNode[]>(node.children || [])
@@ -170,6 +175,21 @@ export default function BomTreeRow({ node, depth, viewColumns, totalCols, onSele
               {isNumber && node.number ? (
                 <span className="inline-flex items-center gap-1">
                   <span>{val}</span>
+                  {onShowDetail && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        onShowDetail(node)
+                      }}
+                      className="text-slate-400 hover:text-indigo-600 transition-colors"
+                      title="Quick details (Modal)"
+                    >
+                      <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <circle cx="12" cy="12" r="9" />
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 8h.01M11 12h1v4h1" />
+                      </svg>
+                    </button>
+                  )}
                   <button
                     onClick={(e) => {
                       e.stopPropagation()
@@ -296,6 +316,7 @@ export default function BomTreeRow({ node, depth, viewColumns, totalCols, onSele
               totalCols={totalCols}
               onSelect={onSelect}
               selectedPartId={selectedPartId}
+              onShowDetail={onShowDetail}
             />
           ))}
 

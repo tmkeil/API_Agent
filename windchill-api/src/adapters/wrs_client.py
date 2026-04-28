@@ -35,6 +35,7 @@ from typing import Optional
 
 from src.adapters.base import WRSClientBase, WRSError
 from src.adapters.bom_mixin import BomMixin
+from src.adapters.bom_transformation_mixin import BomTransformationMixin
 from src.adapters.change_mixin import ChangeMixin
 from src.adapters.documents_mixin import DocumentsMixin
 from src.adapters.parts_mixin import PartsMixin
@@ -61,6 +62,7 @@ class WRSClient(
     VersionsMixin,
     WhereUsedMixin,
     WriteMixin,
+    BomTransformationMixin,
     WRSClientBase,
 ):
     """Vollstaendiger Windchill REST-Client.

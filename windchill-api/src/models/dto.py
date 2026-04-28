@@ -314,6 +314,48 @@ class BomTransformerResponse(BaseModel):
     timing: TimingInfo = TimingInfo()
 
 
+# ── BOM Transformer — Phase 2b (DetectDiscrepancies / GenerateDownstream) ──
+
+
+class TransformDetectRequest(BaseModel):
+    """Detect EBOM nodes that have no Manufacturing pendant.
+
+    `targetPath` and `sourcePartPaths` are Windchill OData paths
+    (e.g. ``"Parts('OR:wt.part.WTPart:12345')"``).
+    """
+    targetPath: str
+    sourcePartPaths: list[str] = []
+    upstreamChangeOid: str = ""
+
+
+class TransformGenerateRequest(BaseModel):
+    """Generate downstream structure for the given EBOM nodes.
+
+    `sourcePartPaths` lists the EBOM nodes the user marked as ``NEW``
+    in the UI. `changeOid` is optional — provide a Change Notice OID for
+    released parts (Windchill standard process).
+    """
+    targetPath: str
+    sourcePartPaths: list[str]
+    upstreamChangeOid: str = ""
+    changeOid: str = ""
+
+
+class TransformResponse(BaseModel):
+    """Wraps the raw OData response from the BomTransformation domain.
+
+    `value` is the unmodified `value` array from the Windchill response
+    (typically `EquivalentUsageAssociation` entries). Returned as-is so
+    the frontend can adapt without API churn while we learn the exact
+    shape against plm-dev.
+    """
+    ok: bool = True
+    action: str = ""
+    value: list[dict] = []
+    raw: dict = {}
+    timing: TimingInfo = TimingInfo()
+
+
 # ── Document Details (Referencing Parts, File Info) ──────────
 
 

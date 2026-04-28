@@ -27,6 +27,9 @@ from src.models.dto import (
     OccurrencesResponse,
     PartDetailResponse,
     PartSubtypeListResponse,
+    TransformDetectRequest,
+    TransformGenerateRequest,
+    TransformResponse,
     WhereUsedResponse,
 )
 from src.services import parts_service
@@ -131,6 +134,63 @@ def get_transformer(
     client = get_client(request)
     session = get_session(request)
     return bom_transformer_service.get_transformer_view(client, code, session=session)
+
+
+@router.post(
+    "/parts/{code}/transformer/detect",
+    response_model=TransformResponse,
+    summary="Detect EBOM nodes without Manufacturing pendant (BomTransformation v3)",
+)
+def post_transformer_detect(
+    code: str,
+    body: TransformDetectRequest,
+    request: Request,
+    _: None = Depends(require_auth),
+):
+    """Wraps ``BomTransformation/DetectDiscrepancies``.
+
+    Requires the v3/BomTransformation domain to be deployed (dev only on
+    plm-dev; not on plm-prod). Returns 404 from Windchill if missing —
+    the adapter raises ``WRSError(status=404)`` which surfaces as HTTP 404.
+    """
+    client = get_client(request)
+    session = get_session(request)
+    return bom_transformer_service.detect_discrepancies(
+        client,
+        target_path=body.targetPath,
+        source_part_paths=body.sourcePartPaths or None,
+        upstream_change_oid=body.upstreamChangeOid,
+        session=session,
+    )
+
+
+@router.post(
+    "/parts/{code}/transformer/generate",
+    response_model=TransformResponse,
+    summary="Generate Manufacturing-side downstream structure (BomTransformation v3)",
+)
+def post_transformer_generate(
+    code: str,
+    body: TransformGenerateRequest,
+    request: Request,
+    _: None = Depends(require_auth),
+):
+    """Wraps ``BomTransformation/GenerateDownstreamStructure``.
+
+    `body.sourcePartPaths` is the list of EBOM nodes the user marked as
+    NEW. `body.changeOid` is optional — provide a Change Notice OID for
+    released parts (Windchill standard process).
+    """
+    client = get_client(request)
+    session = get_session(request)
+    return bom_transformer_service.generate_downstream(
+        client,
+        target_path=body.targetPath,
+        source_part_paths=body.sourcePartPaths,
+        upstream_change_oid=body.upstreamChangeOid,
+        change_oid=body.changeOid,
+        session=session,
+    )
 
 
 # ── Occurrences ──────────────────────────────────────────────

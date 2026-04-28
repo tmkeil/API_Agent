@@ -1,13 +1,18 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { diagnoseBranchActions, getBomTransformer, getObjectDetail } from '../api/client'
+import {
+  getBomTransformer,
+  getObjectDetail,
+  postTransformerDetect,
+  postTransformerGenerate,
+} from '../api/client'
 import type {
   BomTransformerResponse,
   BomTreeNode,
   BomViewColumn,
   ObjectDetailResponse,
 } from '../api/types'
-import type { BranchActionsResponse } from '../api/client'
+import type { TransformResponse } from '../api/client'
 import BomTreeRow from '../components/BomTreeNode'
 
 /** Compact column set used by both trees — matches StructureTab's defaults
@@ -42,6 +47,9 @@ interface SideProps {
   columns: BomViewColumn[]
   onShowDetail: (node: BomTreeNode) => void
   emptyHint: string
+  strategyMap?: Record<string, 'KEEP' | 'NEW' | 'REMOVE'>
+  onCycleStrategy?: (node: BomTreeNode) => void
+  headerExtra?: React.ReactNode
 }
 
 function BomSide({
@@ -52,6 +60,9 @@ function BomSide({
   columns,
   onShowDetail,
   emptyHint,
+  strategyMap,
+  onCycleStrategy,
+  headerExtra,
 }: SideProps) {
   const totalCols = columns.length + 1
   return (
@@ -77,6 +88,7 @@ function BomSide({
             Details →
           </Link>
         )}
+        {headerExtra}
       </div>
       <div className="flex-1 min-h-0 overflow-auto">
         {root ? (
@@ -103,6 +115,8 @@ function BomSide({
                 viewColumns={columns}
                 totalCols={totalCols}
                 onShowDetail={onShowDetail}
+                strategyMap={strategyMap}
+                onCycleStrategy={onCycleStrategy}
               />
             </tbody>
           </table>
@@ -249,6 +263,12 @@ export default function BomTransformerPage() {
   const [error, setError] = useState<string | null>(null)
   const [compact, setCompact] = useState(true)
   const [modalNode, setModalNode] = useState<BomTreeNode | null>(null)
+  // Phase 2b: per-node transform strategy on the design side.
+  const [strategyMap, setStrategyMap] = useState<Record<string, 'KEEP' | 'NEW' | 'REMOVE'>>({})
+  const [transformBusy, setTransformBusy] = useState<null | 'detect' | 'generate'>(null)
+  const [transformResult, setTransformResult] = useState<TransformResponse | null>(null)
+  const [transformError, setTransformError] = useState<string | null>(null)
+  const [confirmGenerate, setConfirmGenerate] = useState(false)
 
   useEffect(() => {
     if (!code) return
@@ -270,6 +290,79 @@ export default function BomTransformerPage() {
   const handleShowDetail = useCallback((node: BomTreeNode) => {
     setModalNode(node)
   }, [])
+
+  const cycleStrategy = useCallback((node: BomTreeNode) => {
+    const id = node.partId || ''
+    if (!id) return
+    setStrategyMap(prev => {
+      const cur = prev[id] ?? 'KEEP'
+      const next = cur === 'KEEP' ? 'NEW' : cur === 'NEW' ? 'REMOVE' : 'KEEP'
+      return { ...prev, [id]: next }
+    })
+  }, [])
+
+  // Build OData "Path" for an OID. BomTransformation.DiscrepancyContext expects
+  // strings of the form "Parts('<oid>')" referring to the v3 Parts entity set.
+  const partPath = useCallback((oid: string) => `Parts('${oid}')`, [])
+
+  const designRootId = data?.designRoot?.partId || ''
+  const targetPath = designRootId ? partPath(designRootId) : ''
+
+  const newPartIds = useMemo(
+    () => Object.entries(strategyMap)
+      .filter(([, s]) => s === 'NEW')
+      .map(([id]) => id),
+    [strategyMap],
+  )
+
+  async function runDetect() {
+    if (!targetPath) {
+      setTransformError('Kein Design-Root vorhanden — DetectDiscrepancies nicht möglich.')
+      return
+    }
+    setTransformBusy('detect')
+    setTransformError(null)
+    setTransformResult(null)
+    try {
+      const r = await postTransformerDetect(code, {
+        targetPath,
+        sourcePartPaths: newPartIds.map(partPath),
+      })
+      setTransformResult(r)
+    } catch (e) {
+      setTransformError(String((e as Error)?.message ?? e))
+    } finally {
+      setTransformBusy(null)
+    }
+  }
+
+  async function runGenerate() {
+    if (!targetPath) {
+      setTransformError('Kein Design-Root vorhanden — Generate nicht möglich.')
+      setConfirmGenerate(false)
+      return
+    }
+    if (newPartIds.length === 0) {
+      setTransformError('Keine Knoten als NEW markiert.')
+      setConfirmGenerate(false)
+      return
+    }
+    setTransformBusy('generate')
+    setTransformError(null)
+    setTransformResult(null)
+    try {
+      const r = await postTransformerGenerate(code, {
+        targetPath,
+        sourcePartPaths: newPartIds.map(partPath),
+      })
+      setTransformResult(r)
+    } catch (e) {
+      setTransformError(String((e as Error)?.message ?? e))
+    } finally {
+      setTransformBusy(null)
+      setConfirmGenerate(false)
+    }
+  }
 
   const designNumber = data?.designRoot?.number ?? '—'
   const mfgNumber = data?.manufacturingRoot?.number ?? '—'
@@ -355,6 +448,28 @@ export default function BomTransformerPage() {
                 ? 'Kein Design-Pendant verknüpft.'
                 : 'Design-BOM nicht verfügbar.'
             }
+            strategyMap={strategyMap}
+            onCycleStrategy={cycleStrategy}
+            headerExtra={
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={runDetect}
+                  disabled={transformBusy !== null || !data.designRoot}
+                  className="text-[11px] px-2 py-0.5 rounded bg-sky-600 text-white hover:bg-sky-700 disabled:opacity-50"
+                  title="DetectDiscrepancies (v3, dev)"
+                >
+                  {transformBusy === 'detect' ? '…' : 'Detect'}
+                </button>
+                <button
+                  onClick={() => setConfirmGenerate(true)}
+                  disabled={transformBusy !== null || !data.designRoot || newPartIds.length === 0}
+                  className="text-[11px] px-2 py-0.5 rounded bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-50"
+                  title={`Generate Downstream (${newPartIds.length} NEW)`}
+                >
+                  {transformBusy === 'generate' ? '…' : `Generate (${newPartIds.length})`}
+                </button>
+              </div>
+            }
           />
           <BomSide
             title={mfgNumber}
@@ -376,205 +491,99 @@ export default function BomTransformerPage() {
         <NodeDetailModal node={modalNode} onClose={() => setModalNode(null)} />
       )}
 
-      {/* Phase 2a: Branch / SaveAs / Revise Action Discovery */}
-      {!loading && !error && data && (
-        <BranchActionDiagnose partNumber={code} />
-      )}
-    </div>
-  )
-}
-
-// ── Phase 2a Diagnose-Panel ────────────────────────────────
-
-function BranchActionDiagnose({ partNumber }: { partNumber: string }) {
-  const [open, setOpen] = useState(false)
-  const [running, setRunning] = useState(false)
-  const [result, setResult] = useState<BranchActionsResponse | null>(null)
-  const [err, setErr] = useState<string | null>(null)
-
-  async function run() {
-    setRunning(true)
-    setErr(null)
-    setResult(null)
-    try {
-      const r = await diagnoseBranchActions(partNumber)
-      setResult(r)
-    } catch (e) {
-      setErr(String((e as Error)?.message ?? e))
-    } finally {
-      setRunning(false)
-    }
-  }
-
-  return (
-    <div className="bg-white rounded shadow-sm border border-slate-200">
-      <button
-        onClick={() => setOpen(o => !o)}
-        className="w-full px-3 py-2 flex items-center justify-between text-xs text-slate-600 hover:bg-slate-50"
-      >
-        <span className="flex items-center gap-2">
-          <span className="text-[10px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded bg-violet-100 text-violet-700">
-            Phase 2a
-          </span>
-          <span>Branch / SaveAs / Revise Action Discovery</span>
-        </span>
-        <span className="text-slate-400">{open ? '▾' : '▸'}</span>
-      </button>
-
-      {open && (
-        <div className="px-3 pb-3 pt-1 text-xs space-y-3 border-t border-slate-100">
-          <p className="text-slate-600">
-            Prüft <strong>nebenwirkungsfrei</strong>, welche OData-Actions auf
-            plm-prod tatsächlich verfügbar sind. Strategie: <code>$metadata</code>{' '}
-            grep + GET-Probe (405 = existiert, 404 = fehlt). Es werden{' '}
-            <strong>keine</strong> POST-Probes ausgeführt, weil NewBranch /
-            SaveAs / Revise reale Objekte erzeugen würden.
-          </p>
-          <button
-            onClick={run}
-            disabled={running}
-            className="px-3 py-1 rounded bg-violet-600 text-white hover:bg-violet-700 disabled:opacity-50"
-          >
-            {running ? 'Läuft …' : `Diagnose für ${partNumber} starten`}
-          </button>
-
-          {err && (
-            <div className="bg-rose-50 border border-rose-200 rounded p-2 text-rose-700">
-              {err}
+      {/* Phase 2b: BomTransformation v3 — Detect / Generate Result Panel */}
+      {!loading && !error && data && (transformError || transformResult) && (
+        <div className="bg-white rounded shadow-sm border border-slate-200 p-3 text-xs space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded bg-violet-100 text-violet-700">
+              Phase 2b · BomTransformation v3
+            </span>
+            <button
+              onClick={() => { setTransformError(null); setTransformResult(null) }}
+              className="text-slate-400 hover:text-slate-700"
+              title="Panel schließen"
+            >×</button>
+          </div>
+          {transformError && (
+            <div className="bg-rose-50 border border-rose-200 rounded p-2 text-rose-700 whitespace-pre-wrap">
+              {transformError}
             </div>
           )}
-
-          {result && (
-            <div className="space-y-3">
-              {/* Zusammenfassung */}
-              <div className="grid grid-cols-3 gap-3">
-                <div className="bg-emerald-50 border border-emerald-200 rounded p-2">
-                  <div className="text-[10px] uppercase font-semibold text-emerald-700 mb-1">
-                    Verfügbar ({result.summary.exists.length})
-                  </div>
-                  {result.summary.exists.length === 0 ? (
-                    <div className="text-slate-500 italic">keine</div>
-                  ) : (
-                    <ul className="font-mono text-[11px] text-emerald-900 space-y-0.5">
-                      {result.summary.exists.map(l => <li key={l}>✓ {l}</li>)}
-                    </ul>
-                  )}
-                </div>
-                <div className="bg-rose-50 border border-rose-200 rounded p-2">
-                  <div className="text-[10px] uppercase font-semibold text-rose-700 mb-1">
-                    Fehlend ({result.summary.missing.length})
-                  </div>
-                  {result.summary.missing.length === 0 ? (
-                    <div className="text-slate-500 italic">keine</div>
-                  ) : (
-                    <ul className="font-mono text-[11px] text-rose-900 space-y-0.5">
-                      {result.summary.missing.map(l => <li key={l}>✗ {l}</li>)}
-                    </ul>
-                  )}
-                </div>
-                <div className="bg-amber-50 border border-amber-200 rounded p-2">
-                  <div className="text-[10px] uppercase font-semibold text-amber-700 mb-1">
-                    Auth-Problem ({result.summary.auth?.length ?? 0})
-                  </div>
-                  {!result.summary.auth || result.summary.auth.length === 0 ? (
-                    <div className="text-slate-500 italic">keine</div>
-                  ) : (
-                    <ul className="font-mono text-[11px] text-amber-900 space-y-0.5">
-                      {result.summary.auth.map(l => <li key={l}>⚠ {l}</li>)}
-                    </ul>
-                  )}
-                </div>
+          {transformResult && (
+            <div className="space-y-2">
+              <div className="flex items-center gap-3 text-slate-600">
+                <span>Action: <code className="font-mono">{transformResult.action}</code></span>
+                <span>Status: {transformResult.ok ? <span className="text-emerald-700">OK</span> : <span className="text-rose-700">FEHLER</span>}</span>
+                <span>Result-Items: {transformResult.value.length}</span>
+                {transformResult.timing?.totalMs != null && (
+                  <span className="text-slate-400">{transformResult.timing.totalMs} ms</span>
+                )}
               </div>
-
-              {/* Metadata-Actions nach Domain */}
-              {result.summary.metadataActionsByDomain && (
+              {transformResult.value.length > 0 && (
                 <details>
                   <summary className="cursor-pointer text-[10px] uppercase font-semibold text-slate-500">
-                    Alle Actions im $metadata pro Domain
+                    Equivalent-Usage-Associations ({transformResult.value.length})
                   </summary>
-                  <div className="mt-2 space-y-2">
-                    {Object.entries(result.summary.metadataActionsByDomain).map(([dom, names]) => (
-                      <div key={dom} className="border border-slate-200 rounded p-2">
-                        <div className="text-[10px] uppercase font-semibold text-slate-600 mb-1">
-                          {dom} <span className="font-normal text-slate-400">({names.length})</span>
-                        </div>
-                        {names.length === 0 ? (
-                          <div className="text-slate-400 italic text-[11px]">keine Actions deklariert</div>
-                        ) : (
-                          <div className="font-mono text-[11px] text-slate-700 flex flex-wrap gap-x-3 gap-y-0.5">
-                            {names.map(n => <span key={n}>{n}</span>)}
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
+                  <pre className="mt-1 max-h-64 overflow-auto bg-slate-50 border border-slate-200 rounded p-2 font-mono text-[11px] text-slate-700">
+{JSON.stringify(transformResult.value, null, 2)}
+                  </pre>
                 </details>
               )}
-
-              {/* Action-Probes Detail */}
               <details>
                 <summary className="cursor-pointer text-[10px] uppercase font-semibold text-slate-500">
-                  Alle Action-Probes ({result.actionProbes.length})
+                  Raw Response
                 </summary>
-                <table className="w-full mt-2 font-mono text-[11px]">
-                  <thead>
-                    <tr className="text-left text-slate-500 border-b border-slate-200">
-                      <th className="py-1 pr-2">Action</th>
-                      <th className="py-1 pr-2">Status</th>
-                      <th className="py-1 pr-2">Meta</th>
-                      <th className="py-1 pr-2">Verdict</th>
-                      <th className="py-1">Hint</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {result.actionProbes.map(p => (
-                      <tr key={p.label} className="border-t border-slate-100">
-                        <td className="py-1 pr-2 text-slate-800">{p.label}</td>
-                        <td className="py-1 pr-2 text-slate-600">{p.status ?? '—'}</td>
-                        <td className="py-1 pr-2 text-slate-600">{p.inMetadata ? '✓' : '—'}</td>
-                        <td className={`py-1 pr-2 font-semibold ${
-                          p.verdict === 'EXISTS' || p.verdict === 'EXISTS_LIKELY'
-                            ? 'text-emerald-700'
-                            : p.verdict === 'MISSING'
-                            ? 'text-rose-700'
-                            : p.verdict === 'AUTH'
-                            ? 'text-amber-700'
-                            : 'text-slate-500'
-                        }`}>
-                          {p.verdict}
-                        </td>
-                        <td className="py-1 text-slate-600">{p.hint || p.error || '—'}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                <pre className="mt-1 max-h-64 overflow-auto bg-slate-50 border border-slate-200 rounded p-2 font-mono text-[11px] text-slate-700">
+{JSON.stringify(transformResult.raw, null, 2)}
+                </pre>
               </details>
-
-              {/* Metadata-Endpunkte Status */}
-              <details>
-                <summary className="cursor-pointer text-[10px] uppercase font-semibold text-slate-500">
-                  $metadata-Endpunkte
-                </summary>
-                <table className="w-full mt-2 font-mono text-[11px]">
-                  <tbody>
-                    {Object.entries(result.metadata).map(([dom, m]) => (
-                      <tr key={dom} className="border-t border-slate-100">
-                        <td className="py-1 pr-2 text-slate-500">{dom}</td>
-                        <td className="py-1 pr-2 text-slate-600">{m.status ?? m.error ?? '—'}</td>
-                        <td className="py-1 text-slate-500">
-                          {m.sizeBytes != null ? `${m.sizeBytes} bytes` : ''}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </details>
-
-              <p className="text-slate-500 italic">{result.note}</p>
             </div>
           )}
+        </div>
+      )}
+
+      {/* Confirmation modal for Generate */}
+      {confirmGenerate && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40"
+          onClick={() => !transformBusy && setConfirmGenerate(false)}
+        >
+          <div
+            className="bg-white rounded shadow-xl border border-slate-200 w-full max-w-md p-4 space-y-3"
+            onClick={e => e.stopPropagation()}
+          >
+            <h2 className="text-sm font-semibold text-slate-800">
+              GenerateDownstreamStructure ausführen?
+            </h2>
+            <p className="text-xs text-slate-600">
+              Diese Aktion ruft die OData-v3-Action <code>GenerateDownstreamStructure</code>{' '}
+              auf <strong>plm-dev</strong> auf und erzeugt im Manufacturing-Strang
+              ein neues Downstream-Pendant für den Design-Root mit{' '}
+              <strong>{newPartIds.length}</strong> als <span className="text-emerald-700 font-semibold">NEW</span> markierten Source-Parts.
+            </p>
+            <p className="text-xs text-slate-500">
+              Target: <code className="font-mono">{targetPath || '—'}</code>
+            </p>
+            <div className="flex justify-end gap-2 pt-2">
+              <button
+                onClick={() => setConfirmGenerate(false)}
+                disabled={transformBusy !== null}
+                className="text-xs px-3 py-1 rounded border border-slate-300 text-slate-600 hover:bg-slate-50 disabled:opacity-50"
+              >
+                Abbrechen
+              </button>
+              <button
+                onClick={runGenerate}
+                disabled={transformBusy !== null}
+                className="text-xs px-3 py-1 rounded bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-50"
+              >
+                {transformBusy === 'generate' ? 'Läuft …' : 'Ja, ausführen'}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
   )
 }
+

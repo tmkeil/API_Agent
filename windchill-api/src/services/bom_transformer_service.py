@@ -20,6 +20,7 @@ from src.models.dto import (
     EquivalenceNetworkResponse,
     EquivPartRef,
     TimingInfo,
+    TransformResponse,
 )
 from src.services import parts_service
 
@@ -95,4 +96,81 @@ def get_transformer_view(
         manufacturingRoot=mfg_root,
         equivalence=equivalence,
         timing=TimingInfo(totalMs=ms, wrsMs=equivalence.timing.wrsMs),
+    )
+
+
+# ── Phase 2b — Discrepancy detection & downstream generation ──
+
+
+def detect_discrepancies(
+    client: WRSClient,
+    target_path: str,
+    source_part_paths: list[str] | None = None,
+    upstream_change_oid: str = "",
+    session: Optional[UserSession] = None,
+) -> TransformResponse:
+    """Wrapper around ``client.detect_discrepancies`` returning a TransformResponse.
+
+    Bubbles the raw OData ``value`` array back to the caller without
+    interpretation — the exact shape of discrepancy items is documented
+    in the BomTransformation Swagger and may differ slightly between
+    Windchill versions.
+    """
+    t0 = time.monotonic()
+    raw = client.detect_discrepancies(
+        target_path=target_path,
+        source_part_paths=source_part_paths or None,
+        upstream_change_oid=upstream_change_oid or None,
+    )
+    ms = round((time.monotonic() - t0) * 1000, 1)
+    value = raw.get("value") if isinstance(raw, dict) else None
+    if not isinstance(value, list):
+        value = []
+    if session:
+        log_session_event(
+            session, "INFO", "transformer:detect", 0, ms, "service",
+            f"target={target_path} sources={len(source_part_paths or [])} "
+            f"discrepancies={len(value)}",
+        )
+    return TransformResponse(
+        ok=True,
+        action="DetectDiscrepancies",
+        value=value,
+        raw=raw if isinstance(raw, dict) else {},
+        timing=TimingInfo(totalMs=ms, wrsMs=ms),
+    )
+
+
+def generate_downstream(
+    client: WRSClient,
+    target_path: str,
+    source_part_paths: list[str],
+    upstream_change_oid: str = "",
+    change_oid: str = "",
+    session: Optional[UserSession] = None,
+) -> TransformResponse:
+    """Wrapper around ``client.generate_downstream_structure``."""
+    t0 = time.monotonic()
+    raw = client.generate_downstream_structure(
+        target_path=target_path,
+        source_part_paths=source_part_paths,
+        upstream_change_oid=upstream_change_oid or None,
+        change_oid=change_oid or None,
+    )
+    ms = round((time.monotonic() - t0) * 1000, 1)
+    value = raw.get("value") if isinstance(raw, dict) else None
+    if not isinstance(value, list):
+        value = []
+    if session:
+        log_session_event(
+            session, "INFO", "transformer:generate", 0, ms, "service",
+            f"target={target_path} sources={len(source_part_paths)} "
+            f"created={len(value)} changeOid={change_oid or '-'}",
+        )
+    return TransformResponse(
+        ok=True,
+        action="GenerateDownstreamStructure",
+        value=value,
+        raw=raw if isinstance(raw, dict) else {},
+        timing=TimingInfo(totalMs=ms, wrsMs=ms),
     )

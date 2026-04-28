@@ -18,6 +18,11 @@ interface Props {
    *  (does not toggle expansion). Used by the BOM Transformer page to
    *  open a modal with full attributes. */
   onShowDetail?: (node: BomTreeNode) => void
+  /** When provided, a KEEP/NEW/REMOVE strategy chip is rendered at the
+   *  start of each row. Click cycles through the three states. Used by
+   *  the BOM Transformer page (Phase 2b). */
+  strategyMap?: Record<string, 'KEEP' | 'NEW' | 'REMOVE'>
+  onCycleStrategy?: (node: BomTreeNode) => void
 }
 
 /** Resolve a column value from a BomTreeNode based on the column config. */
@@ -67,7 +72,7 @@ function getDocCellValue(doc: DocumentNode, col: BomViewColumn): string {
  * Children are lazily loaded on first expand click.
  * Columns are driven by the viewColumns config (BOM view support).
  */
-export default function BomTreeRow({ node, depth, viewColumns, totalCols, onSelect, selectedPartId, onShowDetail }: Props) {
+export default function BomTreeRow({ node, depth, viewColumns, totalCols, onSelect, selectedPartId, onShowDetail, strategyMap, onCycleStrategy }: Props) {
   const hasInitialChildren = (node.children && node.children.length > 0) || node.childrenLoaded || false
   const [expanded, setExpanded] = useState(false)
   const [children, setChildren] = useState<BomTreeNode[]>(node.children || [])
@@ -155,6 +160,21 @@ export default function BomTreeRow({ node, depth, viewColumns, totalCols, onSele
             <span className={`inline-block border px-1 rounded text-[10px] font-medium ${subtypeBadgeStyle(node.type || 'Part')}`}>
               {node.type || 'Part'}
             </span>
+            {strategyMap && onCycleStrategy && (
+              <button
+                onClick={(e) => { e.stopPropagation(); onCycleStrategy(node) }}
+                className={`text-[10px] font-semibold uppercase px-1.5 py-0.5 rounded border transition-colors ${
+                  (strategyMap[node.partId || ''] ?? 'KEEP') === 'NEW'
+                    ? 'bg-emerald-100 border-emerald-300 text-emerald-700 hover:bg-emerald-200'
+                    : (strategyMap[node.partId || ''] ?? 'KEEP') === 'REMOVE'
+                    ? 'bg-rose-100 border-rose-300 text-rose-700 hover:bg-rose-200'
+                    : 'bg-slate-100 border-slate-300 text-slate-600 hover:bg-slate-200'
+                }`}
+                title="Klick zum Wechseln: KEEP → NEW → REMOVE → KEEP"
+              >
+                {strategyMap[node.partId || ''] ?? 'KEEP'}
+              </button>
+            )}
           </span>
         </td>
 
@@ -317,6 +337,8 @@ export default function BomTreeRow({ node, depth, viewColumns, totalCols, onSele
               onSelect={onSelect}
               selectedPartId={selectedPartId}
               onShowDetail={onShowDetail}
+              strategyMap={strategyMap}
+              onCycleStrategy={onCycleStrategy}
             />
           ))}
 

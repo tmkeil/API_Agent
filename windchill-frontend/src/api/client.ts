@@ -270,6 +270,33 @@ export async function getBomTransformer(code: string, signal?: AbortSignal): Pro
   )
 }
 
+// BOM Transformer write — Phase 2b (BomTransformation v3 actions on dev only)
+export interface TransformResponse {
+  ok: boolean
+  action: string
+  value: Array<Record<string, unknown>>
+  raw: Record<string, unknown>
+  timing?: { totalMs?: number; wrsMs?: number }
+}
+export async function postTransformerDetect(
+  code: string,
+  body: { targetPath: string; sourcePartPaths?: string[]; upstreamChangeOid?: string },
+): Promise<TransformResponse> {
+  return request<TransformResponse>(
+    `${BASE}/parts/${encodeURIComponent(code)}/transformer/detect`,
+    { method: 'POST', body: JSON.stringify(body) },
+  )
+}
+export async function postTransformerGenerate(
+  code: string,
+  body: { targetPath: string; sourcePartPaths: string[]; upstreamChangeOid?: string; changeOid?: string },
+): Promise<TransformResponse> {
+  return request<TransformResponse>(
+    `${BASE}/parts/${encodeURIComponent(code)}/transformer/generate`,
+    { method: 'POST', body: JSON.stringify(body) },
+  )
+}
+
 // Change Items (Affected / Resulting)
 export async function getAffectedItems(typeKey: string, code: string, signal?: AbortSignal): Promise<ChangeItemsResponse> {
   return request<ChangeItemsResponse>(

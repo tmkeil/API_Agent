@@ -47,7 +47,7 @@ interface SideProps {
   columns: BomViewColumn[]
   onShowDetail: (node: BomTreeNode) => void
   emptyHint: string
-  strategyMap?: Record<string, 'KEEP' | 'NEW' | 'REMOVE'>
+  strategyMap?: Record<string, 'KEEP' | 'SYNC' | 'REMOVE'>
   onCycleStrategy?: (node: BomTreeNode) => void
   headerExtra?: React.ReactNode
 }
@@ -263,12 +263,15 @@ export default function BomTransformerPage() {
   const [error, setError] = useState<string | null>(null)
   const [compact, setCompact] = useState(true)
   const [modalNode, setModalNode] = useState<BomTreeNode | null>(null)
-  // Phase 2b: per-node transform strategy on the design side.
-  const [strategyMap, setStrategyMap] = useState<Record<string, 'KEEP' | 'NEW' | 'REMOVE'>>({})
-  const [transformBusy, setTransformBusy] = useState<null | 'detect' | 'generate'>(null)
+  // Phase 2b: per-node transform strategy on the MANUFACTURING side.
+  // KEEP   = Knoten bleibt unangetastet (default)
+  // SYNC   = beim nächsten „Sync Selection“ wird sein EBOM-Pendant in SourcePartSelection aufgenommen
+  // REMOVE = visuell markiert, ausgeführt erst in Phase 2c (PTC.ProdMgmt)
+  const [strategyMap, setStrategyMap] = useState<Record<string, 'KEEP' | 'SYNC' | 'REMOVE'>>({})
+  const [transformBusy, setTransformBusy] = useState<null | 'detect' | 'autoSync' | 'syncSel'>(null)
   const [transformResult, setTransformResult] = useState<TransformResponse | null>(null)
   const [transformError, setTransformError] = useState<string | null>(null)
-  const [confirmGenerate, setConfirmGenerate] = useState(false)
+  const [confirmKind, setConfirmKind] = useState<null | 'autoSync' | 'syncSel'>(null)
 
   useEffect(() => {
     if (!code) return
@@ -296,7 +299,8 @@ export default function BomTransformerPage() {
     if (!id) return
     setStrategyMap(prev => {
       const cur = prev[id] ?? 'KEEP'
-      const next = cur === 'KEEP' ? 'NEW' : cur === 'NEW' ? 'REMOVE' : 'KEEP'
+      // KEEP → SYNC → REMOVE → KEEP. REMOVE ist visuell, Phase 2c führt es aus.
+      const next = cur === 'KEEP' ? 'SYNC' : cur === 'SYNC' ? 'REMOVE' : 'KEEP'
       return { ...prev, [id]: next }
     })
   }, [])
@@ -305,19 +309,30 @@ export default function BomTransformerPage() {
   // strings of the form "Parts('<oid>')" referring to the v3 Parts entity set.
   const partPath = useCallback((oid: string) => `Parts('${oid}')`, [])
 
+  // TargetPath = MBOM-Root (downstream). Falls keine MBOM existiert, fallen wir
+  // auf den Design-Root zurück (Initial-Generate-Szenario).
+  const mfgRootId = data?.manufacturingRoot?.partId || ''
   const designRootId = data?.designRoot?.partId || ''
-  const targetPath = designRootId ? partPath(designRootId) : ''
+  const targetPath = mfgRootId
+    ? partPath(mfgRootId)
+    : designRootId ? partPath(designRootId) : ''
 
-  const newPartIds = useMemo(
+  const syncPartIds = useMemo(
     () => Object.entries(strategyMap)
-      .filter(([, s]) => s === 'NEW')
+      .filter(([, s]) => s === 'SYNC')
+      .map(([id]) => id),
+    [strategyMap],
+  )
+  const removePartIds = useMemo(
+    () => Object.entries(strategyMap)
+      .filter(([, s]) => s === 'REMOVE')
       .map(([id]) => id),
     [strategyMap],
   )
 
   async function runDetect() {
     if (!targetPath) {
-      setTransformError('Kein Design-Root vorhanden — DetectDiscrepancies nicht möglich.')
+      setTransformError('Kein MBOM-/Design-Root vorhanden — DetectDiscrepancies nicht möglich.')
       return
     }
     setTransformBusy('detect')
@@ -326,7 +341,8 @@ export default function BomTransformerPage() {
     try {
       const r = await postTransformerDetect(code, {
         targetPath,
-        sourcePartPaths: newPartIds.map(partPath),
+        // Empty selection → Windchill diff-t alle EBOM-Knoten gegen die MBOM.
+        sourcePartPaths: [],
       })
       setTransformResult(r)
     } catch (e) {
@@ -336,31 +352,61 @@ export default function BomTransformerPage() {
     }
   }
 
-  async function runGenerate() {
+  /** Auto-Sync: Generate/Update mit leerer SourcePartSelection → Windchill
+   *  betrachtet alle EBOM-Knoten unter dem TargetPath. Deckt 90% der Fälle. */
+  async function runAutoSync() {
     if (!targetPath) {
-      setTransformError('Kein Design-Root vorhanden — Generate nicht möglich.')
-      setConfirmGenerate(false)
+      setTransformError('Kein MBOM-/Design-Root vorhanden.')
+      setConfirmKind(null)
       return
     }
-    if (newPartIds.length === 0) {
-      setTransformError('Keine Knoten als NEW markiert.')
-      setConfirmGenerate(false)
-      return
-    }
-    setTransformBusy('generate')
+    setTransformBusy('autoSync')
     setTransformError(null)
     setTransformResult(null)
     try {
       const r = await postTransformerGenerate(code, {
         targetPath,
-        sourcePartPaths: newPartIds.map(partPath),
+        sourcePartPaths: [],
       })
       setTransformResult(r)
     } catch (e) {
       setTransformError(String((e as Error)?.message ?? e))
     } finally {
       setTransformBusy(null)
-      setConfirmGenerate(false)
+      setConfirmKind(null)
+    }
+  }
+
+  /** Sync Selection: nur die als SYNC markierten MBOM-Knoten triggern eine
+   *  Synchronisation — wir geben deren OIDs als Filter mit. Hinweis: Windchill
+   *  erwartet hier streng genommen EBOM-Pfade; für v1 senden wir die MBOM-OIDs
+   *  und vertrauen auf serverseitige Auflösung via Equivalence-Map. Falls das
+   *  fehlschlägt, bleibt Auto-Sync der zuverlässige Fallback. */
+  async function runSyncSelection() {
+    if (!targetPath) {
+      setTransformError('Kein MBOM-/Design-Root vorhanden.')
+      setConfirmKind(null)
+      return
+    }
+    if (syncPartIds.length === 0) {
+      setTransformError('Keine MBOM-Knoten als SYNC markiert.')
+      setConfirmKind(null)
+      return
+    }
+    setTransformBusy('syncSel')
+    setTransformError(null)
+    setTransformResult(null)
+    try {
+      const r = await postTransformerGenerate(code, {
+        targetPath,
+        sourcePartPaths: syncPartIds.map(partPath),
+      })
+      setTransformResult(r)
+    } catch (e) {
+      setTransformError(String((e as Error)?.message ?? e))
+    } finally {
+      setTransformBusy(null)
+      setConfirmKind(null)
     }
   }
 
@@ -448,28 +494,6 @@ export default function BomTransformerPage() {
                 ? 'Kein Design-Pendant verknüpft.'
                 : 'Design-BOM nicht verfügbar.'
             }
-            strategyMap={strategyMap}
-            onCycleStrategy={cycleStrategy}
-            headerExtra={
-              <div className="flex items-center gap-1">
-                <button
-                  onClick={runDetect}
-                  disabled={transformBusy !== null || !data.designRoot}
-                  className="text-[11px] px-2 py-0.5 rounded bg-sky-600 text-white hover:bg-sky-700 disabled:opacity-50"
-                  title="DetectDiscrepancies (v3, dev)"
-                >
-                  {transformBusy === 'detect' ? '…' : 'Detect'}
-                </button>
-                <button
-                  onClick={() => setConfirmGenerate(true)}
-                  disabled={transformBusy !== null || !data.designRoot || newPartIds.length === 0}
-                  className="text-[11px] px-2 py-0.5 rounded bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-50"
-                  title={`Generate Downstream (${newPartIds.length} NEW)`}
-                >
-                  {transformBusy === 'generate' ? '…' : `Generate (${newPartIds.length})`}
-                </button>
-              </div>
-            }
           />
           <BomSide
             title={mfgNumber}
@@ -481,7 +505,37 @@ export default function BomTransformerPage() {
             emptyHint={
               data.selfView.toLowerCase().startsWith('manuf')
                 ? 'Manufacturing-BOM nicht verfügbar.'
-                : 'Kein Manufacturing-Pendant — Phase 2: „Generate Downstream".'
+                : 'Kein Manufacturing-Pendant — nutze „Auto-Sync from EBOM“ für Initial-Generate.'
+            }
+            strategyMap={strategyMap}
+            onCycleStrategy={cycleStrategy}
+            headerExtra={
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={runDetect}
+                  disabled={transformBusy !== null || !targetPath}
+                  className="text-[11px] px-2 py-0.5 rounded bg-sky-600 text-white hover:bg-sky-700 disabled:opacity-50"
+                  title="DetectDiscrepancies — Vorschau, was zwischen EBOM und MBOM auseinanderläuft (read-only)"
+                >
+                  {transformBusy === 'detect' ? '…' : 'Detect (Preview)'}
+                </button>
+                <button
+                  onClick={() => setConfirmKind('autoSync')}
+                  disabled={transformBusy !== null || !targetPath}
+                  className="text-[11px] px-2 py-0.5 rounded bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-50"
+                  title="Generiert/aktualisiert ALLE MBOM-Knoten anhand der aktuellen EBOM (Standard-Workflow)"
+                >
+                  {transformBusy === 'autoSync' ? '…' : 'Auto-Sync from EBOM'}
+                </button>
+                <button
+                  onClick={() => setConfirmKind('syncSel')}
+                  disabled={transformBusy !== null || !targetPath || syncPartIds.length === 0}
+                  className="text-[11px] px-2 py-0.5 rounded bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50"
+                  title={`Synchronisiert nur die ${syncPartIds.length} als SYNC markierten Knoten`}
+                >
+                  {transformBusy === 'syncSel' ? '…' : `Sync Selection (${syncPartIds.length})`}
+                </button>
+              </div>
             }
           />
         </div>
@@ -542,42 +596,64 @@ export default function BomTransformerPage() {
         </div>
       )}
 
-      {/* Confirmation modal for Generate */}
-      {confirmGenerate && (
+      {/* Confirmation modal for Auto-Sync / Sync Selection */}
+      {confirmKind && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40"
-          onClick={() => !transformBusy && setConfirmGenerate(false)}
+          onClick={() => !transformBusy && setConfirmKind(null)}
         >
           <div
             className="bg-white rounded shadow-xl border border-slate-200 w-full max-w-md p-4 space-y-3"
             onClick={e => e.stopPropagation()}
           >
             <h2 className="text-sm font-semibold text-slate-800">
-              GenerateDownstreamStructure ausführen?
+              {confirmKind === 'autoSync'
+                ? 'Auto-Sync from EBOM ausführen?'
+                : `Sync Selection (${syncPartIds.length}) ausführen?`}
             </h2>
-            <p className="text-xs text-slate-600">
-              Diese Aktion ruft die OData-v3-Action <code>GenerateDownstreamStructure</code>{' '}
-              auf <strong>plm-dev</strong> auf und erzeugt im Manufacturing-Strang
-              ein neues Downstream-Pendant für den Design-Root mit{' '}
-              <strong>{newPartIds.length}</strong> als <span className="text-emerald-700 font-semibold">NEW</span> markierten Source-Parts.
-            </p>
+            {confirmKind === 'autoSync' ? (
+              <p className="text-xs text-slate-600">
+                Ruft <code>GenerateDownstreamStructure</code> auf <strong>plm-dev</strong>{' '}
+                mit leerer <code>SourcePartSelection</code> auf. Windchill betrachtet
+                damit <strong>alle</strong> EBOM-Knoten unter dem Target und
+                erzeugt/aktualisiert die MBOM-Pendants entsprechend.
+                Die EBOM bleibt unverändert.
+              </p>
+            ) : (
+              <p className="text-xs text-slate-600">
+                Ruft <code>GenerateDownstreamStructure</code> nur für die{' '}
+                <strong>{syncPartIds.length}</strong> als{' '}
+                <span className="text-indigo-700 font-semibold">SYNC</span> markierten
+                MBOM-Knoten auf. Andere Knoten bleiben unverändert.
+              </p>
+            )}
+            {removePartIds.length > 0 && (
+              <p className="text-[11px] text-amber-700 bg-amber-50 border border-amber-200 rounded p-2">
+                Hinweis: {removePartIds.length} Knoten sind als{' '}
+                <span className="font-semibold">REMOVE</span> markiert. REMOVE wird
+                in dieser Phase <strong>nicht</strong> ausgeführt — kommt mit Phase 2c
+                (PTC.ProdMgmt). Markierungen bleiben aber erhalten.
+              </p>
+            )}
             <p className="text-xs text-slate-500">
               Target: <code className="font-mono">{targetPath || '—'}</code>
             </p>
             <div className="flex justify-end gap-2 pt-2">
               <button
-                onClick={() => setConfirmGenerate(false)}
+                onClick={() => setConfirmKind(null)}
                 disabled={transformBusy !== null}
                 className="text-xs px-3 py-1 rounded border border-slate-300 text-slate-600 hover:bg-slate-50 disabled:opacity-50"
               >
                 Abbrechen
               </button>
               <button
-                onClick={runGenerate}
+                onClick={confirmKind === 'autoSync' ? runAutoSync : runSyncSelection}
                 disabled={transformBusy !== null}
                 className="text-xs px-3 py-1 rounded bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-50"
               >
-                {transformBusy === 'generate' ? 'Läuft …' : 'Ja, ausführen'}
+                {transformBusy === 'autoSync' || transformBusy === 'syncSel'
+                  ? 'Läuft …'
+                  : 'Ja, ausführen'}
               </button>
             </div>
           </div>

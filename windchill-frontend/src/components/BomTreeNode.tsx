@@ -18,10 +18,11 @@ interface Props {
    *  (does not toggle expansion). Used by the BOM Transformer page to
    *  open a modal with full attributes. */
   onShowDetail?: (node: BomTreeNode) => void
-  /** When provided, a KEEP/NEW/REMOVE strategy chip is rendered at the
+  /** When provided, a KEEP/SYNC/REMOVE strategy chip is rendered at the
    *  start of each row. Click cycles through the three states. Used by
-   *  the BOM Transformer page (Phase 2b). */
-  strategyMap?: Record<string, 'KEEP' | 'NEW' | 'REMOVE'>
+   *  the BOM Transformer page (Phase 2b) on the Manufacturing side.
+   *  REMOVE is visually marked but not yet executed (Phase 2c). */
+  strategyMap?: Record<string, 'KEEP' | 'SYNC' | 'REMOVE'>
   onCycleStrategy?: (node: BomTreeNode) => void
 }
 
@@ -164,13 +165,17 @@ export default function BomTreeRow({ node, depth, viewColumns, totalCols, onSele
               <button
                 onClick={(e) => { e.stopPropagation(); onCycleStrategy(node) }}
                 className={`text-[10px] font-semibold uppercase px-1.5 py-0.5 rounded border transition-colors ${
-                  (strategyMap[node.partId || ''] ?? 'KEEP') === 'NEW'
-                    ? 'bg-emerald-100 border-emerald-300 text-emerald-700 hover:bg-emerald-200'
+                  (strategyMap[node.partId || ''] ?? 'KEEP') === 'SYNC'
+                    ? 'bg-indigo-100 border-indigo-300 text-indigo-700 hover:bg-indigo-200'
                     : (strategyMap[node.partId || ''] ?? 'KEEP') === 'REMOVE'
-                    ? 'bg-rose-100 border-rose-300 text-rose-700 hover:bg-rose-200'
+                    ? 'bg-rose-50 border-rose-300 border-dashed text-rose-600 hover:bg-rose-100 line-through'
                     : 'bg-slate-100 border-slate-300 text-slate-600 hover:bg-slate-200'
                 }`}
-                title="Klick zum Wechseln: KEEP → NEW → REMOVE → KEEP"
+                title={
+                  (strategyMap[node.partId || ''] ?? 'KEEP') === 'REMOVE'
+                    ? 'REMOVE — visuell markiert, ausgeführt erst in Phase 2c (PTC.ProdMgmt). Klick: → KEEP'
+                    : 'Klick zum Wechseln: KEEP → SYNC → REMOVE → KEEP'
+                }
               >
                 {strategyMap[node.partId || ''] ?? 'KEEP'}
               </button>

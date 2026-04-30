@@ -299,7 +299,7 @@ def part_b(rows: list[dict[str, str]]) -> list[str]:
     issues: list[str] = []
 
     for i, r in enumerate(rows):
-        row_num = i + 2  # +1 fuer 0-Index, +1 fuer Header
+        row_num = i + 1  # 1-basiert (entspricht Anzeige im SAP Preview Tab)
         sl = _norm(r.get("Structure Level"))
         if sl == "" or sl == "0":
             continue  # Level 0 nicht validieren

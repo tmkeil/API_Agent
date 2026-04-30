@@ -72,6 +72,11 @@ COLUMNS: list[str] = [
 # Kinder werden zum Eltern-Level hochgezogen)
 _COLLECTION_SUBTYPES = {"Collection", F.PartSubtype.COLLECTION}
 
+# Enclosed Documentation: Am Tiefenlimit muessen Kinder trotzdem geladen werden,
+# damit die Printing-Good-Regel in part_a() das "Customer related document"
+# Kind finden und hochziehen kann.
+_ENCLOSED_DOC_SUBTYPES = {"Enclosed Documentation", "BALENCDOCPART", "PTC.ProdMgmt.BALENCDOCPART"}
+
 
 # ═════════════════════════════════════════════════════════════
 # OData-Value Helper
@@ -92,7 +97,7 @@ def _flat(val: Any) -> str:
                 parts.append(str(item))
         return ", ".join(parts) if parts else ""
     if isinstance(val, bool):
-        return "true" if val else "false"
+        return "Yes" if val else "No"
     return str(val) if val else ""
 
 
@@ -223,7 +228,7 @@ def _build_part_row(
     row["DisconType"] = _flat(part_raw.get(F.Part.DISCON_TYPE) or "")
     # Printing Good liegt auf dem Part-Subtyp "Enclosed Documentation" (BALENCDOCPART),
     # nicht auf dem Dokument. Wir lesen es daher auch aus part_raw.
-    row["Printing Good"] = _flat(part_raw.get(F.Part.PRINTING_GOOD) or "")
+    row["Printing Good"] = _flat(part_raw.get(F.Part.PRINTING_GOOD))
 
     # ── Quelle: WTPart — Raw-Dimensions (Part-IBAs) ──────
     _apply_raw_dimensions(row, part_raw)
@@ -303,8 +308,8 @@ def _build_doc_row(
     row["PTp"] = "D"
     row["Version"] = _format_version(doc_raw)
     row["Description"] = n["name"]
-    row["SAP Downstream"] = _flat(doc_raw.get(F.Doc.SAP_RELEVANCE) or "")
-    row["Printing Good"] = _flat(doc_raw.get(F.Doc.PRINTING_GOOD) or "")
+    row["SAP Downstream"] = _flat(doc_raw.get(F.Doc.SAP_RELEVANCE))
+    row["Printing Good"] = _flat(doc_raw.get(F.Doc.PRINTING_GOOD))
     row["State"] = n["state"]
 
     return row
@@ -456,13 +461,19 @@ def _export_node(
         mf_link = made_from_links[0] if made_from_links else None
         rows.append(_build_part_row(part_raw, depth, parent_number, usage_link, has_children, mf_link))
 
+        # Enclosed Documentation am Tiefenlimit: Kinder trotzdem laden,
+        # damit die Printing-Good-Regel funktioniert (braucht das
+        # "Customer related document" Kind auf der naechsten Ebene).
+        is_enclosed_doc = obj_type in _ENCLOSED_DOC_SUBTYPES
+        expand = depth < max_depth or is_enclosed_doc
+
         # ── 2. Dokument-Zeilen (nur unterhalb max_depth, da Docs bei depth+1 liegen)
-        if depth < max_depth:
+        if expand:
             for doc, cad_flag in all_docs:
                 rows.append(_build_doc_row(doc, depth + 1, number, is_cad=cad_flag))
 
         # ── 3. Kinder rekursiv (nur unterhalb max_depth) ──
-        if depth < max_depth:
+        if expand:
             resolved_children.sort(
                 key=lambda x: (
                     _flat(x[0].get("FindNumber") or x[0].get("LineNumber") or ""),
@@ -521,9 +532,17 @@ def balluff_bom_export(client, part_number: str, max_depth: int | None = None) -
         n_cad,
     )
 
+    # View (Manufacturing / Design) vom Root-Part extrahieren
+    view_raw = raw_part.get("View") or ""
+    if isinstance(view_raw, dict):
+        view = str(view_raw.get("Display") or view_raw.get("Value") or "")
+    else:
+        view = str(view_raw) if view_raw else ""
+
     return {
         "columns": COLUMNS,
         "rows": rows,
         "partNumber": part_number,
         "rowCount": len(rows),
+        "view": view,
     }

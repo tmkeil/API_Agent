@@ -477,6 +477,7 @@ export interface BalluffBomExportResponse {
   rows: Record<string, string>[]
   partNumber: string
   rowCount: number
+  view: string
 }
 
 // ── SAP Export ──────────────────────────────────────────────

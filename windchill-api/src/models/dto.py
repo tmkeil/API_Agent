@@ -636,6 +636,7 @@ class BalluffBomExportResponse(BaseModel):
     rows: list[dict[str, str]] = []
     partNumber: str = ""
     rowCount: int = 0
+    view: str = ""
 
 
 # ── SAP Export ───────────────────────────────────────────────

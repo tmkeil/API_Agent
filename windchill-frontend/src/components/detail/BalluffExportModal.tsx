@@ -121,6 +121,33 @@ function computeVisibleRows(data: TabData | null, collapsedSet: Set<number>): nu
   return visible
 }
 
+// ── Validation → cell highlighting ──────────────────────────
+
+/** Map validation rule patterns to the SAP preview columns they reference. */
+const _VALIDATION_COL_PATTERNS: [RegExp, string[]][] = [
+  [/Made From.*RAW/i, ['Made From', 'Raw Dimension 1', 'Raw Dimension 2', 'Raw Dimension 3', 'Raw Dimension Unit']],
+  [/Pos.*State/i, ['Pos', 'State']],
+  [/Collection.*Pos/i, ['Pos', 'Subtyp']],
+  [/DocPart.*DocType.*Version/i, ['DocPart', 'DocType', 'DocVersion']],
+  [/PTp.*Pos.*empty/i, ['Pos']],
+  [/Quantity.*Quantity Unit/i, ['Quantity', 'MEINS']],
+]
+
+function buildValidationCells(messages: string[]): Set<string> {
+  const cells = new Set<string>()
+  for (const msg of messages) {
+    const m = msg.match(/^Row\s+(\d+):/)
+    if (!m) continue
+    const row = parseInt(m[1], 10) - 1 // convert 1-based to 0-based index
+    for (const [pattern, cols] of _VALIDATION_COL_PATTERNS) {
+      if (pattern.test(msg)) {
+        for (const col of cols) cells.add(`${row}:${col}`)
+      }
+    }
+  }
+  return cells
+}
+
 // ── Component ───────────────────────────────────────────────
 
 interface Props {
@@ -136,6 +163,9 @@ export default function BalluffExportModal({ partNumber, onClose }: Props) {
   )
 
   const [activeTab, setActiveTab] = useState<'raw' | 'sap' | 'config'>('raw')
+
+  // ── View (Manufacturing/Design) ───────────────────────
+  const [bomView, setBomView] = useState('')
 
   // ── Level picker state ────────────────────────────────
   const [maxDepth, setMaxDepth] = useState<number | null>(null)
@@ -218,6 +248,7 @@ export default function BalluffExportModal({ partNumber, onClose }: Props) {
           rows: resp.rows.map(r => ({ ...r })),
           partNumber: resp.partNumber,
         })
+        setBomView(resp.view || '')
         setBomLoaded(true)
       })
       .catch(e => {
@@ -341,6 +372,9 @@ export default function BalluffExportModal({ partNumber, onClose }: Props) {
     setSaveStatus('idle')
     triggerSapPreview(rawData, undefined, { applyDraft: false })
   }, [rawData, draftScope, partNumber, triggerSapPreview])
+
+  // ── Validation cell highlighting ──────────────────────
+  const validationCells = useMemo(() => buildValidationCells(sapValidation), [sapValidation])
 
   // ── Collapse logic ────────────────────────────────────
   const toggleCollapse = useCallback((tab: 'raw' | 'sap', rowIdx: number) => {
@@ -508,6 +542,7 @@ export default function BalluffExportModal({ partNumber, onClose }: Props) {
   function renderTable(
     tab: 'raw' | 'sap',
     data: TabData,
+    errorCells?: Set<string>,
   ) {
     const hasChildren = tab === 'raw' ? rawHasChildren : sapHasChildren
     const visibleRowIndices = tab === 'raw' ? rawVisibleRows : sapVisibleRows
@@ -577,13 +612,14 @@ export default function BalluffExportModal({ partNumber, onClose }: Props) {
                   {data.columns.map(col => {
                     const isEditing = editCell?.tab === tab && editCell?.row === ri && editCell?.col === col
                     const val = row[col] ?? ''
+                    const isError = errorCells?.has(`${ri}:${col}`) ?? false
                     const indent = col === 'Structure Level' && level > 0
                       ? { paddingLeft: `${level * 8 + 8}px` }
                       : undefined
                     return (
                       <td
                         key={col}
-                        className={`px-2 py-0.5 whitespace-nowrap ${isEditing ? 'p-0' : 'shadow-[inset_0_1px_3px_rgba(0,0,0,0.08)] bg-white/80 hover:shadow-[inset_0_1px_4px_rgba(0,0,0,0.15)] hover:bg-white cursor-text rounded-sm'} ${colWidth(col)}`}
+                        className={`px-2 py-0.5 whitespace-nowrap ${isEditing ? 'p-0' : `shadow-[inset_0_1px_3px_rgba(0,0,0,0.08)] ${isError ? 'bg-red-50 ring-1 ring-inset ring-red-300' : 'bg-white/80'} hover:shadow-[inset_0_1px_4px_rgba(0,0,0,0.15)] hover:bg-white cursor-text rounded-sm`} ${colWidth(col)}`}
                         style={indent}
                         onClick={() => !isEditing && startEdit(tab, ri, col)}
                       >
@@ -623,7 +659,8 @@ export default function BalluffExportModal({ partNumber, onClose }: Props) {
         <div className="flex items-center justify-between px-5 py-3 border-b border-slate-200 shrink-0">
           <div className="flex items-center gap-4">
             <h2 className="text-sm font-semibold text-slate-800">
-              Balluff BOM Export — {partNumber}
+              Balluff BOM Export: {partNumber}
+              {bomView && <span className="font-normal text-slate-500"> ({bomView})</span>}
             </h2>
             {/* Tabs */}
             <div className="flex gap-1 bg-slate-100 rounded-lg p-0.5">
@@ -739,7 +776,7 @@ export default function BalluffExportModal({ partNumber, onClose }: Props) {
                       {rawData.rows.length} rows · {rawData.rows.filter(r => r['PTp'] === 'L').length} parts · {rawData.rows.filter(r => r['PTp'] === 'D').length} docs
                       {maxDepth !== null && <> · Depth: {maxDepth}</>}
                     </span>
-                    <button onClick={handleDownloadRaw} className="px-3 py-1 text-xs font-medium rounded bg-emerald-600 text-white hover:bg-emerald-700 transition-colors disabled:bg-emerald-300 disabled:text-white/70 disabled:cursor-not-allowed disabled:hover:bg-emerald-300">
+                    <button disabled onClick={handleDownloadRaw} className="px-3 py-1 text-xs font-medium rounded bg-emerald-600 text-white hover:bg-emerald-700 transition-colors disabled:bg-emerald-300 disabled:text-white/70 disabled:cursor-not-allowed disabled:hover:bg-emerald-300">
                       CSV
                     </button>
                     <button onClick={handleReload} disabled={rawLoading} className="px-2 py-1 text-xs font-medium rounded border border-slate-300 text-slate-500 hover:bg-slate-100 transition-colors disabled:opacity-40 disabled:bg-emerald-300">
@@ -795,7 +832,7 @@ export default function BalluffExportModal({ partNumber, onClose }: Props) {
                   {sapValidation.length > 0 && (
                     <div className="bg-amber-50 border border-amber-200 rounded-md px-4 py-2 mb-2 shrink-0">
                       <div className="text-xs font-semibold text-amber-800 mb-1">
-                        Validation — {sapValidation.length} issue{sapValidation.length !== 1 ? 's' : ''}
+                        Validation: {sapValidation.length} issue{sapValidation.length !== 1 ? 's' : ''}
                       </div>
                       <ul className="text-xs text-amber-700 space-y-0.5 max-h-24 overflow-auto">
                         {sapValidation.map((msg, i) => (
@@ -862,7 +899,7 @@ export default function BalluffExportModal({ partNumber, onClose }: Props) {
                     >
                       Check validation
                     </button>
-                    <button onClick={handleDownloadSap} className="px-3 py-1 text-xs font-medium rounded bg-emerald-600 text-white hover:bg-emerald-700 transition-colors disabled:bg-emerald-300 disabled:text-white/70 disabled:cursor-not-allowed disabled:hover:bg-emerald-300">
+                    <button disabled onClick={handleDownloadSap} className="px-3 py-1 text-xs font-medium rounded bg-emerald-600 text-white hover:bg-emerald-700 transition-colors disabled:bg-emerald-300 disabled:text-white/70 disabled:cursor-not-allowed disabled:hover:bg-emerald-300">
                       CSV
                     </button>
                     <button
@@ -935,7 +972,7 @@ export default function BalluffExportModal({ partNumber, onClose }: Props) {
                     </div>
                   )}
 
-                  {renderTable('sap', sapData)}
+                  {renderTable('sap', sapData, validationCells)}
                 </>
               ) : !rawData ? (
                 <div className="flex-1 flex items-center justify-center text-sm text-slate-400">

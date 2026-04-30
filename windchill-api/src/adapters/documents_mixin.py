@@ -31,22 +31,39 @@ class DocumentsMixin:
           1. DescribedBy-Navigation    (Standard-Verknuepfung Part → Dokument)
           2. DocMgmt + BALREFERENCEPART (firmenspezifischer Balluff-Filter)
           3. References-Navigation     (Fallback fuer aeltere WRS-Versionen)
+
+        Quelle 1 und 3 liefern Link-Entities (PartDescribeLink bzw.
+        PartReferenceLink), NICHT die Dokumente direkt.
+        Deshalb $expand verwenden, um die tatsaechlichen Dokumente inline
+        zu laden (analog zu get_cad_documents → RelatedCADDoc).
         """
         all_docs: list[dict] = []
         seen: set[str] = set()
 
-        def _collect(items: Optional[list]) -> None:
+        def _collect(items: Optional[list], expand_key: str = "") -> None:
+            """Items sammeln.  Wenn expand_key gesetzt, Link-Entity auspacken."""
             if not items:
                 return
             for item in items:
-                doc_id = item.get("ID", "")
+                # Link-Entity auspacken (z.B. PartDescribeLink → DescribedBy)
+                if expand_key:
+                    doc = item.get(expand_key) or {}
+                    # Fallback: wenn $expand nicht funktioniert hat, Item direkt pruefen
+                    if not doc.get("ID"):
+                        doc = item
+                else:
+                    doc = item
+                doc_id = doc.get("ID", "")
                 if doc_id and doc_id not in seen:
                     seen.add(doc_id)
-                    all_docs.append(item)
+                    all_docs.append(doc)
 
-        # Quelle 1: DescribedBy
+        # Quelle 1: DescribedBy (liefert PartDescribeLink → $expand=DescribedBy)
         url = f"{self._odata_url('ProdMgmt')}/Parts('{part_id}')/DescribedBy"
-        _collect(self._get_all_pages(url, return_none_on_error=True))
+        _collect(
+            self._get_all_pages(url, {"$expand": "DescribedBy"}, return_none_on_error=True),
+            expand_key="DescribedBy",
+        )
 
         # Quelle 2: DocMgmt mit Balluff-spezifischem Filter
         if part_number and self._doc_service_available:
@@ -63,10 +80,13 @@ class DocumentsMixin:
                 # DocMgmt-Service nicht verfuegbar → nicht nochmal versuchen
                 self._doc_service_available = False
 
-        # Quelle 3: Fallback — References
+        # Quelle 3: Fallback — References (liefert PartReferenceLink → $expand=References)
         if not all_docs:
             url = f"{self._odata_url('ProdMgmt')}/Parts('{part_id}')/References"
-            _collect(self._get_all_pages(url, return_none_on_error=True))
+            _collect(
+                self._get_all_pages(url, {"$expand": "References"}, return_none_on_error=True),
+                expand_key="References",
+            )
 
         return all_docs
 
@@ -115,6 +135,9 @@ class DocumentsMixin:
         umgekehrte Richtung: Dokumente, die das Part in ihrer References-Liste
         haben.  Wird als eigene Kategorie im Export gefuehrt.
 
+        Die Navigation liefert PartReferenceLink-Entities.
+        $expand=References holt das eigentliche Dokument inline.
+
         Args:
             part_id: OData-ID des Parts.
             exclude_ids: Bereits bekannte Dokument-IDs (z.B. aus DescribedBy),
@@ -124,17 +147,21 @@ class DocumentsMixin:
             exclude_ids = set()
 
         url = f"{self._odata_url('ProdMgmt')}/Parts('{part_id}')/References"
-        items = self._get_all_pages(url, return_none_on_error=True)
+        items = self._get_all_pages(url, {"$expand": "References"}, return_none_on_error=True)
         if not items:
             return []
 
         result: list[dict] = []
         seen: set[str] = set()
         for item in items:
-            doc_id = item.get("ID", "")
+            # Unpack link entity: PartReferenceLink → References (the actual doc)
+            doc = item.get("References") or {}
+            if not doc.get("ID"):
+                doc = item  # Fallback if $expand didn't work
+            doc_id = doc.get("ID", "")
             if doc_id and doc_id not in seen and doc_id not in exclude_ids:
                 seen.add(doc_id)
-                result.append(item)
+                result.append(doc)
         return result
     # ── Reverse Navigation: Document → Parts ─────────────────
 

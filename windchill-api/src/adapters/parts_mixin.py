@@ -79,6 +79,8 @@ class PartsMixin:
         # 1) $expand=Master
         try:
             resp = self._get(base, {"$expand": "Master"}, suppress_errors=True)
+            status = resp.status_code if resp is not None else "no-resp"
+            logger.info("get_part_master_id(%s) $expand=Master -> %s", part_id, status)
             if resp and resp.status_code == 200:
                 data = resp.json() or {}
                 master = data.get("Master")
@@ -86,12 +88,19 @@ class PartsMixin:
                     mid = extract_id(master) or master.get("ID") or master.get("Id")
                     if mid:
                         return str(mid).strip()
+                # Falls Master fehlt, mal die Top-Level-Keys loggen
+                logger.info(
+                    "get_part_master_id(%s) keys=%s",
+                    part_id, sorted([k for k in data.keys() if not k.startswith("@")])[:25],
+                )
         except Exception:
             logger.debug("get_part_master_id(%s) $expand=Master failed", part_id, exc_info=True)
 
         # 2) /Master als Navigation
         try:
             resp = self._get(f"{base}/Master", None, suppress_errors=True)
+            status = resp.status_code if resp is not None else "no-resp"
+            logger.info("get_part_master_id(%s) /Master -> %s", part_id, status)
             if resp and resp.status_code == 200:
                 data = resp.json() or {}
                 mid = extract_id(data) or data.get("ID") or data.get("Id")

@@ -261,15 +261,18 @@ def _build_discrepancy_context(
     """
     ctx: dict[str, Any] = {}
     if source_root:
-        # SourceRoot ist eine OData-Navigation-Property auf eine Part-Entity,
-        # kein Primitive. Inline-Object-Form mit ID-Property — entspricht dem
-        # PTC.ID-Pattern, das auch in GetEquivalenceNetworkForParts verwendet wird.
-        # Server-Antwort sonst:
-        #   "Invalid value for navigation property 'SourceRoot'.
-        #    Must be an array for collections or for an entity either null or an object."
-        ctx["SourceRoot"] = {"ID": source_root}
+        # SourceRoot ist im EDM eine Navigation-Property auf ObjectReferenceable.
+        # Das Java-Backend von BomTransformation erwartet jedoch intern eine
+        # ``wt.fc.ObjectReference`` (Leichtgewicht-Reference), keine voll
+        # materialisierte WTPart-Entity. Mit Inline-Object ``{"ID": ...}`` oder
+        # einfachem String resolved Windchill ueber die Parts-EntitySet zu einer
+        # WTPart-Entity, was zu einem ClassCastException fuehrt:
+        #   "class wt.part.WTPart cannot be cast to class wt.fc.ObjectReference"
+        # Der OData-v4-konforme Weg, eine reine Reference (nicht Entity) zu
+        # uebergeben, ist die ``@odata.bind``-Annotation am Property-Namen:
+        ctx["SourceRoot@odata.bind"] = f"Parts('{source_root}')"
     if target_root:
-        ctx["TargetRoot"] = {"ID": target_root}
+        ctx["TargetRoot@odata.bind"] = f"Parts('{target_root}')"
     if target_path:
         ctx["TargetPath"] = target_path
     if source_part_paths:

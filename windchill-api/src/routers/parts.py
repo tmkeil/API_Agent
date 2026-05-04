@@ -204,9 +204,15 @@ def debug_detect_variants(
 
     def _try(label: str, body: dict) -> dict:
         client._refresh_csrf()
-        r = client._post(url, json_body=body, suppress_errors=True)
-        snippet = r.text[:1200] if r is not None else None
-        status = r.status_code if r is not None else None
+        # Direkter Single-Shot-POST ohne Retry/Suppress, damit auch 5xx-Bodies
+        # im Response sichtbar sind (statt nach 3 Retries als None zu enden).
+        try:
+            r = client._http.post(url, json=body, timeout=client._timeout)
+            status = r.status_code
+            snippet = r.text[:1500]
+        except Exception as exc:  # noqa: BLE001
+            status = None
+            snippet = f"<exception: {exc!r}>"
         log.info("variant=%s status=%s body=%s", label, status, snippet)
         return {"status": status, "request": body, "response": snippet}
 

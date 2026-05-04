@@ -657,6 +657,14 @@ class WRSClientBase:
                     continue
 
                 if resp.status_code < 500:
+                    if resp.status_code >= 400:
+                        try:
+                            body_snip = resp.text[:1000]
+                        except Exception:
+                            body_snip = "<unreadable>"
+                        logger.warning(
+                            "POST %s -> %d: %s", url, resp.status_code, body_snip,
+                        )
                     return resp
                 # 5xx: Body protokollieren, damit der eigentliche Server-Fehler
                 # nicht durch die Retry-Schleife verloren geht (sonst wird er

@@ -139,6 +139,44 @@ def get_transformer(
     return bom_transformer_service.get_transformer_view(client, code, session=session)
 
 
+@router.get(
+    "/_debug/part/{part_id:path}",
+    summary="DEV: dump raw Part JSON + master-lookup attempts",
+)
+def debug_part(
+    part_id: str,
+    request: Request,
+    _: None = Depends(require_auth),
+):
+    """Diagnostic only: returns the raw Part dict + tries common 'Master' lookup
+    forms, so we can see which navigation/property/$expand actually exists.
+    """
+    import logging as _logging
+    log = _logging.getLogger("debug_part")
+    client = get_client(request)
+    base = f"{client._odata_url('ProdMgmt')}/Parts('{part_id}')"
+    out: dict = {"part_id": part_id, "base": base}
+    # 1) plain
+    r = client._get(base, None, suppress_errors=True)
+    out["plain"] = {"status": r.status_code if r is not None else None,
+                    "keys": sorted([k for k in (r.json() or {}).keys()])[:60] if r and r.status_code == 200 else None,
+                    "body": (r.text[:1500] if r is not None else None) if (r is None or r.status_code != 200) else None}
+    # 2) $expand=Master
+    r = client._get(base, {"$expand": "Master"}, suppress_errors=True)
+    out["expand_Master"] = {"status": r.status_code if r is not None else None,
+                            "body": r.text[:1500] if r is not None else None}
+    # 3) /Master nav
+    r = client._get(base + "/Master", None, suppress_errors=True)
+    out["nav_Master"] = {"status": r.status_code if r is not None else None,
+                         "body": r.text[:1500] if r is not None else None}
+    # 4) $select=Identity (Identity often holds master-style "Number, Name, Version")
+    r = client._get(base, {"$select": "Identity,Number,Name"}, suppress_errors=True)
+    out["select_Identity"] = {"status": r.status_code if r is not None else None,
+                              "body": r.text[:1500] if r is not None else None}
+    log.info("debug_part(%s): %s", part_id, out)
+    return out
+
+
 @router.post(
     "/parts/{code}/transformer/detect",
     response_model=TransformResponse,

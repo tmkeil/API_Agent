@@ -96,11 +96,19 @@ def get_transformer_view(
     try:
         if design_root and design_root.partId:
             design_master = client.get_part_master_id(design_root.partId) or ""
+            logger.info(
+                "bom_transformer: design master lookup partId=%s -> master=%r",
+                design_root.partId, design_master,
+            )
     except Exception as exc:  # noqa: BLE001
         logger.warning("bom_transformer: design master lookup failed: %s", exc)
     try:
         if mfg_root and mfg_root.partId:
             mfg_master = client.get_part_master_id(mfg_root.partId) or ""
+            logger.info(
+                "bom_transformer: mfg master lookup partId=%s -> master=%r",
+                mfg_root.partId, mfg_master,
+            )
     except Exception as exc:  # noqa: BLE001
         logger.warning("bom_transformer: mfg master lookup failed: %s", exc)
 

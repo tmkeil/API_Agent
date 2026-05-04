@@ -129,6 +129,14 @@ class BomTransformationMixin:
             ctx["SourceRoot"] = {"@odata.id": f"Parts('{source_root}')"}
         if target_root:
             ctx["TargetRoot"] = {"@odata.id": f"Parts('{target_root}')"}
+        logger.info(
+            "DetectDiscrepancies body: TargetPath=%r SourceRoot=%r TargetRoot=%r SourcePartSelection=%r UpstreamChangeOid=%r",
+            ctx.get("TargetPath"),
+            (ctx.get("SourceRoot") or {}).get("@odata.id") if isinstance(ctx.get("SourceRoot"), dict) else ctx.get("SourceRoot"),
+            (ctx.get("TargetRoot") or {}).get("@odata.id") if isinstance(ctx.get("TargetRoot"), dict) else ctx.get("TargetRoot"),
+            ctx.get("SourcePartSelection"),
+            ctx.get("UpstreamChangeOid"),
+        )
         return self._bt_post("DetectDiscrepancies", {"DiscrepancyContext": ctx})
 
     def detect_and_resolve_discrepancies(

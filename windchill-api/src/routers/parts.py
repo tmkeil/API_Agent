@@ -29,6 +29,9 @@ from src.models.dto import (
     PartSubtypeListResponse,
     TransformDetectRequest,
     TransformGenerateRequest,
+    TransformCopyRequest,
+    TransformRemoveRequest,
+    TransformRemoveResponse,
     TransformResponse,
     WhereUsedResponse,
 )
@@ -189,6 +192,57 @@ def post_transformer_generate(
         source_part_paths=body.sourcePartPaths,
         upstream_change_oid=body.upstreamChangeOid,
         change_oid=body.changeOid,
+        session=session,
+    )
+
+
+@router.post(
+    "/parts/{code}/transformer/copy",
+    response_model=TransformResponse,
+    summary="Per-node COPY (PasteSpecial) — paste EBOM nodes under MBOM target",
+)
+def post_transformer_copy(
+    code: str,
+    body: TransformCopyRequest,
+    request: Request,
+    _: None = Depends(require_auth),
+):
+    """Wraps ``BomTransformation/PasteSpecial`` — OData-Equivalent zum
+    Drag&Drop in der Windchill-GUI. Kopiert die in ``sourcePartPaths``
+    angegebenen EBOM-Knoten unter den ``targetPath`` MBOM-Knoten.
+    """
+    client = get_client(request)
+    session = get_session(request)
+    return bom_transformer_service.paste_special(
+        client,
+        target_path=body.targetPath,
+        source_part_paths=body.sourcePartPaths,
+        upstream_change_oid=body.upstreamChangeOid,
+        change_oid=body.changeOid,
+        session=session,
+    )
+
+
+@router.post(
+    "/parts/{code}/transformer/remove",
+    response_model=TransformRemoveResponse,
+    summary="Per-node REMOVE — delete the listed MBOM UsageLinks",
+)
+def post_transformer_remove(
+    code: str,  # noqa: ARG001 — accepted for URL symmetry; not used server-side
+    body: TransformRemoveRequest,
+    request: Request,
+    _: None = Depends(require_auth),
+):
+    """Phase 2c: löscht die übergebenen ``WTPartUsageLink``-IDs auf der
+    MBOM-Seite via ``PTC.ProdMgmt.UsageLinks('<id>')``. Die EBOM bleibt
+    unverändert; nur die Parent→Child-Beziehung in der MBOM wird gekappt.
+    """
+    client = get_client(request)
+    session = get_session(request)
+    return bom_transformer_service.remove_usage_links(
+        client,
+        usage_link_ids=body.usageLinkIds,
         session=session,
     )
 

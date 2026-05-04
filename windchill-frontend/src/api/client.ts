@@ -296,6 +296,30 @@ export async function postTransformerGenerate(
     { method: 'POST', body: JSON.stringify(body) },
   )
 }
+export async function postTransformerCopy(
+  code: string,
+  body: { targetPath: string; sourcePartPaths: string[]; upstreamChangeOid?: string; changeOid?: string },
+): Promise<TransformResponse> {
+  return request<TransformResponse>(
+    `${BASE}/parts/${encodeURIComponent(code)}/transformer/copy`,
+    { method: 'POST', body: JSON.stringify(body) },
+  )
+}
+export interface TransformRemoveResponse {
+  ok: boolean
+  removed: string[]
+  failed: { usageLinkId: string; error: string }[]
+  timing?: { totalMs?: number; wrsMs?: number }
+}
+export async function postTransformerRemove(
+  code: string,
+  body: { usageLinkIds: string[] },
+): Promise<TransformRemoveResponse> {
+  return request<TransformRemoveResponse>(
+    `${BASE}/parts/${encodeURIComponent(code)}/transformer/remove`,
+    { method: 'POST', body: JSON.stringify(body) },
+  )
+}
 
 // Change Items (Affected / Resulting)
 export async function getAffectedItems(typeKey: string, code: string, signal?: AbortSignal): Promise<ChangeItemsResponse> {

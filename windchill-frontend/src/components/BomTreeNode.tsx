@@ -18,12 +18,14 @@ interface Props {
    *  (does not toggle expansion). Used by the BOM Transformer page to
    *  open a modal with full attributes. */
   onShowDetail?: (node: BomTreeNode) => void
-  /** When provided, a KEEP/SYNC/REMOVE strategy chip is rendered at the
-   *  start of each row. Click cycles through the three states. Used by
-   *  the BOM Transformer page (Phase 2b) on the Manufacturing side.
-   *  REMOVE is visually marked but not yet executed (Phase 2c). */
-  strategyMap?: Record<string, 'KEEP' | 'SYNC' | 'REMOVE'>
+  /** When provided, a strategy chip is rendered in a fixed leading column.
+   *  Click cycles through the available states for this side.
+   *  - chipMode='source' (EBOM): KEEP ↔ COPY
+   *  - chipMode='target' (MBOM): KEEP ↔ REMOVE
+   *  REMOVE is visually marked but executed in Phase 2c. */
+  strategyMap?: Record<string, 'KEEP' | 'COPY' | 'REMOVE'>
   onCycleStrategy?: (node: BomTreeNode) => void
+  chipMode?: 'source' | 'target'
 }
 
 /** Resolve a column value from a BomTreeNode based on the column config. */
@@ -73,7 +75,7 @@ function getDocCellValue(doc: DocumentNode, col: BomViewColumn): string {
  * Children are lazily loaded on first expand click.
  * Columns are driven by the viewColumns config (BOM view support).
  */
-export default function BomTreeRow({ node, depth, viewColumns, totalCols, onSelect, selectedPartId, onShowDetail, strategyMap, onCycleStrategy }: Props) {
+export default function BomTreeRow({ node, depth, viewColumns, totalCols, onSelect, selectedPartId, onShowDetail, strategyMap, onCycleStrategy, chipMode }: Props) {
   const hasInitialChildren = (node.children && node.children.length > 0) || node.childrenLoaded || false
   const [expanded, setExpanded] = useState(false)
   const [children, setChildren] = useState<BomTreeNode[]>(node.children || [])
@@ -138,6 +140,33 @@ export default function BomTreeRow({ node, depth, viewColumns, totalCols, onSele
             : 'hover:bg-indigo-50/60'
         }`}
       >
+        {/* Strategy chip — fixed leading column, no indent. Only when strategyMap is provided. */}
+        {strategyMap && onCycleStrategy && (() => {
+          const cur = strategyMap[node.partId || ''] ?? 'KEEP'
+          const isCopy = cur === 'COPY'
+          const isRemove = cur === 'REMOVE'
+          const tooltip = chipMode === 'source'
+            ? 'Klick: KEEP ↔ COPY (EBOM-Knoten ins MBOM kopieren)'
+            : 'Klick: KEEP ↔ REMOVE (MBOM-Knoten markieren — Ausführung in Phase 2c)'
+          return (
+            <td className="px-1 py-1.5 whitespace-nowrap w-20">
+              <button
+                onClick={(e) => { e.stopPropagation(); onCycleStrategy(node) }}
+                className={`text-[10px] font-semibold uppercase px-1.5 py-0.5 rounded border transition-colors w-16 text-center ${
+                  isCopy
+                    ? 'bg-emerald-100 border-emerald-300 text-emerald-700 hover:bg-emerald-200'
+                    : isRemove
+                    ? 'bg-rose-50 border-rose-300 border-dashed text-rose-600 hover:bg-rose-100 line-through'
+                    : 'bg-slate-100 border-slate-300 text-slate-600 hover:bg-slate-200'
+                }`}
+                title={tooltip}
+              >
+                {cur}
+              </button>
+            </td>
+          )
+        })()}
+
         {/* Expand icon + type badge + indentation */}
         <td className="px-1 py-1.5 whitespace-nowrap" style={{ paddingLeft: indent }}>
           <span className="inline-flex items-center gap-1">
@@ -161,25 +190,6 @@ export default function BomTreeRow({ node, depth, viewColumns, totalCols, onSele
             <span className={`inline-block border px-1 rounded text-[10px] font-medium ${subtypeBadgeStyle(node.type || 'Part')}`}>
               {node.type || 'Part'}
             </span>
-            {strategyMap && onCycleStrategy && (
-              <button
-                onClick={(e) => { e.stopPropagation(); onCycleStrategy(node) }}
-                className={`text-[10px] font-semibold uppercase px-1.5 py-0.5 rounded border transition-colors ${
-                  (strategyMap[node.partId || ''] ?? 'KEEP') === 'SYNC'
-                    ? 'bg-indigo-100 border-indigo-300 text-indigo-700 hover:bg-indigo-200'
-                    : (strategyMap[node.partId || ''] ?? 'KEEP') === 'REMOVE'
-                    ? 'bg-rose-50 border-rose-300 border-dashed text-rose-600 hover:bg-rose-100 line-through'
-                    : 'bg-slate-100 border-slate-300 text-slate-600 hover:bg-slate-200'
-                }`}
-                title={
-                  (strategyMap[node.partId || ''] ?? 'KEEP') === 'REMOVE'
-                    ? 'REMOVE — visuell markiert, ausgeführt erst in Phase 2c (PTC.ProdMgmt). Klick: → KEEP'
-                    : 'Klick zum Wechseln: KEEP → SYNC → REMOVE → KEEP'
-                }
-              >
-                {strategyMap[node.partId || ''] ?? 'KEEP'}
-              </button>
-            )}
           </span>
         </td>
 
@@ -245,6 +255,7 @@ export default function BomTreeRow({ node, depth, viewColumns, totalCols, onSele
               key={`doc-${doc.docId || i}`}
               className="text-xs border-b border-slate-100"
             >
+              {strategyMap && <td className="w-20" />}
               <td style={{ paddingLeft: indent + 20 }} className="py-0.5">
                 <span className={`inline-block border px-1 rounded text-[10px] font-medium ${subtypeBadgeStyle(doc.subType || 'Dokument')}`}>
                   {doc.subType || 'Doc'}
@@ -292,6 +303,7 @@ export default function BomTreeRow({ node, depth, viewColumns, totalCols, onSele
               key={`cad-${doc.docId || i}`}
               className="text-xs border-b border-slate-100"
             >
+              {strategyMap && <td className="w-20" />}
               <td style={{ paddingLeft: indent + 20 }} className="py-0.5">
                 <span className={`inline-block border px-1 rounded text-[10px] font-medium ${subtypeBadgeStyle(doc.subType || 'CAD-Dokument')}`}>
                   {doc.subType || 'CAD'}
@@ -344,6 +356,7 @@ export default function BomTreeRow({ node, depth, viewColumns, totalCols, onSele
               onShowDetail={onShowDetail}
               strategyMap={strategyMap}
               onCycleStrategy={onCycleStrategy}
+              chipMode={chipMode}
             />
           ))}
 
@@ -351,7 +364,7 @@ export default function BomTreeRow({ node, depth, viewColumns, totalCols, onSele
           {loaded && children.length === 0 && documents.length === 0 && cadDocuments.length === 0 && (
             <tr>
               <td
-                colSpan={totalCols}
+                colSpan={totalCols + (strategyMap ? 1 : 0)}
                 style={{ paddingLeft: indent + 20 }}
                 className="text-xs text-slate-400 italic py-1"
               >

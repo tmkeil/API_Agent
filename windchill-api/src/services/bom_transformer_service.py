@@ -21,6 +21,7 @@ from src.models.dto import (
     EquivPartRef,
     TimingInfo,
     TransformResponse,
+    TransformRemoveResponse,
 )
 from src.services import parts_service
 
@@ -172,5 +173,83 @@ def generate_downstream(
         action="GenerateDownstreamStructure",
         value=value,
         raw=raw if isinstance(raw, dict) else {},
+        timing=TimingInfo(totalMs=ms, wrsMs=ms),
+    )
+
+
+def paste_special(
+    client: WRSClient,
+    target_path: str,
+    source_part_paths: list[str],
+    upstream_change_oid: str = "",
+    change_oid: str = "",
+    session: Optional[UserSession] = None,
+) -> TransformResponse:
+    """Wrapper around ``client.paste_special`` (per-node COPY)."""
+    t0 = time.monotonic()
+    raw = client.paste_special(
+        target_path=target_path,
+        source_part_paths=source_part_paths,
+        upstream_change_oid=upstream_change_oid or None,
+        change_oid=change_oid or None,
+    )
+    ms = round((time.monotonic() - t0) * 1000, 1)
+    value = raw.get("value") if isinstance(raw, dict) else None
+    if not isinstance(value, list):
+        value = []
+    if session:
+        log_session_event(
+            session, "INFO", "transformer:copy", 0, ms, "service",
+            f"target={target_path} sources={len(source_part_paths)} "
+            f"copied={len(value)} changeOid={change_oid or '-'}",
+        )
+    return TransformResponse(
+        ok=True,
+        action="PasteSpecial",
+        value=value,
+        raw=raw if isinstance(raw, dict) else {},
+        timing=TimingInfo(totalMs=ms, wrsMs=ms),
+    )
+
+
+# ── Phase 2c — REMOVE (delete UsageLinks via PTC.ProdMgmt) ──
+
+
+def remove_usage_links(
+    client: WRSClient,
+    usage_link_ids: list[str],
+    session: Optional[UserSession] = None,
+) -> TransformRemoveResponse:
+    """Delete a list of WTPartUsageLinks (per-node REMOVE on the MBOM side).
+
+    Loops over IDs, calls ``client.remove_bom_child`` for each, and reports
+    per-link success/failure. Does **not** abort on first error — collects
+    all results so the UI can show partial progress.
+    """
+    t0 = time.monotonic()
+    removed: list[str] = []
+    failed: list[dict[str, str]] = []
+
+    for link_id in usage_link_ids:
+        if not link_id:
+            failed.append({"usageLinkId": "", "error": "empty id"})
+            continue
+        try:
+            client.remove_bom_child(link_id)
+            removed.append(link_id)
+        except Exception as exc:  # noqa: BLE001 — collect & continue
+            failed.append({"usageLinkId": link_id, "error": str(exc)})
+            logger.warning("transformer:remove failed for %s: %s", link_id, exc)
+
+    ms = round((time.monotonic() - t0) * 1000, 1)
+    if session:
+        log_session_event(
+            session, "INFO", "transformer:remove", 0, ms, "service",
+            f"requested={len(usage_link_ids)} removed={len(removed)} failed={len(failed)}",
+        )
+    return TransformRemoveResponse(
+        ok=len(failed) == 0,
+        removed=removed,
+        failed=failed,
         timing=TimingInfo(totalMs=ms, wrsMs=ms),
     )

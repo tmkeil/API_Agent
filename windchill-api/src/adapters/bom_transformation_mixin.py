@@ -176,6 +176,40 @@ class BomTransformationMixin:
             body["ChangeOid"] = change_oid
         return self._bt_post("UpdateToCurrentUpstreamEquivalents", body)
 
+    def paste_special(
+        self: "WRSClientBase",
+        target_path: str,
+        source_part_paths: list[str],
+        upstream_change_oid: str | None = None,
+        change_oid: str | None = None,
+    ) -> dict[str, Any]:
+        """``POST /BomTransformation/PasteSpecial``.
+
+        Per-Knoten COPY: nimmt die in ``source_part_paths`` angegebenen
+        EBOM-Knoten und fuegt sie als neue Downstream-Equivalents unter
+        ``target_path`` (MBOM-Knoten) ein. Dies ist die OData-Entsprechung
+        des Drag&Drop-Vorgangs in der Windchill-GUI.
+
+        Args:
+            target_path: Windchill-Pfad zum Ziel-MBOM-Knoten (Eltern).
+            source_part_paths: Liste der EBOM-Knoten-Pfade, die kopiert
+                werden sollen.
+            upstream_change_oid: Optionaler Change-Kontext fuer den Upstream.
+            change_oid: Optionale Change Notice / Change Task.
+
+        Returns:
+            Rohes OData-JSON. ``value`` enthaelt
+            ``EquivalentUsageAssociation``-Eintraege.
+        """
+        body: dict[str, Any] = {
+            "DiscrepancyContext": _build_discrepancy_context(
+                target_path, source_part_paths, upstream_change_oid
+            ),
+        }
+        if change_oid:
+            body["ChangeOid"] = change_oid
+        return self._bt_post("PasteSpecial", body)
+
     def get_equivalence_network_for_parts(
         self: "WRSClientBase",
         part_ids: list[str],

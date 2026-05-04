@@ -167,6 +167,16 @@ def _map_tree_node(
             or ""
         )
 
+        # Capture the WTPartUsageLink OData ID — needed for REMOVE / Phase 2c.
+        # Falls back to common alternative keys observed across Windchill versions.
+        link_id = (
+            usage_link.get("ID")
+            or usage_link.get("UsageLinkID")
+            or usage_link.get("UsageLinkId")
+            or ""
+        )
+        node.usageLinkId = str(link_id) if link_id else ""
+
         # Capture ALL remaining usage-link attributes
         # (for BOM view column support and AI Agent access)
         _SKIP_LINK_KEYS = {

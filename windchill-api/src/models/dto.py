@@ -94,6 +94,7 @@ class BomTreeNode(BaseModel):
     quantityUnit: str = ""
     lineNumber: str = ""
     organizationId: str = ""
+    usageLinkId: str = ""           # OData-ID of the WTPartUsageLink to this node's parent — needed for REMOVE
     usageLinkAttributes: dict[str, Any] = {}
     partAttributes: dict[str, Any] = {}
 
@@ -339,6 +340,38 @@ class TransformGenerateRequest(BaseModel):
     sourcePartPaths: list[str]
     upstreamChangeOid: str = ""
     changeOid: str = ""
+
+
+class TransformCopyRequest(BaseModel):
+    """Per-node COPY: paste selected EBOM nodes under a MBOM target.
+
+    Mirrors the Windchill drag&drop semantics; backend translates this to
+    ``PasteSpecial``. ``sourcePartPaths`` lists the EBOM nodes the user
+    marked as ``COPY`` in the UI.
+    """
+    targetPath: str
+    sourcePartPaths: list[str]
+    upstreamChangeOid: str = ""
+    changeOid: str = ""
+
+
+class TransformRemoveRequest(BaseModel):
+    """Per-node REMOVE: delete the listed MBOM usage-links.
+
+    ``usageLinkIds`` are OData IDs of WTPartUsageLink records (the BOM
+    parent→child relationships on the MBOM side). The backend deletes
+    each via ``PTC.ProdMgmt.UsageLinks('<id>')``. Fails fast on the first
+    error and reports which link succeeded.
+    """
+    usageLinkIds: list[str]
+
+
+class TransformRemoveResponse(BaseModel):
+    """Per-link result of a REMOVE batch."""
+    ok: bool = True
+    removed: list[str] = []        # usage-link IDs successfully deleted
+    failed: list[dict[str, str]] = []  # [{usageLinkId, error}]
+    timing: TimingInfo = TimingInfo()
 
 
 class TransformResponse(BaseModel):

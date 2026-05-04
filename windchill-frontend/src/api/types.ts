@@ -39,6 +39,7 @@ export interface BomTreeNode {
   quantityUnit?: string
   lineNumber?: string
   organizationId?: string
+  usageLinkId?: string
   usageLinkAttributes?: Record<string, unknown>
   partAttributes?: Record<string, unknown>
   // Frontend-only state

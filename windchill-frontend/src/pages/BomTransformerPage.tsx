@@ -5,6 +5,8 @@ import {
   getObjectDetail,
   postTransformerDetect,
   postTransformerGenerate,
+  postTransformerCopy,
+  postTransformerRemove,
 } from '../api/client'
 import type {
   BomTransformerResponse,
@@ -47,8 +49,9 @@ interface SideProps {
   columns: BomViewColumn[]
   onShowDetail: (node: BomTreeNode) => void
   emptyHint: string
-  strategyMap?: Record<string, 'KEEP' | 'SYNC' | 'REMOVE'>
+  strategyMap?: Record<string, 'KEEP' | 'COPY' | 'REMOVE'>
   onCycleStrategy?: (node: BomTreeNode) => void
+  chipMode?: 'source' | 'target'
   headerExtra?: React.ReactNode
 }
 
@@ -62,6 +65,7 @@ function BomSide({
   emptyHint,
   strategyMap,
   onCycleStrategy,
+  chipMode,
   headerExtra,
 }: SideProps) {
   const totalCols = columns.length + 1
@@ -95,6 +99,11 @@ function BomSide({
           <table className="w-full text-sm border-collapse">
             <thead className="bg-slate-100 text-slate-600 text-xs border-b border-slate-200 sticky top-0 z-10">
               <tr>
+                {strategyMap && (
+                  <th className="text-left px-1 py-2 font-medium w-20 text-[10px] uppercase tracking-wider">
+                    Action
+                  </th>
+                )}
                 <th className="text-left px-1 py-2 font-medium w-12" />
                 {columns.map(col => (
                   <th
@@ -117,6 +126,7 @@ function BomSide({
                 onShowDetail={onShowDetail}
                 strategyMap={strategyMap}
                 onCycleStrategy={onCycleStrategy}
+                chipMode={chipMode}
               />
             </tbody>
           </table>
@@ -263,15 +273,15 @@ export default function BomTransformerPage() {
   const [error, setError] = useState<string | null>(null)
   const [compact, setCompact] = useState(true)
   const [modalNode, setModalNode] = useState<BomTreeNode | null>(null)
-  // Phase 2b: per-node transform strategy on the MANUFACTURING side.
+  // Phase 2b: per-node transform strategy.
   // KEEP   = Knoten bleibt unangetastet (default)
-  // SYNC   = beim nächsten „Sync Selection“ wird sein EBOM-Pendant in SourcePartSelection aufgenommen
-  // REMOVE = visuell markiert, ausgeführt erst in Phase 2c (PTC.ProdMgmt)
-  const [strategyMap, setStrategyMap] = useState<Record<string, 'KEEP' | 'SYNC' | 'REMOVE'>>({})
-  const [transformBusy, setTransformBusy] = useState<null | 'detect' | 'autoSync' | 'syncSel'>(null)
+  // COPY   = nur auf EBOM-Seite sinnvoll → wird via PasteSpecial in MBOM kopiert
+  // REMOVE = nur auf MBOM-Seite sinnvoll → visuell, Ausführung in Phase 2c (PTC.ProdMgmt)
+  const [strategyMap, setStrategyMap] = useState<Record<string, 'KEEP' | 'COPY' | 'REMOVE'>>({})
+  const [transformBusy, setTransformBusy] = useState<null | 'detect' | 'autoSync' | 'copy' | 'remove'>(null)
   const [transformResult, setTransformResult] = useState<TransformResponse | null>(null)
   const [transformError, setTransformError] = useState<string | null>(null)
-  const [confirmKind, setConfirmKind] = useState<null | 'autoSync' | 'syncSel'>(null)
+  const [confirmKind, setConfirmKind] = useState<null | 'autoSync' | 'copy' | 'remove'>(null)
 
   useEffect(() => {
     if (!code) return
@@ -294,13 +304,22 @@ export default function BomTransformerPage() {
     setModalNode(node)
   }, [])
 
-  const cycleStrategy = useCallback((node: BomTreeNode) => {
+  // Side-aware chip cycle — EBOM toggles KEEP↔COPY, MBOM toggles KEEP↔REMOVE.
+  const cycleEbomStrategy = useCallback((node: BomTreeNode) => {
     const id = node.partId || ''
     if (!id) return
     setStrategyMap(prev => {
       const cur = prev[id] ?? 'KEEP'
-      // KEEP → SYNC → REMOVE → KEEP. REMOVE ist visuell, Phase 2c führt es aus.
-      const next = cur === 'KEEP' ? 'SYNC' : cur === 'SYNC' ? 'REMOVE' : 'KEEP'
+      const next = cur === 'COPY' ? 'KEEP' : 'COPY'
+      return { ...prev, [id]: next }
+    })
+  }, [])
+  const cycleMfgStrategy = useCallback((node: BomTreeNode) => {
+    const id = node.partId || ''
+    if (!id) return
+    setStrategyMap(prev => {
+      const cur = prev[id] ?? 'KEEP'
+      const next = cur === 'REMOVE' ? 'KEEP' : 'REMOVE'
       return { ...prev, [id]: next }
     })
   }, [])
@@ -317,18 +336,55 @@ export default function BomTransformerPage() {
     ? partPath(mfgRootId)
     : designRootId ? partPath(designRootId) : ''
 
-  const syncPartIds = useMemo(
+  // Tree-walker: collect partIds + (partId → usageLinkId) for a subtree.
+  // The usageLinkId is the ID of the WTPartUsageLink that connects each node
+  // to its parent — only that link can be deleted (Phase 2c REMOVE). The root
+  // node has no incoming link and is therefore not removable.
+  const walkTree = useCallback(
+    (root: BomTreeNode | null): { ids: Set<string>; linkByPart: Map<string, string> } => {
+      const ids = new Set<string>()
+      const linkByPart = new Map<string, string>()
+      const stack: BomTreeNode[] = root ? [root] : []
+      while (stack.length) {
+        const n = stack.pop()!
+        if (n.partId) {
+          ids.add(n.partId)
+          if (n.usageLinkId) linkByPart.set(n.partId, n.usageLinkId)
+        }
+        if (n.children) for (const c of n.children) stack.push(c)
+      }
+      return { ids, linkByPart }
+    },
+    [],
+  )
+
+  const ebomWalk = useMemo(() => walkTree(data?.designRoot ?? null), [data, walkTree])
+  const mfgWalk = useMemo(() => walkTree(data?.manufacturingRoot ?? null), [data, walkTree])
+  const ebomIds = ebomWalk.ids
+  const mfgIds = mfgWalk.ids
+
+  const copyPartIds = useMemo(
     () => Object.entries(strategyMap)
-      .filter(([, s]) => s === 'SYNC')
+      .filter(([id, s]) => s === 'COPY' && ebomIds.has(id))
       .map(([id]) => id),
-    [strategyMap],
+    [strategyMap, ebomIds],
   )
   const removePartIds = useMemo(
     () => Object.entries(strategyMap)
-      .filter(([, s]) => s === 'REMOVE')
+      .filter(([id, s]) => s === 'REMOVE' && mfgIds.has(id))
       .map(([id]) => id),
-    [strategyMap],
+    [strategyMap, mfgIds],
   )
+  // Resolve REMOVE-marked partIds to their UsageLink IDs. Root is excluded
+  // automatically (no incoming link). Nodes whose link wasn't loaded yet
+  // are dropped — user must expand them first.
+  const removeLinkIds = useMemo(
+    () => removePartIds
+      .map(id => mfgWalk.linkByPart.get(id))
+      .filter((v): v is string => !!v),
+    [removePartIds, mfgWalk],
+  )
+  const removeUnresolved = removePartIds.length - removeLinkIds.length
 
   async function runDetect() {
     if (!targetPath) {
@@ -341,7 +397,6 @@ export default function BomTransformerPage() {
     try {
       const r = await postTransformerDetect(code, {
         targetPath,
-        // Empty selection → Windchill diff-t alle EBOM-Knoten gegen die MBOM.
         sourcePartPaths: [],
       })
       setTransformResult(r)
@@ -352,8 +407,9 @@ export default function BomTransformerPage() {
     }
   }
 
-  /** Auto-Sync: Generate/Update mit leerer SourcePartSelection → Windchill
-   *  betrachtet alle EBOM-Knoten unter dem TargetPath. Deckt 90% der Fälle. */
+  /** Auto-Sync: GenerateDownstreamStructure mit leerer SourcePartSelection.
+   *  Windchill betrachtet alle EBOM-Knoten unter dem TargetPath und erzeugt /
+   *  aktualisiert die MBOM-Pendants. Standard-Workflow für „komplett übernehmen". */
   async function runAutoSync() {
     if (!targetPath) {
       setTransformError('Kein MBOM-/Design-Root vorhanden.')
@@ -377,29 +433,26 @@ export default function BomTransformerPage() {
     }
   }
 
-  /** Sync Selection: nur die als SYNC markierten MBOM-Knoten triggern eine
-   *  Synchronisation — wir geben deren OIDs als Filter mit. Hinweis: Windchill
-   *  erwartet hier streng genommen EBOM-Pfade; für v1 senden wir die MBOM-OIDs
-   *  und vertrauen auf serverseitige Auflösung via Equivalence-Map. Falls das
-   *  fehlschlägt, bleibt Auto-Sync der zuverlässige Fallback. */
-  async function runSyncSelection() {
+  /** Apply COPY: PasteSpecial mit den als COPY markierten EBOM-Knoten unter
+   *  den MBOM-Target. OData-Equivalent zum Drag&Drop in der Windchill-GUI. */
+  async function runApplyCopy() {
     if (!targetPath) {
       setTransformError('Kein MBOM-/Design-Root vorhanden.')
       setConfirmKind(null)
       return
     }
-    if (syncPartIds.length === 0) {
-      setTransformError('Keine MBOM-Knoten als SYNC markiert.')
+    if (copyPartIds.length === 0) {
+      setTransformError('Keine EBOM-Knoten als COPY markiert.')
       setConfirmKind(null)
       return
     }
-    setTransformBusy('syncSel')
+    setTransformBusy('copy')
     setTransformError(null)
     setTransformResult(null)
     try {
-      const r = await postTransformerGenerate(code, {
+      const r = await postTransformerCopy(code, {
         targetPath,
-        sourcePartPaths: syncPartIds.map(partPath),
+        sourcePartPaths: copyPartIds.map(partPath),
       })
       setTransformResult(r)
     } catch (e) {
@@ -410,6 +463,53 @@ export default function BomTransformerPage() {
     }
   }
 
+  /** Apply REMOVE: löscht die UsageLinks der als REMOVE markierten MBOM-Knoten
+   *  via PTC.ProdMgmt.UsageLinks('<id>'). Liefert per-Link Erfolg/Fehler zurück. */
+  async function runApplyRemove() {
+    if (removeLinkIds.length === 0) {
+      setTransformError('Keine MBOM-UsageLinks zum Entfernen aufgelöst.')
+      setConfirmKind(null)
+      return
+    }
+    setTransformBusy('remove')
+    setTransformError(null)
+    setTransformResult(null)
+    try {
+      const r = await postTransformerRemove(code, { usageLinkIds: removeLinkIds })
+      // Wrap the per-link response into a TransformResponse-shaped object so
+      // the existing result panel can show it without a second renderer.
+      setTransformResult({
+        ok: r.ok,
+        action: 'RemoveUsageLinks',
+        value: [
+          ...r.removed.map(id => ({ usageLinkId: id, status: 'removed' })),
+          ...r.failed.map(f => ({ usageLinkId: f.usageLinkId, status: 'failed', error: f.error })),
+        ],
+        raw: r as unknown as Record<string, unknown>,
+        timing: r.timing ?? {},
+      } as TransformResponse)
+      // Drop strategies for successfully removed nodes — the tree will re-load
+      // on next refresh; until then the chips would be stale.
+      if (r.removed.length > 0) {
+        const removedPartIds = new Set(
+          removePartIds.filter(pid => {
+            const lid = mfgWalk.linkByPart.get(pid)
+            return lid && r.removed.includes(lid)
+          }),
+        )
+        setStrategyMap(prev => {
+          const next = { ...prev }
+          for (const pid of removedPartIds) delete next[pid]
+          return next
+        })
+      }
+    } catch (e) {
+      setTransformError(String((e as Error)?.message ?? e))
+    } finally {
+      setTransformBusy(null)
+      setConfirmKind(null)
+    }
+  }
   const designNumber = data?.designRoot?.number ?? '—'
   const mfgNumber = data?.manufacturingRoot?.number ?? '—'
 
@@ -484,7 +584,7 @@ export default function BomTransformerPage() {
         >
           <BomSide
             title={designNumber}
-            badge="Design"
+            badge="Design (Source)"
             badgeClass="bg-sky-100 text-sky-700"
             root={data.designRoot}
             columns={columns}
@@ -494,10 +594,21 @@ export default function BomTransformerPage() {
                 ? 'Kein Design-Pendant verknüpft.'
                 : 'Design-BOM nicht verfügbar.'
             }
+            strategyMap={strategyMap}
+            onCycleStrategy={cycleEbomStrategy}
+            chipMode="source"
+            headerExtra={
+              <span
+                className="text-[10px] text-slate-500 italic"
+                title="EBOM wird nie geschrieben — COPY markiert nur, was per PasteSpecial in die MBOM übernommen wird"
+              >
+                read-only
+              </span>
+            }
           />
           <BomSide
             title={mfgNumber}
-            badge="Manufacturing"
+            badge="Manufacturing (Target)"
             badgeClass="bg-amber-100 text-amber-700"
             root={data.manufacturingRoot}
             columns={columns}
@@ -508,7 +619,8 @@ export default function BomTransformerPage() {
                 : 'Kein Manufacturing-Pendant — nutze „Auto-Sync from EBOM“ für Initial-Generate.'
             }
             strategyMap={strategyMap}
-            onCycleStrategy={cycleStrategy}
+            onCycleStrategy={cycleMfgStrategy}
+            chipMode="target"
             headerExtra={
               <div className="flex items-center gap-1">
                 <button
@@ -523,17 +635,29 @@ export default function BomTransformerPage() {
                   onClick={() => setConfirmKind('autoSync')}
                   disabled={transformBusy !== null || !targetPath}
                   className="text-[11px] px-2 py-0.5 rounded bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-50"
-                  title="Generiert/aktualisiert ALLE MBOM-Knoten anhand der aktuellen EBOM (Standard-Workflow)"
+                  title="GenerateDownstreamStructure — alle EBOM-Knoten in die MBOM übernehmen (Initial-Generate / Bulk-Update)"
                 >
                   {transformBusy === 'autoSync' ? '…' : 'Auto-Sync from EBOM'}
                 </button>
                 <button
-                  onClick={() => setConfirmKind('syncSel')}
-                  disabled={transformBusy !== null || !targetPath || syncPartIds.length === 0}
+                  onClick={() => setConfirmKind('copy')}
+                  disabled={transformBusy !== null || !targetPath || copyPartIds.length === 0}
                   className="text-[11px] px-2 py-0.5 rounded bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50"
-                  title={`Synchronisiert nur die ${syncPartIds.length} als SYNC markierten Knoten`}
+                  title={`PasteSpecial — kopiert nur die ${copyPartIds.length} als COPY markierten EBOM-Knoten`}
                 >
-                  {transformBusy === 'syncSel' ? '…' : `Sync Selection (${syncPartIds.length})`}
+                  {transformBusy === 'copy' ? '…' : `Apply COPY (${copyPartIds.length})`}
+                </button>
+                <button
+                  onClick={() => setConfirmKind('remove')}
+                  disabled={transformBusy !== null || removeLinkIds.length === 0}
+                  className="text-[11px] px-2 py-0.5 rounded bg-rose-600 text-white hover:bg-rose-700 disabled:opacity-50"
+                  title={
+                    removeUnresolved > 0
+                      ? `${removeLinkIds.length} resolvable / ${removeUnresolved} not yet expanded`
+                      : `Löscht die ${removeLinkIds.length} markierten MBOM-UsageLinks via PTC.ProdMgmt`
+                  }
+                >
+                  {transformBusy === 'remove' ? '…' : `Apply REMOVE (${removeLinkIds.length})`}
                 </button>
               </div>
             }
@@ -609,7 +733,9 @@ export default function BomTransformerPage() {
             <h2 className="text-sm font-semibold text-slate-800">
               {confirmKind === 'autoSync'
                 ? 'Auto-Sync from EBOM ausführen?'
-                : `Sync Selection (${syncPartIds.length}) ausführen?`}
+                : confirmKind === 'copy'
+                  ? `Apply COPY (${copyPartIds.length}) ausführen?`
+                  : `Apply REMOVE (${removeLinkIds.length}) ausführen?`}
             </h2>
             {confirmKind === 'autoSync' ? (
               <p className="text-xs text-slate-600">
@@ -619,20 +745,38 @@ export default function BomTransformerPage() {
                 erzeugt/aktualisiert die MBOM-Pendants entsprechend.
                 Die EBOM bleibt unverändert.
               </p>
-            ) : (
+            ) : confirmKind === 'copy' ? (
               <p className="text-xs text-slate-600">
-                Ruft <code>GenerateDownstreamStructure</code> nur für die{' '}
-                <strong>{syncPartIds.length}</strong> als{' '}
-                <span className="text-indigo-700 font-semibold">SYNC</span> markierten
-                MBOM-Knoten auf. Andere Knoten bleiben unverändert.
+                Ruft <code>PasteSpecial</code> auf <strong>plm-dev</strong> auf und
+                kopiert die <strong>{copyPartIds.length}</strong> als{' '}
+                <span className="text-emerald-700 font-semibold">COPY</span> markierten
+                EBOM-Knoten unter den MBOM-Target. Andere Knoten bleiben unverändert.
+                Die EBOM bleibt unverändert.
               </p>
+            ) : (
+              <>
+                <p className="text-xs text-slate-600">
+                  Löscht die <strong>{removeLinkIds.length}</strong> als{' '}
+                  <span className="text-rose-700 font-semibold">REMOVE</span> markierten
+                  MBOM-UsageLinks via <code>PTC.ProdMgmt.UsageLinks('&lt;id&gt;')</code>.
+                  Nur die Parent→Child-Beziehung wird gekappt — die referenzierten Parts
+                  selbst bleiben in Windchill bestehen. Die EBOM bleibt unverändert.
+                </p>
+                {removeUnresolved > 0 && (
+                  <p className="text-[11px] text-amber-700 bg-amber-50 border border-amber-200 rounded p-2">
+                    {removeUnresolved} markierte Knoten konnten nicht aufgelöst werden
+                    (UsageLink unbekannt — Knoten ggf. erst aufklappen oder Root-Knoten markiert).
+                    Diese werden übersprungen.
+                  </p>
+                )}
+              </>
             )}
-            {removePartIds.length > 0 && (
+            {confirmKind !== 'remove' && removePartIds.length > 0 && (
               <p className="text-[11px] text-amber-700 bg-amber-50 border border-amber-200 rounded p-2">
                 Hinweis: {removePartIds.length} Knoten sind als{' '}
-                <span className="font-semibold">REMOVE</span> markiert. REMOVE wird
-                in dieser Phase <strong>nicht</strong> ausgeführt — kommt mit Phase 2c
-                (PTC.ProdMgmt). Markierungen bleiben aber erhalten.
+                <span className="font-semibold">REMOVE</span> markiert — sie werden
+                durch diese Aktion <strong>nicht</strong> entfernt. Nutze
+                „Apply REMOVE" separat.
               </p>
             )}
             <p className="text-xs text-slate-500">
@@ -647,11 +791,24 @@ export default function BomTransformerPage() {
                 Abbrechen
               </button>
               <button
-                onClick={confirmKind === 'autoSync' ? runAutoSync : runSyncSelection}
+                onClick={
+                  confirmKind === 'autoSync'
+                    ? runAutoSync
+                    : confirmKind === 'copy'
+                      ? runApplyCopy
+                      : runApplyRemove
+                }
                 disabled={transformBusy !== null}
-                className="text-xs px-3 py-1 rounded bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-50"
+                className={
+                  'text-xs px-3 py-1 rounded text-white disabled:opacity-50 ' +
+                  (confirmKind === 'remove'
+                    ? 'bg-rose-600 hover:bg-rose-700'
+                    : 'bg-emerald-600 hover:bg-emerald-700')
+                }
               >
-                {transformBusy === 'autoSync' || transformBusy === 'syncSel'
+                {transformBusy === 'autoSync'
+                  || transformBusy === 'copy'
+                  || transformBusy === 'remove'
                   ? 'Läuft …'
                   : 'Ja, ausführen'}
               </button>

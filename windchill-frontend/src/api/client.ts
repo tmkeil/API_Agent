@@ -280,7 +280,7 @@ export interface TransformResponse {
 }
 export async function postTransformerDetect(
   code: string,
-  body: { targetPath: string; sourcePartPaths?: string[]; upstreamChangeOid?: string },
+  body: { sourceRoot: string; sourcePartPaths?: string[]; upstreamChangeOid?: string },
 ): Promise<TransformResponse> {
   return request<TransformResponse>(
     `${BASE}/parts/${encodeURIComponent(code)}/transformer/detect`,

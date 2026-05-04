@@ -105,7 +105,7 @@ def get_transformer_view(
 
 def detect_discrepancies(
     client: WRSClient,
-    target_path: str,
+    source_root: str,
     source_part_paths: list[str] | None = None,
     upstream_change_oid: str = "",
     session: Optional[UserSession] = None,
@@ -113,13 +113,12 @@ def detect_discrepancies(
     """Wrapper around ``client.detect_discrepancies`` returning a TransformResponse.
 
     Bubbles the raw OData ``value`` array back to the caller without
-    interpretation — the exact shape of discrepancy items is documented
-    in the BomTransformation Swagger and may differ slightly between
-    Windchill versions.
+    interpretation — DiscrepancyItem shape is documented in
+    ``definitions.json:39636``.
     """
     t0 = time.monotonic()
     raw = client.detect_discrepancies(
-        target_path=target_path,
+        source_root=source_root,
         source_part_paths=source_part_paths or None,
         upstream_change_oid=upstream_change_oid or None,
     )
@@ -130,7 +129,7 @@ def detect_discrepancies(
     if session:
         log_session_event(
             session, "INFO", "transformer:detect", 0, ms, "service",
-            f"target={target_path} sources={len(source_part_paths or [])} "
+            f"sourceRoot={source_root} sources={len(source_part_paths or [])} "
             f"discrepancies={len(value)}",
         )
     return TransformResponse(

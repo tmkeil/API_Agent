@@ -83,33 +83,34 @@ class BomTransformationMixin:
 
     def detect_discrepancies(
         self: "WRSClientBase",
-        target_path: str,
+        source_root: str,
         source_part_paths: list[str] | None = None,
         upstream_change_oid: str | None = None,
     ) -> dict[str, Any]:
         """``POST /BomTransformation/DetectDiscrepancies``.
 
-        Findet EBOM-Knoten ohne Downstream-Pendant relativ zur MBOM unter
-        ``target_path``.
+        Findet Discrepancies zwischen Upstream- und Downstream-Struktur,
+        ausgehend vom Upstream-Root-Part ``source_root``.
 
         Args:
-            target_path: Wird bei DetectDiscrepancies bewusst NICHT mit
-                gesendet — der Windchill v3-Server lehnt das Feld mit
-                ``"TargetPath should not be included."`` (HTTP 400) ab.
-                Der Parameter bleibt nur aus API-Kompatibilität in der
-                Signatur, der Server leitet das Ziel intern aus den
-                Source-Equivalences ab.
-            source_part_paths: Optionale Einschraenkung auf bestimmte EBOM-Knoten
-                (Liste von Windchill-Pfaden).
+            source_root: OID des EBOM-Root-Parts (Pflicht laut wt_down.md /
+                DetectAndResolveDiscrepancies-Schema, das auf Detect übertragbar
+                ist — der Server lehnt den Call sonst mit
+                ``"SourceRoot param is required"`` ab).
+            source_part_paths: Optionale Einschraenkung auf bestimmte
+                EBOM-Knoten (Liste von Windchill-Pfaden).
             upstream_change_oid: Optionaler Change-Kontext fuer den Upstream.
 
         Returns:
-            Rohes OData-JSON. Schluessel ``value`` enthaelt die Discrepancies.
+            Rohes OData-JSON. Schluessel ``value`` enthaelt die Discrepancies
+            als ``PTC.BomTransformation.DiscrepancyItem``-Eintraege.
         """
-        del target_path  # explizit ignorieren — siehe Docstring
         body: dict[str, Any] = {
             "DiscrepancyContext": _build_discrepancy_context(
-                "", source_part_paths, upstream_change_oid
+                target_path="",
+                source_part_paths=source_part_paths,
+                upstream_change_oid=upstream_change_oid,
+                source_root=source_root,
             ),
         }
         return self._bt_post("DetectDiscrepancies", body)
@@ -235,17 +236,34 @@ def _build_discrepancy_context(
     target_path: str,
     source_part_paths: list[str] | None,
     upstream_change_oid: str | None,
+    source_root: str | None = None,
+    target_root: str | None = None,
 ) -> dict[str, Any]:
     """Baut den ``PTC.BomTransformation.DiscrepancyContext``-Body.
 
-    Schema (definitions.json:40701):
+    Vollständiges Schema laut Windchill REST Services Domain Capabilities
+    (wt_down.md, DetectAndResolveDiscrepancies / GenerateDownstreamStructure):
+
         {
-          "TargetPath": str,           # bei DetectDiscrepancies leer lassen
+          "SourceRoot": str,                 # OID des Upstream-Root-Parts (Pflicht
+                                              # für Detect / Generate / DetectAndResolve)
+          "TargetRoot": str,                 # OID des Downstream-Root-Parts
+          "TargetPart": str,                 # OID des Downstream-Parents (alt. zu TargetPath)
+          "TargetPath": str,                 # Path-String — bei Detect verboten
+                                              # ("TargetPath should not be included.")
           "SourcePartSelection": [ { "Path": str }, ... ],
           "UpstreamChangeOid": str
         }
+
+    Die in ``definitions.json`` veröffentlichte Form ist unvollständig
+    (es fehlen ``SourceRoot``, ``TargetRoot``, ``TargetPart``).
+    ``wt_down.md`` aus der Windchill-Helpcenter-Doku ist maßgeblich.
     """
     ctx: dict[str, Any] = {}
+    if source_root:
+        ctx["SourceRoot"] = source_root
+    if target_root:
+        ctx["TargetRoot"] = target_root
     if target_path:
         ctx["TargetPath"] = target_path
     if source_part_paths:

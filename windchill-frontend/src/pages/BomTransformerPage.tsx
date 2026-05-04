@@ -314,26 +314,24 @@ export default function BomTransformerPage() {
   const targetPath = mfgRootId
     ? partPath(mfgRootId)
     : designRootId ? partPath(designRootId) : ''
-  // Source-Pfad fuer DetectDiscrepancies — der Server erwartet hier das/die
-  // EBOM-Knoten und leitet das Ziel intern aus deren Equivalence-Links ab.
-  // Daher senden wir den Design-Root, falls vorhanden.
-  const designRootPath = designRootId ? partPath(designRootId) : ''
+  // SourceRoot fuer DetectDiscrepancies — Pflicht laut Windchill-Doku
+  // (wt_down.md, DetectAndResolveDiscrepancies-Schema, vom Server bei
+  // DetectDiscrepancies ebenfalls verlangt: "SourceRoot param is required").
+  // Es ist die OID des EBOM-Root-Parts, NICHT der Path-String.
+  const sourceRoot = designRootId
 
-  // Fire-and-forget DetectDiscrepancies as soon as a sourcePath is available.
+  // Fire-and-forget DetectDiscrepancies as soon as a sourceRoot is available.
   // Wir fragen einmal pro geladener Page — der Aufruf ist read-only und
   // liefert in einem Roundtrip die Identität-aufgelöste Diff-Liste, die wir
   // sonst per Heuristik (Number-Match) nur ungenau approximieren könnten.
   // 404 (Domain nicht deployed — z. B. plm-prod) wird stillschweigend
   // ignoriert; die Page funktioniert dann ohne Pre-Marking weiter.
   useEffect(() => {
-    if (!code || !designRootPath) return
+    if (!code || !sourceRoot) return
     const ctrl = new AbortController()
     setDetectAutoBusy(true)
     setDetectAutoError(null)
-    // TargetPath wird vom Server bei DetectDiscrepancies abgelehnt
-    // ("TargetPath should not be included.") — Backend strippt es,
-    // wir senden hier nur die Source.
-    postTransformerDetect(code, { targetPath: '', sourcePartPaths: [designRootPath] })
+    postTransformerDetect(code, { sourceRoot })
       .then(r => {
         if (ctrl.signal.aborted) return
         setDetectItems(Array.isArray(r.value) ? r.value : [])
@@ -353,7 +351,7 @@ export default function BomTransformerPage() {
         if (!ctrl.signal.aborted) setDetectAutoBusy(false)
       })
     return () => ctrl.abort()
-  }, [code, targetPath])
+  }, [code, sourceRoot])
 
   // Tree-walker: collect partIds + Numbers + (partId → usageLinkId) for a subtree.
   // The usageLinkId is the ID of the WTPartUsageLink that connects each node
@@ -478,7 +476,7 @@ export default function BomTransformerPage() {
   const removeUnresolved = removePartIds.length - removeLinkIds.length
 
   async function runDetect() {
-    if (!designRootPath) {
+    if (!sourceRoot) {
       setTransformError('Kein Design-Root vorhanden — DetectDiscrepancies nicht möglich.')
       return
     }
@@ -486,10 +484,7 @@ export default function BomTransformerPage() {
     setTransformError(null)
     setTransformResult(null)
     try {
-      const r = await postTransformerDetect(code, {
-        targetPath: '',
-        sourcePartPaths: [designRootPath],
-      })
+      const r = await postTransformerDetect(code, { sourceRoot })
       setTransformResult(r)
     } catch (e) {
       setTransformError(String((e as Error)?.message ?? e))

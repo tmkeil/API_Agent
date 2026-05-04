@@ -319,12 +319,22 @@ class BomTransformerResponse(BaseModel):
 
 
 class TransformDetectRequest(BaseModel):
-    """Detect EBOM nodes that have no Manufacturing pendant.
+    """Detect Discrepancies zwischen Upstream- (EBOM) und Downstream-Struktur.
 
-    `targetPath` and `sourcePartPaths` are Windchill OData paths
-    (e.g. ``"Parts('OR:wt.part.WTPart:12345')"``).
+    Laut wt_down.md / DetectAndResolveDiscrepancies-Schema ist ``SourceRoot``
+    Pflicht — der Server lehnt den Call sonst mit
+    ``"SourceRoot param is required"`` (HTTP 400) ab. ``TargetPath`` ist
+    bei DetectDiscrepancies *nicht* erlaubt
+    (``"TargetPath should not be included."``).
+
+    Felder:
+        sourceRoot: OID des EBOM-Root-Parts (Pflicht).
+        sourcePartPaths: optionale Liste von Windchill-Pfaden
+            (z. B. ``"Parts('OR:wt.part.WTPart:12345')"``) zur Einschränkung
+            auf bestimmte Subtrees.
+        upstreamChangeOid: optionaler Change-Kontext.
     """
-    targetPath: str
+    sourceRoot: str
     sourcePartPaths: list[str] = []
     upstreamChangeOid: str = ""
 

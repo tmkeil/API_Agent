@@ -307,21 +307,15 @@ export default function BomTransformerPage() {
   // strings of the form "Parts('<oid>')" referring to the v3 Parts entity set.
   const partPath = useCallback((oid: string) => `Parts('${oid}')`, [])
 
-  // TargetPath = MBOM-Root (downstream). Falls keine MBOM existiert, fallen wir
-  // auf den Design-Root zurück (Initial-Generate-Szenario).
+  // SourceRoot/TargetRoot = WTPart-Iterations-OID des jeweiligen Tree-Roots,
+  // verpackt als ``Parts('OID')``-String (siehe DetectDiscrepancies-Adapter).
+  // Pfade verwenden die ``PVTreeId``-Konvention: ``"/"`` für den Root,
+  // ``"/0:<rootId>-<usageId>-<pathUuid>"`` für tieferliegende Knoten.
   const mfgRootId = data?.manufacturingRoot?.partId || ''
   const designRootId = data?.designRoot?.partId || ''
-  const targetPath = mfgRootId
-    ? partPath(mfgRootId)
-    : designRootId ? partPath(designRootId) : ''
-  // SourceRoot/TargetRoot fehlen zwar in der Swagger-Definition, der
-  // Live-Server lehnt den Call sonst aber mit
-  // ``HTTP 400 "SourceRoot param is required"`` ab.
-  // Windchill erwartet hier die WTPartMaster-OID (nicht die WTPart-Iterations-
-  // OID) — andernfalls wirft der Server eine ClassCastException
-  // (``WTPart cannot be cast to ObjectReference``).
-  const sourceRoot = data?.designRootMasterId || designRootId
-  const targetRoot = data?.manufacturingRootMasterId || mfgRootId
+  const targetPath = '/'
+  const sourceRoot = designRootId ? partPath(designRootId) : ''
+  const targetRoot = mfgRootId ? partPath(mfgRootId) : ''
 
   // Fire-and-forget DetectDiscrepancies as soon as a sourceRoot is available.
   // Wir fragen einmal pro geladener Page — der Aufruf ist read-only und
@@ -334,11 +328,11 @@ export default function BomTransformerPage() {
     const ctrl = new AbortController()
     setDetectAutoBusy(true)
     setDetectAutoError(null)
-    // Detect-spezifische Body-Form (kein Parts('…')-Wrapper für TargetPath —
-    // der Server lehnt das mit "TargetPath should not be included" ab).
-    // Wir nutzen den rohen MBOM-Root-OID als TargetPath.
+    // Auto-Detect (Page-Load): Diff der ganzen Strukturen → SourcePartSelection
+    // bleibt leer ("/"), TargetPath = "/". Konkrete Knoten-Selektionen werden
+    // beim manuellen Detect über PVTreeId-Pfade nachgereicht.
     postTransformerDetect(code, {
-      targetPath: mfgRootId,
+      targetPath,
       sourceRoot,
       targetRoot,
     })

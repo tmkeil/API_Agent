@@ -91,30 +91,22 @@ class BomTransformationMixin:
     ) -> dict[str, Any]:
         """``POST /BomTransformation/DetectDiscrepancies``.
 
-        Body laut Swagger-Spec
-        (``service_endpoints/PTC.BOMTransformation.json#/DetectDiscrepancies``,
-        Schema ``PTC.BomTransformation.DiscrepancyContext`` —
-        ``service_endpoints/definitions.json`` Z. 40701):
+        Body laut Swagger-Spec ``DiscrepancyContext`` plus die zwei vom
+        Live-Server zusätzlich erzwungenen Felder ``SourceRoot`` /
+        ``TargetRoot`` (Server-Validation: ``HTTP 400 "SourceRoot param
+        is required"``).
 
-            {
-              "DiscrepancyContext": {
-                "UpstreamChangeOid": "",
-                "SourcePartSelection": [{"Path": "/"}],
-                "TargetPath": "/"
-              }
-            }
+        Form der Roots: **bare String** ``Parts('OR:wt.part.WTPart:NNN')``
+        — Inline-Objekt-Varianten (``{"@odata.id":…}``, ``{"ID":…}``,
+        ``SourceRoot@odata.bind``) erzeugen alle eine NPE oder
+        ``WTPart cannot be cast to ObjectReference``.
 
-        ``SourceRoot`` / ``TargetRoot`` sind in der Spec **nicht** Teil des
-        Bodies — die ``wt_down.md``-Doku-Tabelle der DetectDiscrepancies-Action
-        listet sie ebenfalls nicht (im Gegensatz zu PasteSpecial / Generate).
-        Ein leerer ``TargetPath`` wird durch ``"/"`` ersetzt (Root-Pfad-
-        Konvention laut ``ResolveDiscrepancies``-Doku).
+        Form der Pfade: ``"/"`` für Root, oder PVTreeId-style
+        ``"/0:<rootIterId>-<usageId>-<pathUuid>"`` für Knoten unterhalb.
 
-        Die Parameter ``source_root`` / ``target_root`` werden vorerst
-        beibehalten, aber **nicht** in den Body geschrieben (Tracing-only).
+        Response laut Spec: ``value: [DiscrepancyItem]`` (siehe
+        ``wt_down.md`` / ``definitions.json``).
         """
-        del source_root, target_root  # spec-konform nicht im Body
-
         sps = source_part_paths or [""]
         ctx: dict[str, Any] = {
             "UpstreamChangeOid": upstream_change_oid or "",
@@ -123,8 +115,20 @@ class BomTransformationMixin:
             ],
             "TargetPath": target_path or "/",
         }
+        if source_root:
+            ctx["SourceRoot"] = (
+                source_root if source_root.startswith("Parts(")
+                else f"Parts('{source_root}')"
+            )
+        if target_root:
+            ctx["TargetRoot"] = (
+                target_root if target_root.startswith("Parts(")
+                else f"Parts('{target_root}')"
+            )
         logger.info(
-            "DetectDiscrepancies body: TargetPath=%r SourcePartSelection=%r UpstreamChangeOid=%r",
+            "DetectDiscrepancies body: SourceRoot=%r TargetRoot=%r TargetPath=%r SourcePartSelection=%r UpstreamChangeOid=%r",
+            ctx.get("SourceRoot"),
+            ctx.get("TargetRoot"),
             ctx.get("TargetPath"),
             ctx.get("SourcePartSelection"),
             ctx.get("UpstreamChangeOid"),

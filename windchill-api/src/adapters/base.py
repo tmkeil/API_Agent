@@ -658,6 +658,17 @@ class WRSClientBase:
 
                 if resp.status_code < 500:
                     return resp
+                # 5xx: Body protokollieren, damit der eigentliche Server-Fehler
+                # nicht durch die Retry-Schleife verloren geht (sonst wird er
+                # in WRSError("keine Antwort", 502) zusammengefaltet).
+                try:
+                    body_snip = resp.text[:1000]
+                except Exception:
+                    body_snip = "<unreadable>"
+                logger.warning(
+                    "POST %s -> %d (attempt %d/%d): %s",
+                    url, resp.status_code, attempt + 1, self._max_retries, body_snip,
+                )
                 last_exc = WRSError(f"Server error {resp.status_code}", resp.status_code)
             except (httpx.TimeoutException, httpx.NetworkError, httpx.ConnectError) as e:
                 last_exc = WRSError(f"Connection error: {e}")

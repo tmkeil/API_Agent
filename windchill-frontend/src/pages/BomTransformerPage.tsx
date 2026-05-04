@@ -314,9 +314,11 @@ export default function BomTransformerPage() {
   const targetPath = mfgRootId
     ? partPath(mfgRootId)
     : designRootId ? partPath(designRootId) : ''
-  // SourceRoot/TargetRoot sind im Detect-Body nicht vorgesehen — laut Swagger
-  // hat der DiscrepancyContext nur UpstreamChangeOid / SourcePartSelection /
-  // TargetPath. Wir senden den Body daher ohne weitere Felder.
+  // SourceRoot/TargetRoot fehlen zwar in der Swagger-Definition, der
+  // Live-Server lehnt den Call sonst aber mit
+  // ``HTTP 400 "SourceRoot param is required"`` ab.
+  const sourceRoot = designRootId
+  const targetRoot = mfgRootId
 
   // Fire-and-forget DetectDiscrepancies as soon as a sourceRoot is available.
   // Wir fragen einmal pro geladener Page — der Aufruf ist read-only und
@@ -325,11 +327,11 @@ export default function BomTransformerPage() {
   // 404 (Domain nicht deployed — z. B. plm-prod) wird stillschweigend
   // ignoriert; die Page funktioniert dann ohne Pre-Marking weiter.
   useEffect(() => {
-    if (!code) return
+    if (!code || !sourceRoot) return
     const ctrl = new AbortController()
     setDetectAutoBusy(true)
     setDetectAutoError(null)
-    postTransformerDetect(code, {})
+    postTransformerDetect(code, { sourceRoot, targetRoot })
       .then(r => {
         if (ctrl.signal.aborted) return
         setDetectItems(Array.isArray(r.value) ? r.value : [])
@@ -349,7 +351,7 @@ export default function BomTransformerPage() {
         if (!ctrl.signal.aborted) setDetectAutoBusy(false)
       })
     return () => ctrl.abort()
-  }, [code])
+  }, [code, sourceRoot, targetRoot])
 
   // Tree-walker: collect partIds + Numbers + (partId → usageLinkId) for a subtree.
   // The usageLinkId is the ID of the WTPartUsageLink that connects each node
@@ -478,7 +480,7 @@ export default function BomTransformerPage() {
     setTransformError(null)
     setTransformResult(null)
     try {
-      const r = await postTransformerDetect(code, {})
+      const r = await postTransformerDetect(code, { sourceRoot, targetRoot })
       setTransformResult(r)
     } catch (e) {
       setTransformError(String((e as Error)?.message ?? e))

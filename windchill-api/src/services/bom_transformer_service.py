@@ -108,6 +108,8 @@ def detect_discrepancies(
     target_path: str = "",
     source_part_paths: list[str] | None = None,
     upstream_change_oid: str = "",
+    source_root: str = "",
+    target_root: str = "",
     session: Optional[UserSession] = None,
 ) -> TransformResponse:
     """Wrapper around ``client.detect_discrepancies`` returning a TransformResponse.
@@ -121,6 +123,8 @@ def detect_discrepancies(
         target_path=target_path,
         source_part_paths=source_part_paths or None,
         upstream_change_oid=upstream_change_oid or None,
+        source_root=source_root or None,
+        target_root=target_root or None,
     )
     ms = round((time.monotonic() - t0) * 1000, 1)
     value = raw.get("value") if isinstance(raw, dict) else None
@@ -129,8 +133,8 @@ def detect_discrepancies(
     if session:
         log_session_event(
             session, "INFO", "transformer:detect", 0, ms, "service",
-            f"targetPath={target_path!r} sources={len(source_part_paths or [])} "
-            f"discrepancies={len(value)}",
+            f"sourceRoot={source_root!r} targetRoot={target_root!r} "
+            f"sources={len(source_part_paths or [])} discrepancies={len(value)}",
         )
     return TransformResponse(
         ok=True,

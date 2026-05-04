@@ -321,19 +321,16 @@ class BomTransformerResponse(BaseModel):
 class TransformDetectRequest(BaseModel):
     """Detect Discrepancies zwischen Upstream- (EBOM) und Downstream-Struktur.
 
-    Body laut Swagger-Spec PTC.BomTransformation.DiscrepancyContext
-    (service_endpoints/PTC.BOMTransformation.json /DetectDiscrepancies):
-        {
-          "DiscrepancyContext": {
-            "UpstreamChangeOid": "",
-            "SourcePartSelection": [{"Path": ""}],
-            "TargetPath": ""
-          }
-        }
+    Body laut Swagger-Spec (``DiscrepancyContext``: TargetPath /
+    SourcePartSelection / UpstreamChangeOid). Der Live-Server verlangt
+    zusätzlich ``SourceRoot`` und akzeptiert ``TargetRoot`` — beide Felder
+    fehlen in der veröffentlichten Swagger-Definition.
     """
     targetPath: str = ""
     sourcePartPaths: list[str] = []
     upstreamChangeOid: str = ""
+    sourceRoot: str = ""
+    targetRoot: str = ""
 
 
 class TransformGenerateRequest(BaseModel):

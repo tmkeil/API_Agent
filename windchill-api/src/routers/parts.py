@@ -163,6 +163,8 @@ def post_transformer_detect(
         target_path=body.targetPath,
         source_part_paths=body.sourcePartPaths or None,
         upstream_change_oid=body.upstreamChangeOid,
+        source_root=body.sourceRoot,
+        target_root=body.targetRoot,
         session=session,
     )
 

@@ -86,6 +86,8 @@ class BomTransformationMixin:
         target_path: str = "",
         source_part_paths: list[str] | None = None,
         upstream_change_oid: str | None = None,
+        source_root: str | None = None,
+        target_root: str | None = None,
     ) -> dict[str, Any]:
         """``POST /BomTransformation/DetectDiscrepancies``.
 
@@ -101,26 +103,33 @@ class BomTransformationMixin:
               }
             }
 
-        Es gibt **keine** weiteren Felder im Detect-Body — insbesondere kein
-        ``SourceRoot``/``TargetRoot``. Die Swagger-Definition ist hier
-        maßgeblich (wt_down.md beschreibt verwandte Actions wie
-        ``DetectAndResolveDiscrepancies`` und ist für Detect nicht 1:1
-        übertragbar).
+        **Aber:** der Live-Server (plm-dev) verlangt zusätzlich ``SourceRoot``
+        (``HTTP 400 "SourceRoot param is required"``) — dieses Feld fehlt in
+        der veröffentlichten Swagger-Definition. Wenn ``SourceRoot`` als
+        Inline-Object mit ``ID`` gesendet wird, akzeptiert der OData-Validator
+        es als Navigation-Property; der interne Java-Handler hat dann jedoch
+        einen bekannten Cast-Bug:
+
+            class wt.part.WTPart cannot be cast to class wt.fc.ObjectReference
+
+        Der Bug zwingt dazu, beide Roots gleichzeitig anzugeben (SourceRoot
+        UND TargetRoot), damit der Resolver gar nicht erst auf den
+        Default-Pfad geht. Wir senden daher beide, sofern bekannt.
         """
-        # Strikt der Swagger-Beispielform folgen — auch leere Werte werden
-        # geschickt, damit Windchill die drei Pflichtkeys vorfindet.
-        body: dict[str, Any] = {
-            "DiscrepancyContext": {
-                "UpstreamChangeOid": upstream_change_oid or "",
-                "SourcePartSelection": (
-                    [{"Path": p} for p in source_part_paths]
-                    if source_part_paths
-                    else [{"Path": ""}]
-                ),
-                "TargetPath": target_path or "",
-            },
+        ctx: dict[str, Any] = {
+            "UpstreamChangeOid": upstream_change_oid or "",
+            "SourcePartSelection": (
+                [{"Path": p} for p in source_part_paths]
+                if source_part_paths
+                else [{"Path": ""}]
+            ),
+            "TargetPath": target_path or "",
         }
-        return self._bt_post("DetectDiscrepancies", body)
+        if source_root:
+            ctx["SourceRoot"] = {"ID": source_root}
+        if target_root:
+            ctx["TargetRoot"] = {"ID": target_root}
+        return self._bt_post("DetectDiscrepancies", {"DiscrepancyContext": ctx})
 
     def detect_and_resolve_discrepancies(
         self: "WRSClientBase",

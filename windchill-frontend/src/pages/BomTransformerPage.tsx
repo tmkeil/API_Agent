@@ -331,7 +331,14 @@ export default function BomTransformerPage() {
     const ctrl = new AbortController()
     setDetectAutoBusy(true)
     setDetectAutoError(null)
-    postTransformerDetect(code, { sourceRoot, targetRoot })
+    // Detect-spezifische Body-Form (kein Parts('…')-Wrapper für TargetPath —
+    // der Server lehnt das mit "TargetPath should not be included" ab).
+    // Wir nutzen den rohen MBOM-Root-OID als TargetPath.
+    postTransformerDetect(code, {
+      targetPath: mfgRootId,
+      sourceRoot,
+      targetRoot,
+    })
       .then(r => {
         if (ctrl.signal.aborted) return
         setDetectItems(Array.isArray(r.value) ? r.value : [])

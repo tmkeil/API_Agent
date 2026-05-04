@@ -93,47 +93,39 @@ class BomTransformationMixin:
 
         Body laut Swagger-Spec
         (``service_endpoints/PTC.BOMTransformation.json#/DetectDiscrepancies``,
-        Schema ``PTC.BomTransformation.DiscrepancyContext``):
+        Schema ``PTC.BomTransformation.DiscrepancyContext`` —
+        ``service_endpoints/definitions.json`` Z. 40701):
 
             {
               "DiscrepancyContext": {
                 "UpstreamChangeOid": "",
-                "SourcePartSelection": [{"Path": ""}],
-                "TargetPath": ""
+                "SourcePartSelection": [{"Path": "/"}],
+                "TargetPath": "/"
               }
             }
 
-        **Aber:** der Live-Server (plm-dev) verlangt zusätzlich ``SourceRoot``
-        (``HTTP 400 "SourceRoot param is required"``) — dieses Feld fehlt in
-        der veröffentlichten Swagger-Definition. Wenn ``SourceRoot`` als
-        Inline-Object mit ``ID`` gesendet wird, akzeptiert der OData-Validator
-        es als Navigation-Property; der interne Java-Handler hat dann jedoch
-        einen bekannten Cast-Bug:
+        ``SourceRoot`` / ``TargetRoot`` sind in der Spec **nicht** Teil des
+        Bodies — die ``wt_down.md``-Doku-Tabelle der DetectDiscrepancies-Action
+        listet sie ebenfalls nicht (im Gegensatz zu PasteSpecial / Generate).
+        Ein leerer ``TargetPath`` wird durch ``"/"`` ersetzt (Root-Pfad-
+        Konvention laut ``ResolveDiscrepancies``-Doku).
 
-            class wt.part.WTPart cannot be cast to class wt.fc.ObjectReference
-
-        Der Bug zwingt dazu, beide Roots gleichzeitig anzugeben (SourceRoot
-        UND TargetRoot), damit der Resolver gar nicht erst auf den
-        Default-Pfad geht. Wir senden daher beide, sofern bekannt.
+        Die Parameter ``source_root`` / ``target_root`` werden vorerst
+        beibehalten, aber **nicht** in den Body geschrieben (Tracing-only).
         """
+        del source_root, target_root  # spec-konform nicht im Body
+
+        sps = source_part_paths or [""]
         ctx: dict[str, Any] = {
             "UpstreamChangeOid": upstream_change_oid or "",
-            "SourcePartSelection": (
-                [{"Path": p} for p in source_part_paths]
-                if source_part_paths
-                else [{"Path": ""}]
-            ),
-            "TargetPath": target_path or "",
+            "SourcePartSelection": [
+                {"Path": (p or "/")} for p in sps
+            ],
+            "TargetPath": target_path or "/",
         }
-        if source_root:
-            ctx["SourceRoot"] = {"@odata.id": f"Parts('{source_root}')"}
-        if target_root:
-            ctx["TargetRoot"] = {"@odata.id": f"Parts('{target_root}')"}
         logger.info(
-            "DetectDiscrepancies body: TargetPath=%r SourceRoot=%r TargetRoot=%r SourcePartSelection=%r UpstreamChangeOid=%r",
+            "DetectDiscrepancies body: TargetPath=%r SourcePartSelection=%r UpstreamChangeOid=%r",
             ctx.get("TargetPath"),
-            (ctx.get("SourceRoot") or {}).get("@odata.id") if isinstance(ctx.get("SourceRoot"), dict) else ctx.get("SourceRoot"),
-            (ctx.get("TargetRoot") or {}).get("@odata.id") if isinstance(ctx.get("TargetRoot"), dict) else ctx.get("TargetRoot"),
             ctx.get("SourcePartSelection"),
             ctx.get("UpstreamChangeOid"),
         )

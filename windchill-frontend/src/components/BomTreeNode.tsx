@@ -20,10 +20,10 @@ interface Props {
   onShowDetail?: (node: BomTreeNode) => void
   /** When provided, a strategy chip is rendered in a fixed leading column.
    *  Click cycles through the available states for this side.
-   *  - chipMode='source' (EBOM): KEEP ↔ COPY
+   *  - chipMode='source' (EBOM): COPY ↔ — (read-only, kein KEEP-Wort)
    *  - chipMode='target' (MBOM): KEEP ↔ REMOVE
    *  REMOVE is visually marked but executed in Phase 2c. */
-  strategyMap?: Record<string, 'KEEP' | 'COPY' | 'REMOVE'>
+  getStrategy?: (node: BomTreeNode) => 'KEEP' | 'COPY' | 'REMOVE'
   onCycleStrategy?: (node: BomTreeNode) => void
   chipMode?: 'source' | 'target'
 }
@@ -75,7 +75,7 @@ function getDocCellValue(doc: DocumentNode, col: BomViewColumn): string {
  * Children are lazily loaded on first expand click.
  * Columns are driven by the viewColumns config (BOM view support).
  */
-export default function BomTreeRow({ node, depth, viewColumns, totalCols, onSelect, selectedPartId, onShowDetail, strategyMap, onCycleStrategy, chipMode }: Props) {
+export default function BomTreeRow({ node, depth, viewColumns, totalCols, onSelect, selectedPartId, onShowDetail, getStrategy, onCycleStrategy, chipMode }: Props) {
   const hasInitialChildren = (node.children && node.children.length > 0) || node.childrenLoaded || false
   const [expanded, setExpanded] = useState(false)
   const [children, setChildren] = useState<BomTreeNode[]>(node.children || [])
@@ -140,14 +140,19 @@ export default function BomTreeRow({ node, depth, viewColumns, totalCols, onSele
             : 'hover:bg-indigo-50/60'
         }`}
       >
-        {/* Strategy chip — fixed leading column, no indent. Only when strategyMap is provided. */}
-        {strategyMap && onCycleStrategy && (() => {
-          const cur = strategyMap[node.partId || ''] ?? 'KEEP'
+        {/* Strategy chip — fixed leading column, no indent. Only when getStrategy is provided. */}
+        {getStrategy && onCycleStrategy && (() => {
+          const cur = getStrategy(node)
           const isCopy = cur === 'COPY'
           const isRemove = cur === 'REMOVE'
-          const tooltip = chipMode === 'source'
-            ? 'Klick: KEEP ↔ COPY (EBOM-Knoten ins MBOM kopieren)'
-            : 'Klick: KEEP ↔ REMOVE (MBOM-Knoten markieren — Ausführung in Phase 2c)'
+          // EBOM ist read-only — der KEEP-Zustand bedeutet dort schlicht
+          // "wird nicht kopiert" und braucht kein eigenes Wort. Daher zeigen
+          // wir auf der Source-Seite nur das aktive COPY-Label.
+          const isSource = chipMode === 'source'
+          const label = isCopy ? 'COPY' : isRemove ? 'REMOVE' : isSource ? '' : 'KEEP'
+          const tooltip = isSource
+            ? 'Klick: COPY (EBOM-Knoten ins MBOM kopieren) ↔ kein Kopieren'
+            : 'Klick: KEEP ↔ REMOVE (MBOM-Knoten zur Löschung markieren)'
           return (
             <td className="px-1 py-1.5 whitespace-nowrap w-20">
               <button
@@ -157,11 +162,13 @@ export default function BomTreeRow({ node, depth, viewColumns, totalCols, onSele
                     ? 'bg-emerald-100 border-emerald-300 text-emerald-700 hover:bg-emerald-200'
                     : isRemove
                     ? 'bg-rose-50 border-rose-300 border-dashed text-rose-600 hover:bg-rose-100 line-through'
+                    : isSource
+                    ? 'bg-transparent border-slate-200 border-dashed text-slate-400 hover:bg-slate-100 hover:text-slate-600'
                     : 'bg-slate-100 border-slate-300 text-slate-600 hover:bg-slate-200'
                 }`}
                 title={tooltip}
               >
-                {cur}
+                {label || '\u00a0'}
               </button>
             </td>
           )
@@ -255,7 +262,7 @@ export default function BomTreeRow({ node, depth, viewColumns, totalCols, onSele
               key={`doc-${doc.docId || i}`}
               className="text-xs border-b border-slate-100"
             >
-              {strategyMap && <td className="w-20" />}
+              {getStrategy && <td className="w-20" />}
               <td style={{ paddingLeft: indent + 20 }} className="py-0.5">
                 <span className={`inline-block border px-1 rounded text-[10px] font-medium ${subtypeBadgeStyle(doc.subType || 'Dokument')}`}>
                   {doc.subType || 'Doc'}
@@ -303,7 +310,7 @@ export default function BomTreeRow({ node, depth, viewColumns, totalCols, onSele
               key={`cad-${doc.docId || i}`}
               className="text-xs border-b border-slate-100"
             >
-              {strategyMap && <td className="w-20" />}
+              {getStrategy && <td className="w-20" />}
               <td style={{ paddingLeft: indent + 20 }} className="py-0.5">
                 <span className={`inline-block border px-1 rounded text-[10px] font-medium ${subtypeBadgeStyle(doc.subType || 'CAD-Dokument')}`}>
                   {doc.subType || 'CAD'}
@@ -354,7 +361,7 @@ export default function BomTreeRow({ node, depth, viewColumns, totalCols, onSele
               onSelect={onSelect}
               selectedPartId={selectedPartId}
               onShowDetail={onShowDetail}
-              strategyMap={strategyMap}
+              getStrategy={getStrategy}
               onCycleStrategy={onCycleStrategy}
               chipMode={chipMode}
             />
@@ -364,7 +371,7 @@ export default function BomTreeRow({ node, depth, viewColumns, totalCols, onSele
           {loaded && children.length === 0 && documents.length === 0 && cadDocuments.length === 0 && (
             <tr>
               <td
-                colSpan={totalCols + (strategyMap ? 1 : 0)}
+                colSpan={totalCols + (getStrategy ? 1 : 0)}
                 style={{ paddingLeft: indent + 20 }}
                 className="text-xs text-slate-400 italic py-1"
               >

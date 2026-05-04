@@ -27,16 +27,6 @@ const COMPACT_COLUMNS: BomViewColumn[] = [
   { key: 'quantity', label: 'Qty', source: 'link', align: 'right' },
 ]
 
-const FULL_COLUMNS: BomViewColumn[] = [
-  { key: 'number', label: 'Nummer', source: 'part', align: 'left' },
-  { key: 'name', label: 'Name', source: 'part', align: 'left' },
-  { key: 'version', label: 'Version', source: 'part', align: 'left' },
-  { key: 'iteration', label: 'Iter.', source: 'part', align: 'left' },
-  { key: 'state', label: 'Status', source: 'part', align: 'left' },
-  { key: 'quantity', label: 'Qty', source: 'link', align: 'right' },
-  { key: 'quantityUnit', label: 'Unit', source: 'link', align: 'left' },
-]
-
 /** Fixed table height — keeps both panes at full size from the start so the
  *  layout doesn't jump when the user expands the root. */
 const TABLE_HEIGHT = '75vh'
@@ -49,7 +39,7 @@ interface SideProps {
   columns: BomViewColumn[]
   onShowDetail: (node: BomTreeNode) => void
   emptyHint: string
-  strategyMap?: Record<string, 'KEEP' | 'COPY' | 'REMOVE'>
+  getStrategy?: (node: BomTreeNode) => 'KEEP' | 'COPY' | 'REMOVE'
   onCycleStrategy?: (node: BomTreeNode) => void
   chipMode?: 'source' | 'target'
   headerExtra?: React.ReactNode
@@ -63,7 +53,7 @@ function BomSide({
   columns,
   onShowDetail,
   emptyHint,
-  strategyMap,
+  getStrategy,
   onCycleStrategy,
   chipMode,
   headerExtra,
@@ -83,15 +73,6 @@ function BomSide({
             {title}
           </span>
         </div>
-        {root?.number && (
-          <Link
-            to={`/detail/part/${encodeURIComponent(root.number)}`}
-            className="text-[11px] text-indigo-600 hover:text-indigo-800 hover:underline whitespace-nowrap"
-            title="Open detail page"
-          >
-            Details →
-          </Link>
-        )}
         {headerExtra}
       </div>
       <div className="flex-1 min-h-0 overflow-auto">
@@ -99,7 +80,7 @@ function BomSide({
           <table className="w-full text-sm border-collapse">
             <thead className="bg-slate-100 text-slate-600 text-xs border-b border-slate-200 sticky top-0 z-10">
               <tr>
-                {strategyMap && (
+                {getStrategy && (
                   <th className="text-left px-1 py-2 font-medium w-20 text-[10px] uppercase tracking-wider">
                     Action
                   </th>
@@ -124,7 +105,7 @@ function BomSide({
                 viewColumns={columns}
                 totalCols={totalCols}
                 onShowDetail={onShowDetail}
-                strategyMap={strategyMap}
+                getStrategy={getStrategy}
                 onCycleStrategy={onCycleStrategy}
                 chipMode={chipMode}
               />
@@ -271,17 +252,31 @@ export default function BomTransformerPage() {
   const [data, setData] = useState<BomTransformerResponse | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [compact, setCompact] = useState(true)
   const [modalNode, setModalNode] = useState<BomTreeNode | null>(null)
   // Phase 2b: per-node transform strategy.
   // KEEP   = Knoten bleibt unangetastet (default)
   // COPY   = nur auf EBOM-Seite sinnvoll → wird via PasteSpecial in MBOM kopiert
   // REMOVE = nur auf MBOM-Seite sinnvoll → visuell, Ausführung in Phase 2c (PTC.ProdMgmt)
-  const [strategyMap, setStrategyMap] = useState<Record<string, 'KEEP' | 'COPY' | 'REMOVE'>>({})
+  // Phase 2b/2c: per-side, per-node strategy overrides. Maps store ONLY user
+  // overrides. The effective strategy is computed by `getEbomStrategy` /
+  // `getMfgStrategy` below (which fall back to a context-aware default).
+  // Two separate maps are required: a Part can appear in both trees with the
+  // same partId (shared part without manufacturing-specific variant), and a
+  // single map would entangle the two sides.
+  const [ebomOverride, setEbomOverride] = useState<Record<string, 'KEEP' | 'COPY'>>({})
+  const [mfgOverride, setMfgOverride] = useState<Record<string, 'KEEP' | 'REMOVE'>>({})
   const [transformBusy, setTransformBusy] = useState<null | 'detect' | 'autoSync' | 'copy' | 'remove'>(null)
   const [transformResult, setTransformResult] = useState<TransformResponse | null>(null)
   const [transformError, setTransformError] = useState<string | null>(null)
   const [confirmKind, setConfirmKind] = useState<null | 'autoSync' | 'copy' | 'remove'>(null)
+  // Auto-Detect: rohe DiscrepancyItems aus ``BomTransformation/DetectDiscrepancies``.
+  // Sobald die Page lädt und ein TargetPath bekannt ist, fragen wir Windchill
+  // einmalig nach den Discrepancies. Diese werden dann zum Pre-Marken der
+  // EBOM-Knoten genutzt (Status NEW/MODIFIED → Default COPY) — semantisch
+  // korrekt, server-seitig aufgelöst, ein einziger Roundtrip.
+  const [detectItems, setDetectItems] = useState<Array<Record<string, unknown>> | null>(null)
+  const [detectAutoBusy, setDetectAutoBusy] = useState(false)
+  const [detectAutoError, setDetectAutoError] = useState<string | null>(null)
 
   useEffect(() => {
     if (!code) return
@@ -289,6 +284,10 @@ export default function BomTransformerPage() {
     setLoading(true)
     setError(null)
     setModalNode(null)
+    setEbomOverride({})
+    setMfgOverride({})
+    setDetectItems(null)
+    setDetectAutoError(null)
     getBomTransformer(code, ctrl.signal)
       .then(setData)
       .catch(e => {
@@ -298,30 +297,10 @@ export default function BomTransformerPage() {
     return () => ctrl.abort()
   }, [code])
 
-  const columns = compact ? COMPACT_COLUMNS : FULL_COLUMNS
+  const columns = COMPACT_COLUMNS
 
   const handleShowDetail = useCallback((node: BomTreeNode) => {
     setModalNode(node)
-  }, [])
-
-  // Side-aware chip cycle — EBOM toggles KEEP↔COPY, MBOM toggles KEEP↔REMOVE.
-  const cycleEbomStrategy = useCallback((node: BomTreeNode) => {
-    const id = node.partId || ''
-    if (!id) return
-    setStrategyMap(prev => {
-      const cur = prev[id] ?? 'KEEP'
-      const next = cur === 'COPY' ? 'KEEP' : 'COPY'
-      return { ...prev, [id]: next }
-    })
-  }, [])
-  const cycleMfgStrategy = useCallback((node: BomTreeNode) => {
-    const id = node.partId || ''
-    if (!id) return
-    setStrategyMap(prev => {
-      const cur = prev[id] ?? 'KEEP'
-      const next = cur === 'REMOVE' ? 'KEEP' : 'REMOVE'
-      return { ...prev, [id]: next }
-    })
   }, [])
 
   // Build OData "Path" for an OID. BomTransformation.DiscrepancyContext expects
@@ -336,13 +315,43 @@ export default function BomTransformerPage() {
     ? partPath(mfgRootId)
     : designRootId ? partPath(designRootId) : ''
 
-  // Tree-walker: collect partIds + (partId → usageLinkId) for a subtree.
+  // Fire-and-forget DetectDiscrepancies as soon as targetPath is available.
+  // Wir fragen einmal pro geladener Page — der Aufruf ist read-only und
+  // liefert in einem Roundtrip die Identität-aufgelöste Diff-Liste, die wir
+  // sonst per Heuristik (Number-Match) nur ungenau approximieren könnten.
+  useEffect(() => {
+    if (!code || !targetPath) return
+    const ctrl = new AbortController()
+    setDetectAutoBusy(true)
+    setDetectAutoError(null)
+    postTransformerDetect(code, { targetPath, sourcePartPaths: [] })
+      .then(r => {
+        if (ctrl.signal.aborted) return
+        setDetectItems(Array.isArray(r.value) ? r.value : [])
+      })
+      .catch(e => {
+        if (e?.name === 'AbortError') return
+        setDetectAutoError(String(e?.message ?? e))
+        setDetectItems([])
+      })
+      .finally(() => {
+        if (!ctrl.signal.aborted) setDetectAutoBusy(false)
+      })
+    return () => ctrl.abort()
+  }, [code, targetPath])
+
+  // Tree-walker: collect partIds + Numbers + (partId → usageLinkId) for a subtree.
   // The usageLinkId is the ID of the WTPartUsageLink that connects each node
   // to its parent — only that link can be deleted (Phase 2c REMOVE). The root
   // node has no incoming link and is therefore not removable.
   const walkTree = useCallback(
-    (root: BomTreeNode | null): { ids: Set<string>; linkByPart: Map<string, string> } => {
+    (root: BomTreeNode | null): {
+      ids: Set<string>
+      numbers: Set<string>
+      linkByPart: Map<string, string>
+    } => {
       const ids = new Set<string>()
+      const numbers = new Set<string>()
       const linkByPart = new Map<string, string>()
       const stack: BomTreeNode[] = root ? [root] : []
       while (stack.length) {
@@ -351,29 +360,96 @@ export default function BomTransformerPage() {
           ids.add(n.partId)
           if (n.usageLinkId) linkByPart.set(n.partId, n.usageLinkId)
         }
+        if (n.number) numbers.add(n.number)
         if (n.children) for (const c of n.children) stack.push(c)
       }
-      return { ids, linkByPart }
+      return { ids, numbers, linkByPart }
     },
     [],
   )
 
   const ebomWalk = useMemo(() => walkTree(data?.designRoot ?? null), [data, walkTree])
   const mfgWalk = useMemo(() => walkTree(data?.manufacturingRoot ?? null), [data, walkTree])
-  const ebomIds = ebomWalk.ids
   const mfgIds = mfgWalk.ids
 
-  const copyPartIds = useMemo(
-    () => Object.entries(strategyMap)
-      .filter(([id, s]) => s === 'COPY' && ebomIds.has(id))
-      .map(([id]) => id),
-    [strategyMap, ebomIds],
+  // Discrepancy-Item-Index: Set von ``Number`` aller Items, die DetectDiscrepancies
+  // für diese Page geliefert hat. Solche Numbers entsprechen EBOM-Knoten, die
+  // *nicht identisch* in der MBOM stehen (NEW oder MODIFIED) — also exakt die
+  // Kandidaten für PasteSpecial → Default COPY. Die Status-Differenzierung
+  // ist hier nicht nötig: alle non-identical Items wollen kopiert werden.
+  // Falls Detect (noch) nicht geladen ist, fällt der Default auf einen sicheren
+  // Wert zurück — siehe getEbomStrategy.
+  const discrepancyNumbers = useMemo(() => {
+    const s = new Set<string>()
+    if (!detectItems) return s
+    for (const it of detectItems) {
+      const num = (it.Number ?? it.number ?? it.PartNumber ?? it.partNumber) as
+        | string
+        | undefined
+      if (typeof num === 'string' && num) s.add(num)
+    }
+    return s
+  }, [detectItems])
+
+  // Effective strategy resolvers.
+  //   EBOM: COPY wenn der Knoten in der DetectDiscrepancy-Antwort vorkommt
+  //         (Status NEW/MODIFIED — kein Pendant oder abweichendes Pendant).
+  //         Solange Detect noch lädt, defaulten wir konservativ auf KEEP, damit
+  //         keine Übergangs-Chips aufpoppen, die der Server gleich widerruft.
+  //         Schlägt Detect fehl, bleiben alle EBOM-Defaults KEEP — der User
+  //         kann immer noch manuell COPY setzen oder den Detect-Button benutzen.
+  //   MBOM: immer KEEP — REMOVE ist destruktiv und muss opt-in sein.
+  const getEbomStrategy = useCallback(
+    (node: BomTreeNode): 'KEEP' | 'COPY' | 'REMOVE' => {
+      const id = node.partId || ''
+      if (id && id in ebomOverride) return ebomOverride[id]
+      if (!detectItems) return 'KEEP'
+      return node.number && discrepancyNumbers.has(node.number) ? 'COPY' : 'KEEP'
+    },
+    [ebomOverride, detectItems, discrepancyNumbers],
   )
+  const getMfgStrategy = useCallback(
+    (node: BomTreeNode): 'KEEP' | 'COPY' | 'REMOVE' => {
+      const id = node.partId || ''
+      return (id && mfgOverride[id]) || 'KEEP'
+    },
+    [mfgOverride],
+  )
+
+  // Side-aware chip cycle. Initialize from default before flipping so the
+  // first click on an auto-COPY node does the intuitive thing (COPY → KEEP).
+  const cycleEbomStrategy = useCallback((node: BomTreeNode) => {
+    const id = node.partId || ''
+    if (!id) return
+    const cur = getEbomStrategy(node)
+    const next: 'KEEP' | 'COPY' = cur === 'COPY' ? 'KEEP' : 'COPY'
+    setEbomOverride(prev => ({ ...prev, [id]: next }))
+  }, [getEbomStrategy])
+  const cycleMfgStrategy = useCallback((node: BomTreeNode) => {
+    const id = node.partId || ''
+    if (!id) return
+    const cur = getMfgStrategy(node)
+    const next: 'KEEP' | 'REMOVE' = cur === 'REMOVE' ? 'KEEP' : 'REMOVE'
+    setMfgOverride(prev => ({ ...prev, [id]: next }))
+  }, [getMfgStrategy])
+
+  // Collect effective COPY partIds across the whole loaded EBOM tree.
+  const copyPartIds = useMemo(() => {
+    const out: string[] = []
+    const stack: BomTreeNode[] = data?.designRoot ? [data.designRoot] : []
+    while (stack.length) {
+      const n = stack.pop()!
+      if (n.partId && getEbomStrategy(n) === 'COPY') out.push(n.partId)
+      if (n.children) for (const c of n.children) stack.push(c)
+    }
+    return out
+  }, [data, getEbomStrategy])
+
   const removePartIds = useMemo(
-    () => Object.entries(strategyMap)
+    () => Object.entries(mfgOverride)
       .filter(([id, s]) => s === 'REMOVE' && mfgIds.has(id))
       .map(([id]) => id),
-    [strategyMap, mfgIds],
+    [mfgOverride, mfgIds],
   )
   // Resolve REMOVE-marked partIds to their UsageLink IDs. Root is excluded
   // automatically (no incoming link). Nodes whose link wasn't loaded yet
@@ -497,7 +573,7 @@ export default function BomTransformerPage() {
             return lid && r.removed.includes(lid)
           }),
         )
-        setStrategyMap(prev => {
+        setMfgOverride(prev => {
           const next = { ...prev }
           for (const pid of removedPartIds) delete next[pid]
           return next
@@ -552,15 +628,6 @@ export default function BomTransformerPage() {
           <span className="text-xs text-slate-500">
             {linkCount > 0 ? `${linkCount} Equivalence Link(s)` : 'Keine Equivalence Links'}
           </span>
-          <label className="flex items-center gap-1.5 text-xs text-slate-600 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={compact}
-              onChange={e => setCompact(e.target.checked)}
-              className="accent-indigo-600"
-            />
-            Kompakt
-          </label>
         </div>
       </div>
 
@@ -584,7 +651,7 @@ export default function BomTransformerPage() {
         >
           <BomSide
             title={designNumber}
-            badge="Design (Source)"
+            badge="Design"
             badgeClass="bg-sky-100 text-sky-700"
             root={data.designRoot}
             columns={columns}
@@ -594,21 +661,42 @@ export default function BomTransformerPage() {
                 ? 'Kein Design-Pendant verknüpft.'
                 : 'Design-BOM nicht verfügbar.'
             }
-            strategyMap={strategyMap}
+            getStrategy={getEbomStrategy}
             onCycleStrategy={cycleEbomStrategy}
             chipMode="source"
             headerExtra={
-              <span
-                className="text-[10px] text-slate-500 italic"
-                title="EBOM wird nie geschrieben — COPY markiert nur, was per PasteSpecial in die MBOM übernommen wird"
-              >
-                read-only
-              </span>
+              <div className="flex items-center gap-2">
+                <span
+                  className="text-[10px] text-slate-500 italic"
+                  title="EBOM wird nie geschrieben — COPY markiert nur, was per PasteSpecial in die MBOM übernommen wird"
+                >
+                  read-only
+                </span>
+                {detectAutoBusy ? (
+                  <span className="text-[10px] text-slate-400" title="DetectDiscrepancies läuft …">
+                    scanning…
+                  </span>
+                ) : detectAutoError ? (
+                  <span
+                    className="text-[10px] text-rose-600"
+                    title={`Auto-Detect fehlgeschlagen: ${detectAutoError}`}
+                  >
+                    detect err
+                  </span>
+                ) : detectItems ? (
+                  <span
+                    className="text-[10px] text-emerald-600"
+                    title={`${discrepancyNumbers.size} Discrepancy-Item(s) — als COPY vorgemarkt`}
+                  >
+                    {discrepancyNumbers.size} diff
+                  </span>
+                ) : null}
+              </div>
             }
           />
           <BomSide
             title={mfgNumber}
-            badge="Manufacturing (Target)"
+            badge="Manufacturing"
             badgeClass="bg-amber-100 text-amber-700"
             root={data.manufacturingRoot}
             columns={columns}
@@ -618,7 +706,7 @@ export default function BomTransformerPage() {
                 ? 'Manufacturing-BOM nicht verfügbar.'
                 : 'Kein Manufacturing-Pendant — nutze „Auto-Sync from EBOM“ für Initial-Generate.'
             }
-            strategyMap={strategyMap}
+            getStrategy={getMfgStrategy}
             onCycleStrategy={cycleMfgStrategy}
             chipMode="target"
             headerExtra={

@@ -314,25 +314,40 @@ export default function BomTransformerPage() {
   const targetPath = mfgRootId
     ? partPath(mfgRootId)
     : designRootId ? partPath(designRootId) : ''
+  // Source-Pfad fuer DetectDiscrepancies — der Server erwartet hier das/die
+  // EBOM-Knoten und leitet das Ziel intern aus deren Equivalence-Links ab.
+  // Daher senden wir den Design-Root, falls vorhanden.
+  const designRootPath = designRootId ? partPath(designRootId) : ''
 
-  // Fire-and-forget DetectDiscrepancies as soon as targetPath is available.
+  // Fire-and-forget DetectDiscrepancies as soon as a sourcePath is available.
   // Wir fragen einmal pro geladener Page — der Aufruf ist read-only und
   // liefert in einem Roundtrip die Identität-aufgelöste Diff-Liste, die wir
   // sonst per Heuristik (Number-Match) nur ungenau approximieren könnten.
+  // 404 (Domain nicht deployed — z. B. plm-prod) wird stillschweigend
+  // ignoriert; die Page funktioniert dann ohne Pre-Marking weiter.
   useEffect(() => {
-    if (!code || !targetPath) return
+    if (!code || !designRootPath) return
     const ctrl = new AbortController()
     setDetectAutoBusy(true)
     setDetectAutoError(null)
-    postTransformerDetect(code, { targetPath, sourcePartPaths: [] })
+    // TargetPath wird vom Server bei DetectDiscrepancies abgelehnt
+    // ("TargetPath should not be included.") — Backend strippt es,
+    // wir senden hier nur die Source.
+    postTransformerDetect(code, { targetPath: '', sourcePartPaths: [designRootPath] })
       .then(r => {
         if (ctrl.signal.aborted) return
         setDetectItems(Array.isArray(r.value) ? r.value : [])
       })
       .catch(e => {
         if (e?.name === 'AbortError') return
-        setDetectAutoError(String(e?.message ?? e))
-        setDetectItems([])
+        const msg = String(e?.message ?? e)
+        // 404 = Domain auf diesem Windchill nicht deployed (prod). Kein Fehler-Indikator.
+        if (/\b404\b|nicht deploy/i.test(msg)) {
+          setDetectItems([])
+        } else {
+          setDetectAutoError(msg)
+          setDetectItems([])
+        }
       })
       .finally(() => {
         if (!ctrl.signal.aborted) setDetectAutoBusy(false)
@@ -463,8 +478,8 @@ export default function BomTransformerPage() {
   const removeUnresolved = removePartIds.length - removeLinkIds.length
 
   async function runDetect() {
-    if (!targetPath) {
-      setTransformError('Kein MBOM-/Design-Root vorhanden — DetectDiscrepancies nicht möglich.')
+    if (!designRootPath) {
+      setTransformError('Kein Design-Root vorhanden — DetectDiscrepancies nicht möglich.')
       return
     }
     setTransformBusy('detect')
@@ -472,8 +487,8 @@ export default function BomTransformerPage() {
     setTransformResult(null)
     try {
       const r = await postTransformerDetect(code, {
-        targetPath,
-        sourcePartPaths: [],
+        targetPath: '',
+        sourcePartPaths: [designRootPath],
       })
       setTransformResult(r)
     } catch (e) {

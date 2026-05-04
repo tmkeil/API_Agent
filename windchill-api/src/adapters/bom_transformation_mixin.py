@@ -93,7 +93,12 @@ class BomTransformationMixin:
         ``target_path``.
 
         Args:
-            target_path: Windchill-Pfad zum Manufacturing-Root.
+            target_path: Wird bei DetectDiscrepancies bewusst NICHT mit
+                gesendet — der Windchill v3-Server lehnt das Feld mit
+                ``"TargetPath should not be included."`` (HTTP 400) ab.
+                Der Parameter bleibt nur aus API-Kompatibilität in der
+                Signatur, der Server leitet das Ziel intern aus den
+                Source-Equivalences ab.
             source_part_paths: Optionale Einschraenkung auf bestimmte EBOM-Knoten
                 (Liste von Windchill-Pfaden).
             upstream_change_oid: Optionaler Change-Kontext fuer den Upstream.
@@ -101,9 +106,10 @@ class BomTransformationMixin:
         Returns:
             Rohes OData-JSON. Schluessel ``value`` enthaelt die Discrepancies.
         """
+        del target_path  # explizit ignorieren — siehe Docstring
         body: dict[str, Any] = {
             "DiscrepancyContext": _build_discrepancy_context(
-                target_path, source_part_paths, upstream_change_oid
+                "", source_part_paths, upstream_change_oid
             ),
         }
         return self._bt_post("DetectDiscrepancies", body)
@@ -234,12 +240,14 @@ def _build_discrepancy_context(
 
     Schema (definitions.json:40701):
         {
-          "TargetPath": str,
+          "TargetPath": str,           # bei DetectDiscrepancies leer lassen
           "SourcePartSelection": [ { "Path": str }, ... ],
           "UpstreamChangeOid": str
         }
     """
-    ctx: dict[str, Any] = {"TargetPath": target_path}
+    ctx: dict[str, Any] = {}
+    if target_path:
+        ctx["TargetPath"] = target_path
     if source_part_paths:
         ctx["SourcePartSelection"] = [{"Path": p} for p in source_part_paths]
     if upstream_change_oid:

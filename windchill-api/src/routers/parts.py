@@ -177,6 +177,121 @@ def debug_part(
     return out
 
 
+@router.get(
+    "/_debug/detect_variants",
+    summary="DEV: try multiple DetectDiscrepancies body permutations",
+)
+def debug_detect_variants(
+    request: Request,
+    source_oid: str,
+    target_oid: str,
+    source_path: str = "/",
+    target_path: str = "/",
+    _: None = Depends(require_auth),
+):
+    """Feuert serielle DetectDiscrepancies-Calls mit verschiedenen Body-Formen
+    gegen den Live-Server und liefert pro Variante {status, body_snippet}.
+
+    URL-Beispiel (im eingeloggten Browser-Tab in die Adressleiste):
+        /api/_debug/detect_variants?source_oid=OR:wt.part.WTPart:396451183
+            &target_oid=OR:wt.part.WTPart:396671366
+            &source_path=/0:396451183-392173008-060c64e0-5635-4faf-b652-87faed00c444
+    """
+    import logging as _logging
+    log = _logging.getLogger("debug_detect_variants")
+    client = get_client(request)
+    url = f"{client.base_url}/servlet/odata/v3/BomTransformation/DetectDiscrepancies"
+
+    def _try(label: str, body: dict) -> dict:
+        client._refresh_csrf()
+        r = client._post(url, json_body=body, suppress_errors=True)
+        snippet = r.text[:1200] if r is not None else None
+        status = r.status_code if r is not None else None
+        log.info("variant=%s status=%s body=%s", label, status, snippet)
+        return {"status": status, "request": body, "response": snippet}
+
+    src_parts = f"Parts('{source_oid}')"
+    tgt_parts = f"Parts('{target_oid}')"
+
+    variants: dict = {}
+
+    variants["A_odata_id_root_path"] = _try("A", {"DiscrepancyContext": {
+        "SourceRoot": {"@odata.id": src_parts},
+        "TargetRoot": {"@odata.id": tgt_parts},
+        "TargetPath": "/",
+        "SourcePartSelection": [{"Path": "/"}],
+        "UpstreamChangeOid": "",
+    }})
+
+    variants["B_odata_id_real_path"] = _try("B", {"DiscrepancyContext": {
+        "SourceRoot": {"@odata.id": src_parts},
+        "TargetRoot": {"@odata.id": tgt_parts},
+        "TargetPath": target_path,
+        "SourcePartSelection": [{"Path": source_path}],
+        "UpstreamChangeOid": "",
+    }})
+
+    variants["C_id_field"] = _try("C", {"DiscrepancyContext": {
+        "SourceRoot": {"ID": source_oid},
+        "TargetRoot": {"ID": target_oid},
+        "TargetPath": target_path,
+        "SourcePartSelection": [{"Path": source_path}],
+        "UpstreamChangeOid": "",
+    }})
+
+    variants["D_odata_bind_outside"] = _try("D", {"DiscrepancyContext": {
+        "SourceRoot@odata.bind": src_parts,
+        "TargetRoot@odata.bind": tgt_parts,
+        "TargetPath": target_path,
+        "SourcePartSelection": [{"Path": source_path}],
+        "UpstreamChangeOid": "",
+    }})
+
+    variants["E_only_source_root"] = _try("E", {"DiscrepancyContext": {
+        "SourceRoot": {"@odata.id": src_parts},
+        "TargetPath": target_path,
+        "SourcePartSelection": [{"Path": source_path}],
+        "UpstreamChangeOid": "",
+    }})
+
+    variants["F_oid_only_string"] = _try("F", {"DiscrepancyContext": {
+        "SourceRoot": {"@odata.id": source_oid},
+        "TargetRoot": {"@odata.id": target_oid},
+        "TargetPath": target_path,
+        "SourcePartSelection": [{"Path": source_path}],
+        "UpstreamChangeOid": "",
+    }})
+
+    return {"url": url, "variants": variants}
+
+
+@router.post(
+    "/_debug/detect_raw",
+    summary="DEV: send a raw DetectDiscrepancies body and return Windchill's response",
+)
+def debug_detect_raw(
+    body: dict,
+    request: Request,
+    _: None = Depends(require_auth),
+):
+    """Send an arbitrary body straight to BomTransformation/DetectDiscrepancies.
+
+    Body shape: ``{"DiscrepancyContext": {...}}`` — passed through verbatim.
+    Returns ``{status, body}`` so we can inspect 4xx/5xx error messages.
+    """
+    import logging as _logging
+    log = _logging.getLogger("debug_detect_raw")
+    client = get_client(request)
+    url = f"{client.base_url}/servlet/odata/v3/BomTransformation/DetectDiscrepancies"
+    client._refresh_csrf()
+    log.info("debug_detect_raw payload: %s", body)
+    resp = client._post(url, json_body=body, suppress_errors=True)
+    return {
+        "status": resp.status_code if resp is not None else None,
+        "body": (resp.text if resp is not None else None),
+    }
+
+
 @router.post(
     "/parts/{code}/transformer/detect",
     response_model=TransformResponse,

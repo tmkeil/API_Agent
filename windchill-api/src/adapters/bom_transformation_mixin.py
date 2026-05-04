@@ -116,15 +116,11 @@ class BomTransformationMixin:
             "TargetPath": target_path or "/",
         }
         if source_root:
-            ctx["SourceRoot"] = (
-                source_root if source_root.startswith("Parts(")
-                else f"Parts('{source_root}')"
-            )
+            sr = source_root if source_root.startswith("Parts(") else f"Parts('{source_root}')"
+            ctx["SourceRoot"] = {"@odata.id": sr}
         if target_root:
-            ctx["TargetRoot"] = (
-                target_root if target_root.startswith("Parts(")
-                else f"Parts('{target_root}')"
-            )
+            tr = target_root if target_root.startswith("Parts(") else f"Parts('{target_root}')"
+            ctx["TargetRoot"] = {"@odata.id": tr}
         logger.info(
             "DetectDiscrepancies body: SourceRoot=%r TargetRoot=%r TargetPath=%r SourcePartSelection=%r UpstreamChangeOid=%r",
             ctx.get("SourceRoot"),

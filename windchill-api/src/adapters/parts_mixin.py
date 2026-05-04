@@ -67,6 +67,41 @@ class PartsMixin:
             logger.debug("get_part_by_id(%s) failed", part_id, exc_info=True)
             return None
 
+    def get_part_master_id(self: "WRSClientBase", part_id: str) -> Optional[str]:
+        """Master-OID (``OR:wt.part.WTPartMaster:NNN``) zu einer WTPart-Iterations-OID.
+
+        Versucht $expand=Master, dann /Master als Navigation, dann nichts.
+        """
+        if not part_id:
+            return None
+        base = f"{self._odata_url('ProdMgmt')}/Parts('{part_id}')"
+
+        # 1) $expand=Master
+        try:
+            resp = self._get(base, {"$expand": "Master"}, suppress_errors=True)
+            if resp and resp.status_code == 200:
+                data = resp.json() or {}
+                master = data.get("Master")
+                if isinstance(master, dict):
+                    mid = extract_id(master) or master.get("ID") or master.get("Id")
+                    if mid:
+                        return str(mid).strip()
+        except Exception:
+            logger.debug("get_part_master_id(%s) $expand=Master failed", part_id, exc_info=True)
+
+        # 2) /Master als Navigation
+        try:
+            resp = self._get(f"{base}/Master", None, suppress_errors=True)
+            if resp and resp.status_code == 200:
+                data = resp.json() or {}
+                mid = extract_id(data) or data.get("ID") or data.get("Id")
+                if mid:
+                    return str(mid).strip()
+        except Exception:
+            logger.debug("get_part_master_id(%s) /Master failed", part_id, exc_info=True)
+
+        return None
+
     def search_parts(self: "WRSClientBase", query: str, limit: int = 25) -> list[dict]:
         """Freitextsuche nach Parts (Nummer oder Name).
 

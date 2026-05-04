@@ -311,6 +311,8 @@ class BomTransformerResponse(BaseModel):
     selfView: str = ""
     designRoot: Optional[BomTreeNode] = None
     manufacturingRoot: Optional[BomTreeNode] = None
+    designRootMasterId: str = ""
+    manufacturingRootMasterId: str = ""
     equivalence: EquivalenceNetworkResponse
     timing: TimingInfo = TimingInfo()
 

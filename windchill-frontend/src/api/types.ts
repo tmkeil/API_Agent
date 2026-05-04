@@ -218,6 +218,8 @@ export interface BomTransformerResponse {
   selfView: string
   designRoot: BomTreeNode | null
   manufacturingRoot: BomTreeNode | null
+  designRootMasterId?: string
+  manufacturingRootMasterId?: string
   equivalence: EquivalenceNetworkResponse
   timing: TimingInfo
 }

@@ -317,8 +317,11 @@ export default function BomTransformerPage() {
   // SourceRoot/TargetRoot fehlen zwar in der Swagger-Definition, der
   // Live-Server lehnt den Call sonst aber mit
   // ``HTTP 400 "SourceRoot param is required"`` ab.
-  const sourceRoot = designRootId
-  const targetRoot = mfgRootId
+  // Windchill erwartet hier die WTPartMaster-OID (nicht die WTPart-Iterations-
+  // OID) — andernfalls wirft der Server eine ClassCastException
+  // (``WTPart cannot be cast to ObjectReference``).
+  const sourceRoot = data?.designRootMasterId || designRootId
+  const targetRoot = data?.manufacturingRootMasterId || mfgRootId
 
   // Fire-and-forget DetectDiscrepancies as soon as a sourceRoot is available.
   // Wir fragen einmal pro geladener Page — der Aufruf ist read-only und

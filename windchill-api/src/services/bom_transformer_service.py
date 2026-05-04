@@ -89,12 +89,29 @@ def get_transformer_view(
     design_root = _safe_root(client, design_code, session)
     mfg_root = _safe_root(client, mfg_code, session)
 
+    # Master-OIDs für SourceRoot/TargetRoot (BomTransformation.DetectDiscrepancies
+    # erwartet wt.part.WTPartMaster — die WTPart-Iterations-OID schlägt fehl).
+    design_master = ""
+    mfg_master = ""
+    try:
+        if design_root and design_root.partId:
+            design_master = client.get_part_master_id(design_root.partId) or ""
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("bom_transformer: design master lookup failed: %s", exc)
+    try:
+        if mfg_root and mfg_root.partId:
+            mfg_master = client.get_part_master_id(mfg_root.partId) or ""
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("bom_transformer: mfg master lookup failed: %s", exc)
+
     ms = round((time.monotonic() - t0) * 1000, 1)
     return BomTransformerResponse(
         code=code,
         selfView=self_view,
         designRoot=design_root,
         manufacturingRoot=mfg_root,
+        designRootMasterId=design_master,
+        manufacturingRootMasterId=mfg_master,
         equivalence=equivalence,
         timing=TimingInfo(totalMs=ms, wrsMs=equivalence.timing.wrsMs),
     )

@@ -262,13 +262,14 @@ def _build_discrepancy_context(
     ctx: dict[str, Any] = {}
     if source_root:
         # SourceRoot ist eine OData-Navigation-Property auf eine Part-Entity,
-        # kein Primitive. Daher als @odata.bind-Referenz auf den Parts-Entity-Set.
+        # kein Primitive. Inline-Object-Form mit ID-Property — entspricht dem
+        # PTC.ID-Pattern, das auch in GetEquivalenceNetworkForParts verwendet wird.
         # Server-Antwort sonst:
         #   "Invalid value for navigation property 'SourceRoot'.
         #    Must be an array for collections or for an entity either null or an object."
-        ctx["SourceRoot@odata.bind"] = f"Parts('{source_root}')"
+        ctx["SourceRoot"] = {"ID": source_root}
     if target_root:
-        ctx["TargetRoot@odata.bind"] = f"Parts('{target_root}')"
+        ctx["TargetRoot"] = {"ID": target_root}
     if target_path:
         ctx["TargetPath"] = target_path
     if source_part_paths:

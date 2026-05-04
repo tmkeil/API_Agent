@@ -105,7 +105,7 @@ def get_transformer_view(
 
 def detect_discrepancies(
     client: WRSClient,
-    source_root: str,
+    target_path: str = "",
     source_part_paths: list[str] | None = None,
     upstream_change_oid: str = "",
     session: Optional[UserSession] = None,
@@ -118,7 +118,7 @@ def detect_discrepancies(
     """
     t0 = time.monotonic()
     raw = client.detect_discrepancies(
-        source_root=source_root,
+        target_path=target_path,
         source_part_paths=source_part_paths or None,
         upstream_change_oid=upstream_change_oid or None,
     )
@@ -129,7 +129,7 @@ def detect_discrepancies(
     if session:
         log_session_event(
             session, "INFO", "transformer:detect", 0, ms, "service",
-            f"sourceRoot={source_root} sources={len(source_part_paths or [])} "
+            f"targetPath={target_path!r} sources={len(source_part_paths or [])} "
             f"discrepancies={len(value)}",
         )
     return TransformResponse(

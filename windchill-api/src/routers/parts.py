@@ -160,7 +160,7 @@ def post_transformer_detect(
     session = get_session(request)
     return bom_transformer_service.detect_discrepancies(
         client,
-        source_root=body.sourceRoot,
+        target_path=body.targetPath,
         source_part_paths=body.sourcePartPaths or None,
         upstream_change_oid=body.upstreamChangeOid,
         session=session,

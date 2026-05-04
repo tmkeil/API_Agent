@@ -314,11 +314,9 @@ export default function BomTransformerPage() {
   const targetPath = mfgRootId
     ? partPath(mfgRootId)
     : designRootId ? partPath(designRootId) : ''
-  // SourceRoot fuer DetectDiscrepancies — Pflicht laut Windchill-Doku
-  // (wt_down.md, DetectAndResolveDiscrepancies-Schema, vom Server bei
-  // DetectDiscrepancies ebenfalls verlangt: "SourceRoot param is required").
-  // Es ist die OID des EBOM-Root-Parts, NICHT der Path-String.
-  const sourceRoot = designRootId
+  // SourceRoot/TargetRoot sind im Detect-Body nicht vorgesehen — laut Swagger
+  // hat der DiscrepancyContext nur UpstreamChangeOid / SourcePartSelection /
+  // TargetPath. Wir senden den Body daher ohne weitere Felder.
 
   // Fire-and-forget DetectDiscrepancies as soon as a sourceRoot is available.
   // Wir fragen einmal pro geladener Page — der Aufruf ist read-only und
@@ -327,11 +325,11 @@ export default function BomTransformerPage() {
   // 404 (Domain nicht deployed — z. B. plm-prod) wird stillschweigend
   // ignoriert; die Page funktioniert dann ohne Pre-Marking weiter.
   useEffect(() => {
-    if (!code || !sourceRoot) return
+    if (!code) return
     const ctrl = new AbortController()
     setDetectAutoBusy(true)
     setDetectAutoError(null)
-    postTransformerDetect(code, { sourceRoot })
+    postTransformerDetect(code, {})
       .then(r => {
         if (ctrl.signal.aborted) return
         setDetectItems(Array.isArray(r.value) ? r.value : [])
@@ -351,7 +349,7 @@ export default function BomTransformerPage() {
         if (!ctrl.signal.aborted) setDetectAutoBusy(false)
       })
     return () => ctrl.abort()
-  }, [code, sourceRoot])
+  }, [code])
 
   // Tree-walker: collect partIds + Numbers + (partId → usageLinkId) for a subtree.
   // The usageLinkId is the ID of the WTPartUsageLink that connects each node
@@ -476,15 +474,11 @@ export default function BomTransformerPage() {
   const removeUnresolved = removePartIds.length - removeLinkIds.length
 
   async function runDetect() {
-    if (!sourceRoot) {
-      setTransformError('Kein Design-Root vorhanden — DetectDiscrepancies nicht möglich.')
-      return
-    }
     setTransformBusy('detect')
     setTransformError(null)
     setTransformResult(null)
     try {
-      const r = await postTransformerDetect(code, { sourceRoot })
+      const r = await postTransformerDetect(code, {})
       setTransformResult(r)
     } catch (e) {
       setTransformError(String((e as Error)?.message ?? e))

@@ -321,20 +321,17 @@ class BomTransformerResponse(BaseModel):
 class TransformDetectRequest(BaseModel):
     """Detect Discrepancies zwischen Upstream- (EBOM) und Downstream-Struktur.
 
-    Laut wt_down.md / DetectAndResolveDiscrepancies-Schema ist ``SourceRoot``
-    Pflicht — der Server lehnt den Call sonst mit
-    ``"SourceRoot param is required"`` (HTTP 400) ab. ``TargetPath`` ist
-    bei DetectDiscrepancies *nicht* erlaubt
-    (``"TargetPath should not be included."``).
-
-    Felder:
-        sourceRoot: OID des EBOM-Root-Parts (Pflicht).
-        sourcePartPaths: optionale Liste von Windchill-Pfaden
-            (z. B. ``"Parts('OR:wt.part.WTPart:12345')"``) zur Einschränkung
-            auf bestimmte Subtrees.
-        upstreamChangeOid: optionaler Change-Kontext.
+    Body laut Swagger-Spec PTC.BomTransformation.DiscrepancyContext
+    (service_endpoints/PTC.BOMTransformation.json /DetectDiscrepancies):
+        {
+          "DiscrepancyContext": {
+            "UpstreamChangeOid": "",
+            "SourcePartSelection": [{"Path": ""}],
+            "TargetPath": ""
+          }
+        }
     """
-    sourceRoot: str
+    targetPath: str = ""
     sourcePartPaths: list[str] = []
     upstreamChangeOid: str = ""
 

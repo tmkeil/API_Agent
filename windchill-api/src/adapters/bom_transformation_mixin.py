@@ -83,35 +83,42 @@ class BomTransformationMixin:
 
     def detect_discrepancies(
         self: "WRSClientBase",
-        source_root: str,
+        target_path: str = "",
         source_part_paths: list[str] | None = None,
         upstream_change_oid: str | None = None,
     ) -> dict[str, Any]:
         """``POST /BomTransformation/DetectDiscrepancies``.
 
-        Findet Discrepancies zwischen Upstream- und Downstream-Struktur,
-        ausgehend vom Upstream-Root-Part ``source_root``.
+        Body laut Swagger-Spec
+        (``service_endpoints/PTC.BOMTransformation.json#/DetectDiscrepancies``,
+        Schema ``PTC.BomTransformation.DiscrepancyContext``):
 
-        Args:
-            source_root: OID des EBOM-Root-Parts (Pflicht laut wt_down.md /
-                DetectAndResolveDiscrepancies-Schema, das auf Detect übertragbar
-                ist — der Server lehnt den Call sonst mit
-                ``"SourceRoot param is required"`` ab).
-            source_part_paths: Optionale Einschraenkung auf bestimmte
-                EBOM-Knoten (Liste von Windchill-Pfaden).
-            upstream_change_oid: Optionaler Change-Kontext fuer den Upstream.
+            {
+              "DiscrepancyContext": {
+                "UpstreamChangeOid": "",
+                "SourcePartSelection": [{"Path": ""}],
+                "TargetPath": ""
+              }
+            }
 
-        Returns:
-            Rohes OData-JSON. Schluessel ``value`` enthaelt die Discrepancies
-            als ``PTC.BomTransformation.DiscrepancyItem``-Eintraege.
+        Es gibt **keine** weiteren Felder im Detect-Body — insbesondere kein
+        ``SourceRoot``/``TargetRoot``. Die Swagger-Definition ist hier
+        maßgeblich (wt_down.md beschreibt verwandte Actions wie
+        ``DetectAndResolveDiscrepancies`` und ist für Detect nicht 1:1
+        übertragbar).
         """
+        # Strikt der Swagger-Beispielform folgen — auch leere Werte werden
+        # geschickt, damit Windchill die drei Pflichtkeys vorfindet.
         body: dict[str, Any] = {
-            "DiscrepancyContext": _build_discrepancy_context(
-                target_path="",
-                source_part_paths=source_part_paths,
-                upstream_change_oid=upstream_change_oid,
-                source_root=source_root,
-            ),
+            "DiscrepancyContext": {
+                "UpstreamChangeOid": upstream_change_oid or "",
+                "SourcePartSelection": (
+                    [{"Path": p} for p in source_part_paths]
+                    if source_part_paths
+                    else [{"Path": ""}]
+                ),
+                "TargetPath": target_path or "",
+            },
         }
         return self._bt_post("DetectDiscrepancies", body)
 
@@ -236,43 +243,20 @@ def _build_discrepancy_context(
     target_path: str,
     source_part_paths: list[str] | None,
     upstream_change_oid: str | None,
-    source_root: str | None = None,
-    target_root: str | None = None,
 ) -> dict[str, Any]:
     """Baut den ``PTC.BomTransformation.DiscrepancyContext``-Body.
 
-    Vollständiges Schema laut Windchill REST Services Domain Capabilities
-    (wt_down.md, DetectAndResolveDiscrepancies / GenerateDownstreamStructure):
+    Schema laut Swagger
+    (``service_endpoints/definitions.json``,
+    ``PTC.BomTransformation.DiscrepancyContext``):
 
         {
-          "SourceRoot": str,                 # OID des Upstream-Root-Parts (Pflicht
-                                              # für Detect / Generate / DetectAndResolve)
-          "TargetRoot": str,                 # OID des Downstream-Root-Parts
-          "TargetPart": str,                 # OID des Downstream-Parents (alt. zu TargetPath)
-          "TargetPath": str,                 # Path-String — bei Detect verboten
-                                              # ("TargetPath should not be included.")
-          "SourcePartSelection": [ { "Path": str }, ... ],
-          "UpstreamChangeOid": str
+          "UpstreamChangeOid": str,
+          "SourcePartSelection": [{ "Path": str }, ...],
+          "TargetPath": str
         }
-
-    Die in ``definitions.json`` veröffentlichte Form ist unvollständig
-    (es fehlen ``SourceRoot``, ``TargetRoot``, ``TargetPart``).
-    ``wt_down.md`` aus der Windchill-Helpcenter-Doku ist maßgeblich.
     """
     ctx: dict[str, Any] = {}
-    if source_root:
-        # SourceRoot ist im EDM eine Navigation-Property auf ObjectReferenceable.
-        # Das Java-Backend von BomTransformation erwartet jedoch intern eine
-        # ``wt.fc.ObjectReference`` (Leichtgewicht-Reference), keine voll
-        # materialisierte WTPart-Entity. Mit Inline-Object ``{"ID": ...}`` oder
-        # einfachem String resolved Windchill ueber die Parts-EntitySet zu einer
-        # WTPart-Entity, was zu einem ClassCastException fuehrt:
-        #   "class wt.part.WTPart cannot be cast to class wt.fc.ObjectReference"
-        # Der OData-v4-konforme Weg, eine reine Reference (nicht Entity) zu
-        # uebergeben, ist die ``@odata.bind``-Annotation am Property-Namen:
-        ctx["SourceRoot@odata.bind"] = f"Parts('{source_root}')"
-    if target_root:
-        ctx["TargetRoot@odata.bind"] = f"Parts('{target_root}')"
     if target_path:
         ctx["TargetPath"] = target_path
     if source_part_paths:
